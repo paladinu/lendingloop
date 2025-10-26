@@ -3,4 +3,5 @@ export interface SharedItem {
     name: string;
     ownerId: string;
     isAvailable: boolean;
+    imageUrl?: string;
 }

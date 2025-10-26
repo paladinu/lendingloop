@@ -6,4 +6,5 @@ public interface IItemsService
 {
     Task<List<SharedItem>> GetAllItemsAsync();
     Task<SharedItem> CreateItemAsync(SharedItem item);
+    Task<SharedItem?> UpdateItemImageAsync(string id, string imageUrl);
 }

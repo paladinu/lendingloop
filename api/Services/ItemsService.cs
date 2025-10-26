@@ -23,4 +23,17 @@ public class ItemsService : IItemsService
         await _itemsCollection.InsertOneAsync(item);
         return item;
     }
+
+    public async Task<SharedItem?> UpdateItemImageAsync(string id, string imageUrl)
+    {
+        var filter = Builders<SharedItem>.Filter.Eq(item => item.Id, id);
+        var update = Builders<SharedItem>.Update.Set(item => item.ImageUrl, imageUrl);
+        
+        var options = new FindOneAndUpdateOptions<SharedItem>
+        {
+            ReturnDocument = ReturnDocument.After
+        };
+
+        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+    }
 }

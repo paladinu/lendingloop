@@ -74,10 +74,6 @@
 
 - [x] 13. Integrate Angular Material for UI components
 
-
-
-
-
   - Add @angular/material and @angular/cdk packages to ui/package.json
   - Configure Angular Material theme in styles.css
   - Update app.config.ts to include provideAnimations for Material animations
@@ -87,3 +83,51 @@
   - Update app.component.ts to import necessary Material modules
   - Remove or minimize custom CSS in favor of Material Design components
   - _Requirements: 6.3, 6.4, 7.3_
+
+- [x] 14. Add ImageUrl property to SharedItem model
+
+
+
+
+
+  - Update Models/SharedItem.cs to include ImageUrl property with BsonElement attribute
+  - Update ui/src/app/models/shared-item.interface.ts to include optional imageUrl property
+  - _Requirements: 9.1_
+
+- [x] 15. Implement image upload endpoint in API
+
+
+
+
+
+  - Add POST /api/items/{id}/image endpoint to ItemsController
+  - Implement file validation logic (file type and size checks)
+  - Create file storage logic to save uploaded images to the uploads/images directory
+  - Update ItemsService to include UpdateItemImageAsync method
+  - Configure static file serving in Program.cs to serve uploaded images
+  - Add FileStorage configuration section to appsettings.Development.json
+  - _Requirements: 9.2, 9.3_
+
+- [x] 16. Implement image upload functionality in Angular UI
+
+
+
+
+
+  - Add file input control to the add item form in app.component.html
+  - Implement onFileSelected method in app.component.ts to handle file selection
+  - Update addItem method to accept optional image file parameter
+  - Add uploadItemImage method to items.service.ts that sends multipart form data
+  - Update the item creation flow to upload image after item is created
+  - _Requirements: 9.4_
+
+- [x] 17. Display item images in the UI
+
+
+
+
+
+  - Update app.component.html to conditionally display images when ImageUrl is present
+  - Add image styling using Material card components for proper layout
+  - Handle missing images gracefully with placeholder or no image display
+  - _Requirements: 9.5_

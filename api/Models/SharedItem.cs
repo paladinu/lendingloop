@@ -17,4 +17,7 @@ public class SharedItem
     
     [BsonElement("isAvailable")]
     public bool IsAvailable { get; set; } = true;
+    
+    [BsonElement("imageUrl")]
+    public string? ImageUrl { get; set; }
 }

@@ -55,6 +55,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Configure static file serving for uploaded images
+var uploadPath = builder.Configuration["FileStorage:UploadPath"] ?? "uploads/images";
+var fullUploadPath = Path.Combine(app.Environment.ContentRootPath, uploadPath);
+Directory.CreateDirectory(fullUploadPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(fullUploadPath),
+    RequestPath = $"/{uploadPath}"
+});
+
 // Use CORS
 app.UseCors("AllowAngularDev");
 

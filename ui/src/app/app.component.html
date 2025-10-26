@@ -23,6 +23,14 @@
           <input matInput [(ngModel)]="newItemName" name="itemName" placeholder="Enter item name" required
             [disabled]="loading" />
         </mat-form-field>
+        
+        <div class="file-input-container">
+          <label for="imageUpload" class="file-input-label">Item Image (optional)</label>
+          <input type="file" id="imageUpload" accept="image/*" (change)="onFileSelected($event)" 
+            [disabled]="loading" class="file-input" />
+          <span *ngIf="selectedImageFile" class="file-name">{{ selectedImageFile.name }}</span>
+        </div>
+
         <button mat-raised-button color="primary" type="submit" [disabled]="!newItemName.trim() || loading">
           {{ loading ? 'Adding...' : 'Add Item' }}
         </button>
@@ -48,6 +56,7 @@
 
     <div *ngIf="items.length > 0" class="items-grid">
       <mat-card *ngFor="let item of items" class="item-card">
+        <img *ngIf="item.imageUrl" mat-card-image [src]="item.imageUrl" [alt]="item.name" class="item-image" />
         <mat-card-header>
           <mat-card-title>{{ item.name }}</mat-card-title>
         </mat-card-header>

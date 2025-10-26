@@ -18,4 +18,10 @@ export class ItemsService {
     createItem(item: Partial<SharedItem>): Observable<SharedItem> {
         return this.http.post<SharedItem>(this.apiUrl, item);
     }
+
+    uploadItemImage(itemId: string, imageFile: File): Observable<SharedItem> {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        return this.http.post<SharedItem>(`${this.apiUrl}/${itemId}/image`, formData);
+    }
 }

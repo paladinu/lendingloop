@@ -69,13 +69,15 @@ graph LR
 - Key Methods:
   - `ngOnInit()`: Fetches items on component initialization
   - `loadItems()`: Retrieves all items from the API
-  - `addItem(name: string)`: Creates a new item and refreshes the list
+  - `addItem(name: string, imageFile?: File)`: Creates a new item and optionally uploads an image, then refreshes the list
+  - `onFileSelected(event: Event)`: Handles file input change events for image selection
 
 **ItemsService**
 - Responsibility: HTTP client service for API communication
 - Key Methods:
   - `getItems(): Observable<SharedItem[]>`: GET request to /api/items
   - `createItem(item: Partial<SharedItem>): Observable<SharedItem>`: POST request to /api/items
+  - `uploadItemImage(itemId: string, imageFile: File): Observable<SharedItem>`: POST request to /api/items/{id}/image with multipart form data
 
 **Proxy Configuration (proxy.conf.json)**
 ```json
@@ -97,13 +99,15 @@ graph LR
 - Endpoints:
   - `GET /api/items`: Returns all items
   - `POST /api/items`: Creates a new item
-- Dependencies: IItemsService
+  - `POST /api/items/{id}/image`: Uploads an image for a specific item
+- Dependencies: IItemsService, IWebHostEnvironment (for file storage)
 
 **ItemsService**
 - Responsibility: Business logic and data access for items
 - Key Methods:
   - `Task<List<SharedItem>> GetAllItemsAsync()`: Retrieves all items from MongoDB
   - `Task<SharedItem> CreateItemAsync(SharedItem item)`: Inserts a new item into MongoDB
+  - `Task<SharedItem?> UpdateItemImageAsync(string id, string imageUrl)`: Updates the ImageUrl property for a specific item
 - Dependencies: IMongoCollection<SharedItem>
 
 **Program.cs Configuration**
@@ -135,6 +139,9 @@ public class SharedItem
     
     [BsonElement("isAvailable")]
     public bool IsAvailable { get; set; } = true;
+    
+    [BsonElement("imageUrl")]
+    public string? ImageUrl { get; set; }
 }
 ```
 
@@ -145,6 +152,7 @@ export interface SharedItem {
   name: string;
   ownerId: string;
   isAvailable: boolean;
+  imageUrl?: string;
 }
 ```
 
@@ -184,6 +192,10 @@ export interface SharedItem {
     "ConnectionString": "mongodb://localhost:27017",
     "DatabaseName": "SharedItemsDb",
     "CollectionName": "items"
+  },
+  "FileStorage": {
+    "UploadPath": "uploads/images",
+    "MaxFileSizeBytes": 5242880
   },
   "Logging": {
     "LogLevel": {
@@ -231,6 +243,8 @@ export interface SharedItem {
 
 **Validation**
 - Validate required fields (Name cannot be empty)
+- Validate image file types (accept only common image formats: jpg, jpeg, png, gif)
+- Validate image file size (maximum 5MB)
 - Return 400 Bad Request for invalid data
 
 ## Testing Strategy

@@ -29,6 +29,7 @@ export class AppComponent implements OnInit {
   title = 'Shared Items Manager';
   items: SharedItem[] = [];
   newItemName: string = '';
+  selectedImageFile: File | null = null;
   loading: boolean = false;
   error: string = '';
 
@@ -55,6 +56,13 @@ export class AppComponent implements OnInit {
     });
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedImageFile = input.files[0];
+    }
+  }
+
   addItem(): void {
     if (!this.newItemName.trim()) {
       return;
@@ -71,9 +79,31 @@ export class AppComponent implements OnInit {
 
     this.itemsService.createItem(newItem).subscribe({
       next: (createdItem) => {
-        this.items.push(createdItem);
-        this.newItemName = '';
-        this.loading = false;
+        // If an image was selected, upload it
+        if (this.selectedImageFile && createdItem.id) {
+          this.itemsService.uploadItemImage(createdItem.id, this.selectedImageFile).subscribe({
+            next: (updatedItem) => {
+              this.items.push(updatedItem);
+              this.newItemName = '';
+              this.selectedImageFile = null;
+              this.loading = false;
+            },
+            error: (err) => {
+              console.error('Error uploading image:', err);
+              // Still add the item without the image
+              this.items.push(createdItem);
+              this.newItemName = '';
+              this.selectedImageFile = null;
+              this.error = 'Item added but image upload failed.';
+              this.loading = false;
+            }
+          });
+        } else {
+          this.items.push(createdItem);
+          this.newItemName = '';
+          this.selectedImageFile = null;
+          this.loading = false;
+        }
       },
       error: (err) => {
         console.error('Error creating item:', err);

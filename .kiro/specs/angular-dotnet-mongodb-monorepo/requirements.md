@@ -26,7 +26,7 @@ This document specifies the requirements for a monorepo containing an Angular UI
 2. THE Monorepo SHALL contain a top-level directory named "api" for the C# .NET 8 Web API project.
 3. THE Monorepo SHALL contain a root-level README.md file with local development instructions.
 4. THE Monorepo SHALL contain a .gitignore file that excludes node_modules, bin, obj, and other build artifacts.
-5. THE Monorepo SHALL NOT contain Docker-related files such as docker-compose.yml or a docker directory.
+5. THE Monorepo SHALL exclude Docker-related files such as docker-compose.yml and docker directories from the repository structure.
 
 ### Requirement 2
 
@@ -67,11 +67,8 @@ This document specifies the requirements for a monorepo containing an Angular UI
 
 #### Acceptance Criteria
 
-1. THE API SHALL define a SharedItem class with an Id property of type string representing the MongoDB ObjectId.
-2. THE API SHALL define a SharedItem class with a Name property of type string.
-3. THE API SHALL define a SharedItem class with an OwnerId property of type string.
-4. THE API SHALL define a SharedItem class with an IsAvailable property of type boolean.
-5. THE API SHALL configure MongoDB serialization for the SharedItem class.
+1. THE API SHALL define a SharedItem class with properties including Id (string representing MongoDB ObjectId), Name (string), OwnerId (string), and IsAvailable (boolean).
+2. THE API SHALL configure MongoDB serialization attributes for the SharedItem class to enable proper database storage and retrieval.
 
 ### Requirement 6
 
@@ -107,3 +104,15 @@ This document specifies the requirements for a monorepo containing an Angular UI
 3. THE README.md SHALL provide instructions to start the UI using "ng serve" from the ./ui directory.
 4. THE README.md SHALL document the technology stack including Angular, .NET 8, and MongoDB.
 5. THE README.md SHALL specify that the UI runs on http://localhost:4200 and the API runs on http://localhost:8080.
+
+### Requirement 9
+
+**User Story:** As a user, I want to be able to optionally upload an image of my item and have it displayed alongside the item, so that I can visually identify items in the shared collection.
+
+#### Acceptance Criteria
+
+1. THE SharedItem class SHALL include an ImageUrl property of type string to store the location of the uploaded image.
+2. THE API SHALL expose a POST endpoint at /api/items/{id}/image that accepts an image file upload for a specific SharedItem.
+3. WHEN an image is uploaded, THE API SHALL store the image file and update the SharedItem ImageUrl property with the file location.
+4. THE Angular UI SHALL provide an optional file input control in the add item form to allow image selection.
+5. WHEN a SharedItem has an associated ImageUrl, THE Angular UI SHALL display the image alongside the item name and availability status in the items list.
