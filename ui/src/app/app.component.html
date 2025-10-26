@@ -5,47 +5,61 @@
   </header>
 
   <!-- Error message -->
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
+  <mat-card *ngIf="error" class="error-card">
+    <mat-card-content>
+      {{ error }}
+    </mat-card-content>
+  </mat-card>
 
   <!-- Add item form -->
-  <section class="add-item-section">
-    <h2>Add New Item</h2>
-    <form (ngSubmit)="addItem()" class="add-item-form">
-      <div class="form-group">
-        <label for="itemName">Item Name:</label>
-        <input type="text" id="itemName" [(ngModel)]="newItemName" name="itemName" placeholder="Enter item name"
-          required [disabled]="loading" />
-      </div>
-      <button type="submit" [disabled]="!newItemName.trim() || loading" class="add-button">
-        {{ loading ? 'Adding...' : 'Add Item' }}
-      </button>
-    </form>
-  </section>
+  <mat-card class="add-item-card">
+    <mat-card-header>
+      <mat-card-title>Add New Item</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form (ngSubmit)="addItem()" class="add-item-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Item Name</mat-label>
+          <input matInput [(ngModel)]="newItemName" name="itemName" placeholder="Enter item name" required
+            [disabled]="loading" />
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="submit" [disabled]="!newItemName.trim() || loading">
+          {{ loading ? 'Adding...' : 'Add Item' }}
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
 
   <!-- Items list -->
   <section class="items-section">
     <h2>Shared Items</h2>
 
-    <div *ngIf="loading && items.length === 0" class="loading-message">
-      Loading items...
-    </div>
+    <mat-card *ngIf="loading && items.length === 0" class="message-card">
+      <mat-card-content>
+        Loading items...
+      </mat-card-content>
+    </mat-card>
 
-    <div *ngIf="!loading && items.length === 0" class="empty-message">
-      No items found. Add your first item above!
-    </div>
+    <mat-card *ngIf="!loading && items.length === 0" class="message-card">
+      <mat-card-content>
+        No items found. Add your first item above!
+      </mat-card-content>
+    </mat-card>
 
     <div *ngIf="items.length > 0" class="items-grid">
-      <div *ngFor="let item of items" class="item-card">
-        <h3>{{ item.name }}</h3>
-        <div class="item-details">
-          <span class="owner">Owner: {{ item.ownerId }}</span>
-          <span class="availability" [class.available]="item.isAvailable" [class.unavailable]="!item.isAvailable">
-            {{ item.isAvailable ? 'Available' : 'Not Available' }}
-          </span>
-        </div>
-      </div>
+      <mat-card *ngFor="let item of items" class="item-card">
+        <mat-card-header>
+          <mat-card-title>{{ item.name }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="item-details">
+            <span class="owner">Owner: {{ item.ownerId }}</span>
+            <mat-chip [highlighted]="item.isAvailable">
+              {{ item.isAvailable ? 'Available' : 'Not Available' }}
+            </mat-chip>
+          </div>
+        </mat-card-content>
+      </mat-card>
     </div>
   </section>
 </div>

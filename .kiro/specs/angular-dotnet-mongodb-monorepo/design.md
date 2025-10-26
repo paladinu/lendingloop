@@ -58,6 +58,12 @@ graph LR
 
 #### Angular UI (Port 4200)
 
+**Styling Approach**
+- Use Angular Material components for UI elements (buttons, forms, cards, lists, etc.)
+- Minimize custom CSS in favor of Material Design components and theming
+- Apply custom styles only when Material components don't provide the needed functionality
+- Leverage Material's built-in responsive design and accessibility features
+
 **AppComponent**
 - Responsibility: Main application component that displays items and handles user interactions
 - Key Methods:
@@ -165,6 +171,8 @@ export interface SharedItem {
 **package.json dependencies**
 - @angular/core, @angular/common, @angular/platform-browser
 - @angular/common/http (for HttpClient)
+- @angular/material (for Material Design components)
+- @angular/cdk (peer dependency for Material)
 - rxjs (for observables)
 
 ### .NET API Configuration
