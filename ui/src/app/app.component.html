@@ -1,0 +1,53 @@
+<div class="container">
+  <header>
+    <h1>{{ title }}</h1>
+    <p>Manage your shared items</p>
+  </header>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <!-- Add item form -->
+  <section class="add-item-section">
+    <h2>Add New Item</h2>
+    <form (ngSubmit)="addItem()" class="add-item-form">
+      <div class="form-group">
+        <label for="itemName">Item Name:</label>
+        <input type="text" id="itemName" [(ngModel)]="newItemName" name="itemName" placeholder="Enter item name"
+          required [disabled]="loading" />
+      </div>
+      <button type="submit" [disabled]="!newItemName.trim() || loading" class="add-button">
+        {{ loading ? 'Adding...' : 'Add Item' }}
+      </button>
+    </form>
+  </section>
+
+  <!-- Items list -->
+  <section class="items-section">
+    <h2>Shared Items</h2>
+
+    <div *ngIf="loading && items.length === 0" class="loading-message">
+      Loading items...
+    </div>
+
+    <div *ngIf="!loading && items.length === 0" class="empty-message">
+      No items found. Add your first item above!
+    </div>
+
+    <div *ngIf="items.length > 0" class="items-grid">
+      <div *ngFor="let item of items" class="item-card">
+        <h3>{{ item.name }}</h3>
+        <div class="item-details">
+          <span class="owner">Owner: {{ item.ownerId }}</span>
+          <span class="availability" [class.available]="item.isAvailable" [class.unavailable]="!item.isAvailable">
+            {{ item.isAvailable ? 'Available' : 'Not Available' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<router-outlet />
