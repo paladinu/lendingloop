@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ItemsService } from './services/items.service';
-import { SharedItem } from './shared-item.interface';
+import { SharedItem } from './models/shared-item.interface';
 
 @Component({
   selector: 'app-root',

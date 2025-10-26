@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SharedItem } from '../shared-item.interface';
+import { SharedItem } from '../models/shared-item.interface';
 
 @Injectable({
     providedIn: 'root'
