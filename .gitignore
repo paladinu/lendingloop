@@ -301,6 +301,21 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# Angular
+dist/
+tmp/
+out-tsc/
+.angular/
+.sass-cache/
+connect.lock
+coverage/
+libpeerconnection.log
+testem.log
+typings/
+*.launch
+.DS_Store
+Thumbs.db
+
 # Visual Studio 6 build log
 *.plg
 
