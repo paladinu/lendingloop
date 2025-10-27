@@ -1,0 +1,420 @@
+using Api.DTOs;
+using Api.Models;
+using Api.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Security.Cryptography;
+
+namespace Api.Controllers;
+
+[ApiController]
+[Route("api/auth")]
+public class AuthController : ControllerBase
+{
+    private readonly IUserService _userService;
+    private readonly IPasswordService _passwordService;
+    private readonly IJwtTokenService _jwtTokenService;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<AuthController> _logger;
+
+    public AuthController(
+        IUserService userService,
+        IPasswordService passwordService,
+        IJwtTokenService jwtTokenService,
+        IEmailService emailService,
+        ILogger<AuthController> logger)
+    {
+        _userService = userService;
+        _passwordService = passwordService;
+        _jwtTokenService = jwtTokenService;
+        _emailService = emailService;
+        _logger = logger;
+    }
+
+    [HttpPost("register")]
+    public async Task<ActionResult<RegisterResponse>> Register(RegisterRequest request)
+    {
+        try
+        {
+            // Validate the model
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Validate password policy
+            var passwordValidationResults = _passwordService.ValidatePassword(request.Password);
+            if (passwordValidationResults.Any())
+            {
+                foreach (var validationResult in passwordValidationResults)
+                {
+                    ModelState.AddModelError("Password", validationResult.ErrorMessage ?? "Invalid password");
+                }
+                return BadRequest(ModelState);
+            }
+
+            // Check if user already exists
+            var existingUser = await _userService.GetUserByEmailAsync(request.Email);
+            if (existingUser != null)
+            {
+                return Conflict(new { message = "A user with this email address already exists" });
+            }
+
+            // Generate email verification token
+            var verificationToken = GenerateVerificationToken();
+            var verificationExpiry = DateTime.UtcNow.AddHours(24); // Token expires in 24 hours
+
+            // Create new user
+            var user = new User
+            {
+                Email = request.Email,
+                PasswordHash = _passwordService.HashPassword(request.Password),
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                StreetAddress = request.StreetAddress,
+                IsEmailVerified = false,
+                EmailVerificationToken = verificationToken,
+                EmailVerificationExpiry = verificationExpiry,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            // Save user to database
+            var createdUser = await _userService.CreateUserAsync(user);
+
+            _logger.LogInformation("User registered successfully: {Email}", request.Email);
+
+            // Send verification email
+            var emailSent = await _emailService.SendVerificationEmailAsync(createdUser, verificationToken);
+            if (!emailSent)
+            {
+                _logger.LogWarning("Failed to send verification email to {Email}", request.Email);
+            }
+
+            return Ok(new RegisterResponse
+            {
+                Success = true,
+                Message = "Registration successful. Please check your email for verification instructions.",
+                User = new UserProfile
+                {
+                    Id = createdUser.Id ?? string.Empty,
+                    Email = createdUser.Email,
+                    FirstName = createdUser.FirstName,
+                    LastName = createdUser.LastName,
+                    StreetAddress = createdUser.StreetAddress,
+                    IsEmailVerified = createdUser.IsEmailVerified
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during user registration for email: {Email}", request.Email);
+            return StatusCode(500, new { message = "An error occurred during registration" });
+        }
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
+    {
+        try
+        {
+            // Validate the model
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Find user by email
+            var user = await _userService.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
+
+            // Verify password
+            if (!_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+            {
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
+
+            // Check if email is verified
+            if (!user.IsEmailVerified)
+            {
+                return StatusCode(403, new { message = "Please verify your email address before logging in" });
+            }
+
+            // Update last login time
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userService.UpdateUserAsync(user.Id!, user);
+
+            // Generate JWT token
+            var token = _jwtTokenService.GenerateToken(user);
+            var expiresAt = DateTime.UtcNow.AddHours(_jwtTokenService.GetTokenExpirationHours());
+            
+            _logger.LogInformation("Generated JWT token for {Email}. Expires at: {ExpiresAt} UTC. Current time: {CurrentTime} UTC", 
+                request.Email, expiresAt, DateTime.UtcNow);
+
+            _logger.LogInformation("User logged in successfully: {Email}", request.Email);
+
+            return Ok(new AuthResponse
+            {
+                Token = token,
+                ExpiresAt = expiresAt,
+                User = new UserProfile
+                {
+                    Id = user.Id ?? string.Empty,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    StreetAddress = user.StreetAddress,
+                    IsEmailVerified = user.IsEmailVerified
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during login for email: {Email}", request.Email);
+            return StatusCode(500, new { message = "An error occurred during login" });
+        }
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<ActionResult<VerificationResponse>> VerifyEmail(VerifyEmailRequest request)
+    {
+        try
+        {
+            // Validate the model
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Verify the email using the token
+            var user = await _userService.VerifyEmailAsync(request.Token);
+            
+            if (user == null)
+            {
+                return BadRequest(new VerificationResponse
+                {
+                    Success = false,
+                    Message = "Invalid or expired verification token"
+                });
+            }
+
+            _logger.LogInformation("Email verified successfully for user: {Email}", user.Email);
+
+            return Ok(new VerificationResponse
+            {
+                Success = true,
+                Message = "Email verified successfully. You can now log in to your account.",
+                User = new UserProfile
+                {
+                    Id = user.Id ?? string.Empty,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    StreetAddress = user.StreetAddress,
+                    IsEmailVerified = user.IsEmailVerified
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during email verification for token: {Token}", request.Token);
+            return StatusCode(500, new VerificationResponse
+            {
+                Success = false,
+                Message = "An error occurred during email verification"
+            });
+        }
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public ActionResult Logout()
+    {
+        try
+        {
+            // Since we're using JWT tokens, logout is handled client-side by removing the token
+            // The server doesn't need to maintain session state
+            // In a more advanced implementation, we could maintain a blacklist of tokens
+            
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            _logger.LogInformation("User logged out: {Email}", userEmail);
+
+            return Ok(new { message = "Logged out successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+            return StatusCode(500, new { message = "An error occurred during logout" });
+        }
+    }
+
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<ActionResult<UserProfile>> GetCurrentUser()
+    {
+        try
+        {
+            // Get user ID from JWT token claims
+            var userId = User.FindFirst("userId")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            // Get user from database
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            return Ok(new UserProfile
+            {
+                Id = user.Id ?? string.Empty,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                StreetAddress = user.StreetAddress,
+                IsEmailVerified = user.IsEmailVerified
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting current user");
+            return StatusCode(500, new { message = "An error occurred while retrieving user information" });
+        }
+    }
+
+    [HttpPost("resend-verification")]
+    public async Task<ActionResult> ResendVerificationEmail(ResendVerificationRequest request)
+    {
+        try
+        {
+            // Validate the model
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Find user by email
+            var user = await _userService.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                // Don't reveal if email exists or not for security
+                return Ok(new { message = "If an account with this email exists and is not verified, a verification email has been sent." });
+            }
+
+            // Check if user is already verified
+            if (user.IsEmailVerified)
+            {
+                return BadRequest(new { message = "This email address is already verified." });
+            }
+
+            // Generate new verification token
+            var verificationToken = GenerateVerificationToken();
+            var verificationExpiry = DateTime.UtcNow.AddHours(24);
+
+            // Update user with new token
+            user.EmailVerificationToken = verificationToken;
+            user.EmailVerificationExpiry = verificationExpiry;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _userService.UpdateUserAsync(user.Id!, user);
+
+            // Send verification email
+            var emailSent = await _emailService.SendVerificationEmailAsync(user, verificationToken);
+            if (!emailSent)
+            {
+                _logger.LogWarning("Failed to resend verification email to {Email}", request.Email);
+                return StatusCode(500, new { message = "Failed to send verification email. Please try again later." });
+            }
+
+            _logger.LogInformation("Verification email resent to {Email}", request.Email);
+
+            return Ok(new { message = "If an account with this email exists and is not verified, a verification email has been sent." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resending verification email for: {Email}", request.Email);
+            return StatusCode(500, new { message = "An error occurred while resending verification email" });
+        }
+    }
+
+    [HttpPost("test-email")]
+    [Authorize] // Require authentication for security
+    public async Task<ActionResult> TestEmailConfiguration()
+    {
+        try
+        {
+            _logger.LogInformation("Testing email configuration");
+            
+            var result = await _emailService.TestEmailConfigurationAsync();
+            
+            if (result)
+            {
+                return Ok(new { 
+                    message = "Email configuration test successful",
+                    success = true 
+                });
+            }
+            else
+            {
+                return StatusCode(500, new { 
+                    message = "Email configuration test failed",
+                    success = false 
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error testing email configuration");
+            return StatusCode(500, new { 
+                message = "An error occurred while testing email configuration",
+                success = false 
+            });
+        }
+    }
+
+    [HttpGet("email-health")]
+    [Authorize] // Require authentication for security
+    public ActionResult GetEmailHealthStatus()
+    {
+        try
+        {
+            _logger.LogInformation("Getting email health status");
+            
+            var status = _emailService.GetEmailHealthStatus();
+            
+            return Ok(new
+            {
+                isConfigured = status.IsConfigured,
+                testMode = status.TestMode,
+                smtpHost = status.SmtpHost,
+                smtpPort = status.SmtpPort,
+                fromEmail = status.FromEmail,
+                configurationErrors = status.ConfigurationErrors,
+                timestamp = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting email health status");
+            return StatusCode(500, new { 
+                message = "An error occurred while retrieving email health status" 
+            });
+        }
+    }
+
+    private static string GenerateVerificationToken()
+    {
+        // Generate a cryptographically secure random token
+        using var rng = RandomNumberGenerator.Create();
+        var tokenBytes = new byte[32];
+        rng.GetBytes(tokenBytes);
+        return Convert.ToBase64String(tokenBytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+    }
+}

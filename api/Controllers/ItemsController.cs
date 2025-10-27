@@ -1,11 +1,14 @@
 using Api.Models;
 using Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ItemsController : ControllerBase
 {
     private readonly IItemsService _itemsService;
@@ -24,7 +27,13 @@ public class ItemsController : ControllerBase
     {
         try
         {
-            var items = await _itemsService.GetAllItemsAsync();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            var items = await _itemsService.GetItemsByUserIdAsync(userId);
             return Ok(items);
         }
         catch (Exception ex)
@@ -43,6 +52,15 @@ public class ItemsController : ControllerBase
                 return BadRequest("Item name is required.");
             }
 
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            // Set the userId from the authenticated user
+            item.UserId = userId;
+
             var createdItem = await _itemsService.CreateItemAsync(item);
             return CreatedAtAction(nameof(GetAllItems), new { id = createdItem.Id }, createdItem);
         }
@@ -57,6 +75,12 @@ public class ItemsController : ControllerBase
     {
         try
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
             // Validate file exists
             if (file == null || file.Length == 0)
             {
@@ -93,18 +117,18 @@ public class ItemsController : ControllerBase
                 await file.CopyToAsync(stream);
             }
 
-            // Update item with image URL
+            // Update item with image URL - only allow users to update their own items
             var imageUrl = $"/{uploadPath}/{uniqueFileName}";
-            var updatedItem = await _itemsService.UpdateItemImageAsync(id, imageUrl);
+            var updatedItem = await _itemsService.UpdateItemImageAsync(id, imageUrl, userId);
 
             if (updatedItem == null)
             {
-                // Clean up uploaded file if item not found
+                // Clean up uploaded file if item not found or user doesn't own it
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);
                 }
-                return NotFound($"Item with id {id} not found.");
+                return NotFound($"Item with id {id} not found or you don't have permission to update it.");
             }
 
             return Ok(updatedItem);

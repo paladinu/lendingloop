@@ -12,8 +12,8 @@ public class SharedItem
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
     
-    [BsonElement("ownerId")]
-    public string OwnerId { get; set; } = string.Empty;
+    [BsonElement("userId")]
+    public string UserId { get; set; } = string.Empty;
     
     [BsonElement("isAvailable")]
     public bool IsAvailable { get; set; } = true;

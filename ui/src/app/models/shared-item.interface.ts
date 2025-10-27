@@ -1,7 +1,7 @@
 export interface SharedItem {
     id?: string;
     name: string;
-    ownerId: string;
+    userId: string;
     isAvailable: boolean;
     imageUrl?: string;
 }

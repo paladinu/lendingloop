@@ -1,0 +1,93 @@
+<!-- Navigation Toolbar -->
+<mat-toolbar color="primary" class="app-toolbar">
+    <span class="toolbar-title">{{ title }}</span>
+    <span class="toolbar-spacer"></span>
+
+    <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+        <mat-icon>account_circle</mat-icon>
+        <span class="user-name">{{ getUserDisplayName() }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+        <div class="user-info">
+            <div class="user-name-large">{{ getUserDisplayName() }}</div>
+            <div class="user-email">{{ currentUser?.email }}</div>
+        </div>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+        </button>
+    </mat-menu>
+</mat-toolbar>
+
+<div class="container">
+    <!-- Error message -->
+    <mat-card *ngIf="error" class="error-card">
+        <mat-card-content>
+            {{ error }}
+        </mat-card-content>
+    </mat-card>
+
+    <!-- Add item form -->
+    <mat-card class="add-item-card">
+        <mat-card-header>
+            <mat-card-title>Add New Item</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <form (ngSubmit)="addItem()" class="add-item-form">
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Item Name</mat-label>
+                    <input matInput [(ngModel)]="newItemName" name="itemName" placeholder="Enter item name" required
+                        [disabled]="loading" />
+                </mat-form-field>
+
+                <div class="file-input-container">
+                    <label for="imageUpload" class="file-input-label">Item Image (optional)</label>
+                    <input type="file" id="imageUpload" accept="image/*" (change)="onFileSelected($event)"
+                        [disabled]="loading" class="file-input" />
+                    <span *ngIf="selectedImageFile" class="file-name">{{ selectedImageFile.name }}</span>
+                </div>
+
+                <button mat-raised-button color="primary" type="submit" [disabled]="!newItemName.trim() || loading">
+                    {{ loading ? 'Adding...' : 'Add Item' }}
+                </button>
+            </form>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- Items list -->
+    <section class="items-section">
+        <h2>Shared Items</h2>
+
+        <mat-card *ngIf="loading && items.length === 0" class="message-card">
+            <mat-card-content>
+                Loading items...
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card *ngIf="!loading && items.length === 0" class="message-card">
+            <mat-card-content>
+                No items found. Add your first item above!
+            </mat-card-content>
+        </mat-card>
+
+        <div *ngIf="items.length > 0" class="items-grid">
+            <mat-card *ngFor="let item of items" class="item-card">
+                <img *ngIf="item.imageUrl" mat-card-image [src]="item.imageUrl" [alt]="item.name" class="item-image" />
+                <mat-card-header>
+                    <mat-card-title>{{ item.name }}</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div class="item-details">
+                        <span class="owner">Owner: {{ getUserDisplayName() }}</span>
+                        <mat-chip [highlighted]="item.isAvailable">
+                            {{ item.isAvailable ? 'Available' : 'Not Available' }}
+                        </mat-chip>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+    </section>
+</div>

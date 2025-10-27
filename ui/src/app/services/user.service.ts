@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
-import { SharedItem } from '../models/shared-item.interface';
+import { UserProfile } from '../models/auth.interface';
 import { AuthService } from './auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
-export class ItemsService {
-    private apiUrl = 'http://localhost:8080/api/items';
+export class UserService {
+    private readonly API_URL = 'http://localhost:8080/api/auth';
 
     constructor(
         private http: HttpClient,
@@ -17,31 +17,24 @@ export class ItemsService {
         private router: Router
     ) { }
 
-    getItems(): Observable<SharedItem[]> {
-        return this.http.get<SharedItem[]>(this.apiUrl)
+    getCurrentUser(): Observable<UserProfile> {
+        return this.http.get<UserProfile>(`${this.API_URL}/me`)
             .pipe(
                 catchError(error => this.handleError(error))
             );
     }
 
-    createItem(item: Partial<SharedItem>): Observable<SharedItem> {
-        return this.http.post<SharedItem>(this.apiUrl, item)
-            .pipe(
-                catchError(error => this.handleError(error))
-            );
-    }
-
-    uploadItemImage(itemId: string, imageFile: File): Observable<SharedItem> {
-        const formData = new FormData();
-        formData.append('file', imageFile);
-        return this.http.post<SharedItem>(`${this.apiUrl}/${itemId}/image`, formData)
+    // Future method for getting user details by ID
+    // This would require a new API endpoint on the backend
+    getUserById(userId: string): Observable<UserProfile> {
+        return this.http.get<UserProfile>(`${this.API_URL}/users/${userId}`)
             .pipe(
                 catchError(error => this.handleError(error))
             );
     }
 
     private handleError(error: HttpErrorResponse): Observable<never> {
-        console.error('ItemsService error:', error);
+        console.error('UserService error:', error);
 
         // Handle authentication errors
         if (error.status === 401) {
@@ -54,6 +47,11 @@ export class ItemsService {
         if (error.status === 403) {
             // Forbidden - user doesn't have permission
             return throwError(() => new Error('You do not have permission to perform this action.'));
+        }
+
+        if (error.status === 404) {
+            // User not found
+            return throwError(() => new Error('User not found.'));
         }
 
         // Handle other HTTP errors
