@@ -1,53 +1,50 @@
-import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
 
-    constructor(
-        private authService: AuthService,
-        private router: Router
-    ) { }
+    // Get the auth token from the service
+    const authToken = authService.getToken();
 
-    intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        // Get the auth token from the service
-        const authToken = this.authService.getToken();
-
-        // Clone the request and add the authorization header if token exists
-        let authReq = req;
-        if (authToken && this.shouldAddToken(req.url)) {
-            authReq = req.clone({
-                headers: req.headers.set('Authorization', `Bearer ${authToken}`)
-            });
-        }
-
-        // Handle the request and catch authentication errors
-        return next.handle(authReq).pipe(
-            catchError((error: HttpErrorResponse) => {
-                if (error.status === 401) {
-                    // Token is invalid or expired
-                    this.handleUnauthorized();
-                }
-                return throwError(() => error);
-            })
-        );
+    // Clone the request and add the authorization header if token exists
+    let authReq = req;
+    if (authToken && shouldAddToken(req.url)) {
+        console.log('AuthInterceptor - Adding token to request:', req.url);
+        authReq = req.clone({
+            headers: req.headers.set('Authorization', `Bearer ${authToken}`)
+        });
+    } else {
+        console.log('AuthInterceptor - No token added to request:', req.url, 'Has token:', !!authToken);
     }
 
-    private shouldAddToken(url: string): boolean {
-        // Don't add token to login and register requests
-        const excludedEndpoints = ['/auth/login', '/auth/register', '/auth/verify-email'];
-        return !excludedEndpoints.some(endpoint => url.includes(endpoint));
-    }
+    // Handle the request and catch authentication errors
+    return next(authReq).pipe(
+        catchError((error: HttpErrorResponse) => {
+            if (error.status === 401) {
+                console.log('AuthInterceptor - 401 error, redirecting to login');
+                // Token is invalid or expired
+                handleUnauthorized(authService, router);
+            }
+            return throwError(() => error);
+        })
+    );
+};
 
-    private handleUnauthorized(): void {
-        // Clear stored authentication data
-        this.authService.logout();
+function shouldAddToken(url: string): boolean {
+    // Don't add token to login and register requests
+    const excludedEndpoints = ['/auth/login', '/auth/register', '/auth/verify-email', '/auth/resend-verification'];
+    return !excludedEndpoints.some(endpoint => url.includes(endpoint));
+}
 
-        // Redirect to login page
-        this.router.navigate(['/login']);
-    }
+function handleUnauthorized(authService: AuthService, router: Router): void {
+    // Clear stored authentication data
+    authService.logout();
+
+    // Redirect to login page
+    router.navigate(['/login']);
 }

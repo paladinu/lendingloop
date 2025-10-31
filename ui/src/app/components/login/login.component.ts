@@ -62,13 +62,21 @@ export class LoginComponent {
         error: (error) => {
           this.isLoading = false;
           console.error('Login error:', error);
+          console.error('Error status:', error.status);
+          console.error('Error response:', error.error);
+          
+          // Extract error message from response
+          let message = 'An error occurred during login. Please try again.';
+          
           if (error.status === 401) {
-            this.errorMessage = 'Invalid email or password';
+            message = error.error?.message || 'Invalid email or password';
           } else if (error.status === 403) {
-            this.errorMessage = 'Please verify your email address before logging in';
-          } else {
-            this.errorMessage = 'An error occurred during login. Please try again.';
+            message = error.error?.message || 'Please verify your email address before logging in';
+          } else if (error.error?.message) {
+            message = error.error.message;
           }
+          
+          this.errorMessage = message;
         }
       });
     } else {

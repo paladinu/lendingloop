@@ -119,9 +119,12 @@ public class AuthController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Login attempt for email: {Email}", request.Email);
+            
             // Validate the model
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Login failed - invalid model state for email: {Email}", request.Email);
                 return BadRequest(ModelState);
             }
 
@@ -129,18 +132,26 @@ public class AuthController : ControllerBase
             var user = await _userService.GetUserByEmailAsync(request.Email);
             if (user == null)
             {
+                _logger.LogWarning("Login failed - user not found for email: {Email}", request.Email);
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
+            _logger.LogInformation("User found for email: {Email}, checking password", request.Email);
+
             // Verify password
-            if (!_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+            var passwordValid = _passwordService.VerifyPassword(request.Password, user.PasswordHash);
+            _logger.LogInformation("Password verification result for {Email}: {Result}", request.Email, passwordValid);
+            
+            if (!passwordValid)
             {
+                _logger.LogWarning("Login failed - invalid password for email: {Email}", request.Email);
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
             // Check if email is verified
             if (!user.IsEmailVerified)
             {
+                _logger.LogWarning("Login failed - email not verified for: {Email}", request.Email);
                 return StatusCode(403, new { message = "Please verify your email address before logging in" });
             }
 
@@ -406,6 +417,94 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { 
                 message = "An error occurred while retrieving email health status" 
             });
+        }
+    }
+
+    [HttpPost("dev/verify-user")]
+    public async Task<ActionResult> DevVerifyUser([FromBody] DevVerifyUserRequest request)
+    {
+        // Only allow in development environment
+        if (!_logger.GetType().Assembly.GetName().Name!.Contains("Development"))
+        {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (env != "Development")
+            {
+                return NotFound();
+            }
+        }
+
+        try
+        {
+            var user = await _userService.GetUserByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            if (user.IsEmailVerified)
+            {
+                return Ok(new { message = "User email is already verified", user = new { user.Email, user.IsEmailVerified } });
+            }
+
+            // Manually verify the user
+            user.IsEmailVerified = true;
+            user.EmailVerificationToken = null;
+            user.EmailVerificationExpiry = null;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _userService.UpdateUserAsync(user.Id!, user);
+
+            _logger.LogInformation("DEV: Manually verified email for user: {Email}", request.Email);
+
+            return Ok(new { 
+                message = "User email verified successfully (DEV MODE)", 
+                user = new { user.Email, user.IsEmailVerified } 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error manually verifying user email: {Email}", request.Email);
+            return StatusCode(500, new { message = "An error occurred while verifying user" });
+        }
+    }
+
+    [HttpGet("dev/user-status/{email}")]
+    public async Task<ActionResult> DevGetUserStatus(string email)
+    {
+        // Only allow in development environment
+        if (!_logger.GetType().Assembly.GetName().Name!.Contains("Development"))
+        {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (env != "Development")
+            {
+                return NotFound();
+            }
+        }
+
+        try
+        {
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found", email });
+            }
+
+            return Ok(new
+            {
+                email = user.Email,
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                isEmailVerified = user.IsEmailVerified,
+                hasVerificationToken = !string.IsNullOrEmpty(user.EmailVerificationToken),
+                verificationExpiry = user.EmailVerificationExpiry,
+                createdAt = user.CreatedAt,
+                lastLoginAt = user.LastLoginAt
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user status: {Email}", email);
+            return StatusCode(500, new { message = "An error occurred while retrieving user status" });
         }
     }
 

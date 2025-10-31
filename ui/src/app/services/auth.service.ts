@@ -29,14 +29,19 @@ export class AuthService {
     login(email: string, password: string): Observable<AuthResponse> {
         const loginRequest: LoginRequest = { email, password };
 
+        console.log('AuthService - attempting login for:', email);
+        console.log('AuthService - API URL:', `${this.API_URL}/login`);
 
         return this.http.post<AuthResponse>(`${this.API_URL}/login`, loginRequest)
             .pipe(
                 tap(response => {
+                    console.log('AuthService - login successful, response:', response);
                     this.storeAuthData(response);
                 }),
                 catchError(error => {
-                    console.error('Login error:', error);
+                    console.error('AuthService - login error:', error);
+                    console.error('AuthService - error status:', error.status);
+                    console.error('AuthService - error body:', error.error);
                     return throwError(() => error);
                 })
             );
@@ -129,13 +134,18 @@ export class AuthService {
     }
 
     getToken(): string | null {
-        return localStorage.getItem(this.TOKEN_KEY);
+        const token = localStorage.getItem(this.TOKEN_KEY);
+        console.log('AuthService - getToken called, token exists:', !!token);
+        return token;
     }
 
     private storeAuthData(authResponse: AuthResponse): void {
+        console.log('AuthService - storing auth data');
+        console.log('AuthService - token:', authResponse.token.substring(0, 20) + '...');
         localStorage.setItem(this.TOKEN_KEY, authResponse.token);
         localStorage.setItem(this.USER_KEY, JSON.stringify(authResponse.user));
         this.currentUserSubject.next(authResponse.user);
+        console.log('AuthService - token stored, can retrieve:', !!this.getToken());
     }
 
     private clearAuthData(): void {

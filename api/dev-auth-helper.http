@@ -1,0 +1,28 @@
+### Development Authentication Helper
+### Use these requests to debug authentication issues
+
+### Check user status
+GET http://localhost:8080/api/auth/dev/user-status/your-email@example.com
+
+###
+
+### Manually verify a user (Development only)
+POST http://localhost:8080/api/auth/dev/verify-user
+Content-Type: application/json
+
+{
+  "email": "your-email@example.com"
+}
+
+###
+
+### Test login after verification
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "your-email@example.com",
+  "password": "YourPassword123!"
+}
+
+###
