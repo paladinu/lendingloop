@@ -17,7 +17,9 @@ Examples:
 - `npm install` → Run in `/ui`
 - `npm start` or `ng serve` → Run in `/ui`
 - `ng generate` → Run in `/ui`
-- `npm test` → Run in `/ui`
+- `npm test` → Run in `/ui` (uses Jest)
+- `npm run test:watch` → Run in `/ui` (Jest watch mode)
+- `npm run test:coverage` → Run in `/ui` (Jest with coverage)
 
 ### .NET Commands (Backend)
 **ALWAYS run dotnet commands from the `/api` directory using the `path` parameter.**
