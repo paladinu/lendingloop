@@ -1,0 +1,77 @@
+<div class="loop-invite-container">
+  <div class="header">
+    <button class="btn-back" (click)="navigateBack()">← Back to Loop</button>
+  </div>
+
+  <h1>Invite Members</h1>
+
+  <div *ngIf="success" class="success-message">
+    {{ success }}
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div class="invite-section">
+    <h2>Invite by Email</h2>
+    <p class="section-description">Send an invitation to someone via email</p>
+    <form (ngSubmit)="onEmailInvite()">
+      <div class="form-group">
+        <input
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="Enter email address"
+          [disabled]="loading"
+          required
+        />
+        <button type="submit" class="btn-primary" [disabled]="loading || !email.trim()">
+          <span *ngIf="!loading">Send Invitation</span>
+          <span *ngIf="loading">Sending...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="invite-section">
+    <h2>Invite from Your Other Loops</h2>
+    <p class="section-description">Select users from your other loops to invite</p>
+
+    <div *ngIf="loadingInvitees" class="loading">
+      <div class="spinner"></div>
+      <p>Loading users...</p>
+    </div>
+
+    <div *ngIf="!loadingInvitees && potentialInvitees.length === 0" class="empty-state">
+      <p>No users available to invite from your other loops.</p>
+    </div>
+
+    <div *ngIf="!loadingInvitees && potentialInvitees.length > 0">
+      <div class="users-list">
+        <div *ngFor="let user of potentialInvitees" class="user-item">
+          <input
+            type="checkbox"
+            [id]="'user-' + user.id"
+            [checked]="selectedUserIds.has(user.id)"
+            (change)="toggleUserSelection(user.id)"
+            [disabled]="loading"
+          />
+          <label [for]="'user-' + user.id">
+            <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+            <span class="user-email">{{ user.email }}</span>
+          </label>
+        </div>
+      </div>
+
+      <button
+        class="btn-primary btn-invite-selected"
+        (click)="onInviteSelectedUsers()"
+        [disabled]="loading || selectedUserIds.size === 0"
+      >
+        <span *ngIf="!loading">Invite Selected ({{ selectedUserIds.size }})</span>
+        <span *ngIf="loading">Inviting...</span>
+      </button>
+    </div>
+  </div>
+</div>

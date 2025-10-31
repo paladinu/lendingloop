@@ -1,0 +1,22 @@
+<div class="accept-invitation-container">
+  <div class="card">
+    <div *ngIf="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Accepting invitation...</p>
+    </div>
+
+    <div *ngIf="success" class="success">
+      <div class="icon">✓</div>
+      <h2>Invitation Accepted!</h2>
+      <p>You've successfully joined the loop.</p>
+      <p>Redirecting you to the loop...</p>
+    </div>
+
+    <div *ngIf="error" class="error">
+      <div class="icon">✗</div>
+      <h2>Unable to Accept Invitation</h2>
+      <p>{{ error }}</p>
+      <button class="btn-primary" (click)="navigateToLoops()">Go to My Loops</button>
+    </div>
+  </div>
+</div>

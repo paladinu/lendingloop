@@ -138,4 +138,56 @@ public class ItemsController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
+
+    [HttpPut("{id}/visibility")]
+    public async Task<ActionResult<SharedItem>> UpdateItemVisibility(string id, [FromBody] UpdateItemVisibilityRequest request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            // Validate that the item exists and belongs to the user
+            var item = await _itemsService.GetItemByIdAsync(id);
+            if (item == null)
+            {
+                return NotFound($"Item with id {id} not found.");
+            }
+
+            if (item.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            // Update visibility settings
+            var updatedItem = await _itemsService.UpdateItemVisibilityAsync(
+                id,
+                userId,
+                request.VisibleToLoopIds ?? new List<string>(),
+                request.VisibleToAllLoops,
+                request.VisibleToFutureLoops
+            );
+
+            if (updatedItem == null)
+            {
+                return NotFound($"Item with id {id} not found or you don't have permission to update it.");
+            }
+
+            return Ok(updatedItem);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+}
+
+public class UpdateItemVisibilityRequest
+{
+    public List<string>? VisibleToLoopIds { get; set; }
+    public bool VisibleToAllLoops { get; set; }
+    public bool VisibleToFutureLoops { get; set; }
 }

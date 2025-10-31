@@ -40,6 +40,28 @@ export class ItemsService {
             );
     }
 
+    getItemById(itemId: string): Observable<SharedItem> {
+        return this.http.get<SharedItem>(`${this.apiUrl}/${itemId}`)
+            .pipe(
+                catchError(error => this.handleError(error))
+            );
+    }
+
+    updateItemVisibility(
+        itemId: string,
+        visibleToLoopIds: string[],
+        visibleToAllLoops: boolean,
+        visibleToFutureLoops: boolean
+    ): Observable<SharedItem> {
+        return this.http.put<SharedItem>(`${this.apiUrl}/${itemId}/visibility`, {
+            visibleToLoopIds,
+            visibleToAllLoops,
+            visibleToFutureLoops
+        }).pipe(
+            catchError(error => this.handleError(error))
+        );
+    }
+
     private handleError(error: HttpErrorResponse): Observable<never> {
         console.error('ItemsService error:', error);
 

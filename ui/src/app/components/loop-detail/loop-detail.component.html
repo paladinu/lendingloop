@@ -1,0 +1,85 @@
+<div class="loop-detail-container">
+  <div class="header">
+    <button class="btn-back" (click)="navigateBack()">← Back to Loops</button>
+  </div>
+
+  <div *ngIf="loop" class="loop-header">
+    <div class="loop-info">
+      <h1>{{ loop.name }}</h1>
+      <div class="loop-stats">
+        <span class="stat">
+          <span class="icon">👥</span>
+          {{ loop.memberCount || 0 }} Members
+        </span>
+        <span class="stat">
+          <span class="icon">📦</span>
+          {{ loop.itemCount || 0 }} Items
+        </span>
+      </div>
+    </div>
+    <div class="loop-actions">
+      <button class="btn-secondary" (click)="navigateToMembers()">View Members</button>
+      <button class="btn-primary" (click)="navigateToInvite()">Invite Members</button>
+    </div>
+  </div>
+
+  <div class="search-section">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Search items..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange()"
+      />
+    </div>
+    <div class="results-count" *ngIf="searchQuery">
+      {{ filteredItems.length }} of {{ items.length }} items
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading items...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="loadLoopItems()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && filteredItems.length === 0 && !searchQuery" class="empty-state">
+    <p>No items in this loop yet.</p>
+    <p>Items shared by loop members will appear here.</p>
+  </div>
+
+  <div *ngIf="!loading && !error && filteredItems.length === 0 && searchQuery" class="empty-state">
+    <p>No items match your search.</p>
+    <p>Try a different search term.</p>
+  </div>
+
+  <div *ngIf="!loading && !error && filteredItems.length > 0" class="items-grid">
+    <div *ngFor="let item of filteredItems" class="item-card">
+      <div class="item-image" *ngIf="item.imageUrl">
+        <img [src]="item.imageUrl" [alt]="item.name" />
+      </div>
+      <div class="item-image placeholder" *ngIf="!item.imageUrl">
+        <span class="placeholder-icon">📦</span>
+      </div>
+      <div class="item-content">
+        <h3>{{ item.name }}</h3>
+        <p class="item-description" *ngIf="item.description">{{ item.description }}</p>
+        <div class="item-meta">
+          <span class="owner">By {{ item.ownerName || 'Unknown' }}</span>
+          <span class="date">{{ item.createdAt | date:'short' }}</span>
+        </div>
+        <div class="item-status" *ngIf="item.isAvailable">
+          <span class="badge available">Available</span>
+        </div>
+        <div class="item-status" *ngIf="!item.isAvailable">
+          <span class="badge unavailable">Unavailable</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

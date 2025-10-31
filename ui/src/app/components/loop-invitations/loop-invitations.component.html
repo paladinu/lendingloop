@@ -1,0 +1,36 @@
+<div class="invitations-container">
+  <div class="back-nav">
+    <button class="btn-back" (click)="navigateToHome()">← Back to Items</button>
+  </div>
+  
+  <h1>Pending Invitations</h1>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading invitations...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="loadInvitations()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && invitations.length === 0" class="empty-state">
+    <p>You don't have any pending invitations.</p>
+  </div>
+
+  <div *ngIf="!loading && !error && invitations.length > 0" class="invitations-list">
+    <div *ngFor="let invitation of invitations" class="invitation-card">
+      <div class="invitation-content">
+        <h3>{{ invitation.loopName }}</h3>
+        <p class="inviter">Invited by {{ invitation.invitedByUserName }}</p>
+        <p class="date">{{ invitation.createdAt | date:'medium' }}</p>
+      </div>
+      <div class="invitation-actions">
+        <button class="btn-accept" (click)="acceptInvitation(invitation.id)">
+          Accept
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

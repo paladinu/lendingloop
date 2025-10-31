@@ -15,6 +15,13 @@
     flex: 1 1 auto;
 }
 
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 8px;
+}
+
 .user-menu-button {
     display: flex;
     align-items: center;

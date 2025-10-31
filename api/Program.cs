@@ -118,6 +118,12 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
     // Register Email Service
     builder.Services.AddScoped<IEmailService, EmailService>();
     
+    // Register Loop Service
+    builder.Services.AddScoped<ILoopService, LoopService>();
+    
+    // Register Loop Invitation Service
+    builder.Services.AddScoped<ILoopInvitationService, LoopInvitationService>();
+    
     // Register Database Migration Service
     builder.Services.AddScoped<DatabaseMigration>();
     

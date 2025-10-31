@@ -1,0 +1,69 @@
+<div class="visibility-container">
+  <h1>Item Visibility Settings</h1>
+  <p class="subtitle" *ngIf="item">Configure which loops can see "{{ item.name }}"</p>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <div *ngIf="success" class="success-message">
+    {{ success }}
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && item" class="form-card">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-section">
+        <h3>Select Loops</h3>
+        <div class="checkbox-group">
+          <div *ngFor="let loop of loops" class="checkbox-item">
+            <input
+              type="checkbox"
+              [id]="'loop-' + loop.id"
+              [checked]="selectedLoopIds.has(loop.id!)"
+              (change)="toggleLoopSelection(loop.id!)"
+              [disabled]="visibleToAllLoops"
+            />
+            <label [for]="'loop-' + loop.id">{{ loop.name }}</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Visibility Options</h3>
+        <div class="checkbox-item">
+          <input
+            type="checkbox"
+            id="allLoops"
+            [(ngModel)]="visibleToAllLoops"
+            name="allLoops"
+          />
+          <label for="allLoops">Visible to all current loops</label>
+        </div>
+        <div class="checkbox-item">
+          <input
+            type="checkbox"
+            id="futureLoops"
+            [(ngModel)]="visibleToFutureLoops"
+            name="futureLoops"
+          />
+          <label for="futureLoops">Automatically visible in future loops I join</label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="loading">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          <span *ngIf="!loading">Save Settings</span>
+          <span *ngIf="loading">Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

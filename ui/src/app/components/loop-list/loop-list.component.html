@@ -1,0 +1,51 @@
+<div class="loop-list-container">
+  <div class="back-nav">
+    <button class="btn-back" (click)="navigateToHome()">← Back to Items</button>
+  </div>
+  
+  <div class="header">
+    <h1>My Loops</h1>
+    <button class="btn-create" (click)="navigateToCreateLoop()">
+      <span class="icon">+</span> Create Loop
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading loops...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="loadLoops()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && loops.length === 0" class="empty-state">
+    <p>You don't have any loops yet.</p>
+    <p>Create your first loop to start sharing items with others!</p>
+    <button class="btn-primary" (click)="navigateToCreateLoop()">Create Your First Loop</button>
+  </div>
+
+  <div *ngIf="!loading && !error && loops.length > 0" class="loops-grid">
+    <div *ngFor="let loop of loops" class="loop-card" (click)="navigateToLoop(loop.id)">
+      <div class="loop-card-header">
+        <h3>{{ loop.name }}</h3>
+      </div>
+      <div class="loop-card-body">
+        <div class="loop-stat">
+          <span class="stat-icon">👥</span>
+          <span class="stat-value">{{ loop.memberCount || 0 }}</span>
+          <span class="stat-label">Members</span>
+        </div>
+        <div class="loop-stat">
+          <span class="stat-icon">📦</span>
+          <span class="stat-value">{{ loop.itemCount || 0 }}</span>
+          <span class="stat-label">Items</span>
+        </div>
+      </div>
+      <div class="loop-card-footer">
+        <span class="created-date">Created {{ loop.createdAt | date:'short' }}</span>
+      </div>
+    </div>
+  </div>
+</div>

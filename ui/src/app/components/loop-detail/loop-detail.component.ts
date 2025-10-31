@@ -1,0 +1,101 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { LoopService } from '../../services/loop.service';
+import { Loop } from '../../models/loop.interface';
+import { SharedItem } from '../../models/shared-item.interface';
+
+@Component({
+  selector: 'app-loop-detail',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './loop-detail.component.html',
+  styleUrls: ['./loop-detail.component.css']
+})
+export class LoopDetailComponent implements OnInit {
+  loopId: string | null = null;
+  loop: Loop | null = null;
+  items: SharedItem[] = [];
+  filteredItems: SharedItem[] = [];
+  searchQuery = '';
+  loading = false;
+  error: string | null = null;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private loopService: LoopService
+  ) {}
+
+  ngOnInit(): void {
+    this.loopId = this.route.snapshot.paramMap.get('id');
+    if (this.loopId) {
+      this.loadLoopDetails();
+      this.loadLoopItems();
+    }
+  }
+
+  loadLoopDetails(): void {
+    if (!this.loopId) return;
+
+    this.loopService.getLoopById(this.loopId).subscribe({
+      next: (loop) => {
+        this.loop = loop;
+      },
+      error: (err) => {
+        this.error = 'Failed to load loop details';
+        console.error('Error loading loop:', err);
+      }
+    });
+  }
+
+  loadLoopItems(): void {
+    if (!this.loopId) return;
+
+    this.loading = true;
+    this.error = null;
+
+    this.loopService.getLoopItems(this.loopId).subscribe({
+      next: (response) => {
+        this.items = response.items;
+        this.filteredItems = response.items;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Failed to load items';
+        this.loading = false;
+        console.error('Error loading items:', err);
+      }
+    });
+  }
+
+  onSearchChange(): void {
+    if (!this.searchQuery.trim()) {
+      this.filteredItems = this.items;
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase();
+    this.filteredItems = this.items.filter(item =>
+      item.name.toLowerCase().includes(query) ||
+      item.description.toLowerCase().includes(query)
+    );
+  }
+
+  navigateToMembers(): void {
+    if (this.loopId) {
+      this.router.navigate(['/loops', this.loopId, 'members']);
+    }
+  }
+
+  navigateToInvite(): void {
+    if (this.loopId) {
+      this.router.navigate(['/loops', this.loopId, 'invite']);
+    }
+  }
+
+  navigateBack(): void {
+    this.router.navigate(['/loops']);
+  }
+}

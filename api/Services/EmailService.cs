@@ -258,6 +258,35 @@ public class EmailService : IEmailService
         }
     }
 
+    public async Task<bool> SendLoopInvitationEmailAsync(string recipientEmail, string recipientName, string inviterName, string loopName, string invitationToken)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(recipientEmail))
+            {
+                _logger.LogError("Cannot send loop invitation email: recipient email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(invitationToken))
+            {
+                _logger.LogError("Cannot send loop invitation email: invitation token is null or empty");
+                return false;
+            }
+
+            var invitationUrl = $"{_emailConfig.BaseUrl}/loops/accept-invitation?token={invitationToken}";
+            var subject = $"You're invited to join {loopName}";
+            var body = GenerateLoopInvitationEmailBody(recipientName, inviterName, loopName, invitationUrl);
+
+            return await SendEmailWithRetryAsync(recipientEmail, subject, body, "loop invitation");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send loop invitation email to {Email}", recipientEmail);
+            return false;
+        }
+    }
+
     public async Task<bool> TestEmailConfigurationAsync()
     {
         try
@@ -470,6 +499,87 @@ public class EmailService : IEmailService
         <p><strong>Important:</strong> This password reset link will expire in 1 hour for security reasons.</p>
         
         <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The Shared Items App Team</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateLoopInvitationEmailBody(string recipientName, string inviterName, string loopName, string invitationUrl)
+    {
+        var displayName = string.IsNullOrWhiteSpace(recipientName) ? "there" : recipientName;
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Loop Invitation</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #6f42c1;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .button {{
+            display: inline-block;
+            background-color: #6f42c1;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>You're Invited to Join a Loop!</h1>
+    </div>
+    <div class='content'>
+        <h2>Hi {displayName},</h2>
+        <p><strong>{inviterName}</strong> has invited you to join the loop <strong>{loopName}</strong> on Shared Items App!</p>
+        
+        <p>Loops are sharing groups where members can share items with each other. By joining this loop, you'll be able to see and access items shared by other members.</p>
+        
+        <div style='text-align: center;'>
+            <a href='{invitationUrl}' class='button'>Accept Invitation</a>
+        </div>
+        
+        <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+        <p style='word-break: break-all; background-color: #e9ecef; padding: 10px; border-radius: 3px;'>{invitationUrl}</p>
+        
+        <p><strong>Important:</strong> This invitation link will expire in 30 days for security reasons.</p>
+        
+        <p>If you don't have an account yet, you'll be prompted to create one when you accept the invitation.</p>
         
         <div class='footer'>
             <p>Best regards,<br>The Shared Items App Team</p>
