@@ -10,6 +10,7 @@ import { LoopCreateComponent } from './components/loop-create/loop-create.compon
 import { LoopDetailComponent } from './components/loop-detail/loop-detail.component';
 import { LoopInviteComponent } from './components/loop-invite/loop-invite.component';
 import { LoopInvitationsComponent } from './components/loop-invitations/loop-invitations.component';
+import { LoopMembersComponent } from './components/loop-members/loop-members.component';
 import { AcceptInvitationComponent } from './components/accept-invitation/accept-invitation.component';
 import { ItemVisibilityComponent } from './components/item-visibility/item-visibility.component';
 
@@ -41,7 +42,8 @@ export const routes: Routes = [
             { path: 'invitations', component: LoopInvitationsComponent },
             { path: 'accept-invitation', component: AcceptInvitationComponent },
             { path: ':id', component: LoopDetailComponent },
-            { path: ':id/invite', component: LoopInviteComponent }
+            { path: ':id/invite', component: LoopInviteComponent },
+            { path: ':id/members', component: LoopMembersComponent }
         ]
     },
 

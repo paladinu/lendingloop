@@ -1,0 +1,39 @@
+<div class="loop-members-container">
+  <div class="header">
+    <button class="btn-back" (click)="navigateBack()">← Back to Loop</button>
+  </div>
+
+  <div *ngIf="loop" class="page-header">
+    <h1>Members of {{ loop.name }}</h1>
+    <p class="member-count">{{ members.length }} {{ members.length === 1 ? 'member' : 'members' }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading members...</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="loadMembers()">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !error && members.length === 0" class="empty-state">
+    <div class="empty-icon">👥</div>
+    <p>No members found in this loop.</p>
+    <p>Members will appear here once they join.</p>
+  </div>
+
+  <div *ngIf="!loading && !error && members.length > 0" class="members-list">
+    <div *ngFor="let member of members" class="member-card">
+      <div class="member-avatar">
+        <span class="avatar-icon">{{ getMemberDisplayName(member).charAt(0).toUpperCase() }}</span>
+      </div>
+      <div class="member-info">
+        <h3 class="member-name">{{ getMemberDisplayName(member) }}</h3>
+        <p class="member-email">{{ member.email }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
