@@ -41,27 +41,49 @@ export class ItemVisibilityComponent implements OnInit {
   }
 
   loadData(): void {
+    if (!this.itemId) {
+      this.error = 'No item ID provided';
+      this.loading = false;
+      return;
+    }
+
     this.loading = true;
     this.error = null;
     
+    console.log('Loading item visibility data for item ID:', this.itemId);
+    
     forkJoin({
       loops: this.loopService.getUserLoops(),
-      item: this.itemsService.getItemById(this.itemId!)
+      item: this.itemsService.getItemById(this.itemId)
     }).subscribe({
       next: ({ loops, item }) => {
+        console.log('Data loaded successfully:', { loops, item });
         this.loops = loops || [];
         this.item = item || null;
         if (this.item) {
-          this.selectedLoopIds = new Set(this.item.visibleToLoopIds);
-          this.visibleToAllLoops = this.item.visibleToAllLoops;
-          this.visibleToFutureLoops = this.item.visibleToFutureLoops;
+          this.selectedLoopIds = new Set(this.item.visibleToLoopIds || []);
+          this.visibleToAllLoops = this.item.visibleToAllLoops || false;
+          this.visibleToFutureLoops = this.item.visibleToFutureLoops || false;
         }
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load data. Please try again.';
-        this.loading = false;
         console.error('Error loading data:', err);
+        console.error('Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          error: err.error
+        });
+        
+        if (err.status === 404) {
+          this.error = 'Item not found.';
+        } else if (err.status === 403) {
+          this.error = 'You do not have permission to edit this item.';
+        } else {
+          this.error = 'Failed to load data. Please try again.';
+        }
+        this.loading = false;
       }
     });
   }

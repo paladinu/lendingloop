@@ -42,3 +42,68 @@ Examples:
 - **NEVER use `cd` commands** - Always use the `path` parameter in tool calls
 - The Angular dev server proxies API requests to the .NET backend (see `/ui/proxy.conf.json`)
 - Both applications need to be running for full functionality
+
+
+## Testing Guidelines
+
+### Backend Testing (.NET)
+**All services in the `/api` project MUST have corresponding unit tests in `/api.tests`.**
+
+- Create test files following the pattern: `{ServiceName}Tests.cs`
+- Use xUnit as the testing framework
+- Mock dependencies using Moq or NSubstitute
+- Test all public methods and edge cases
+- Aim for high code coverage on business logic
+
+Example test structure:
+```csharp
+public class ItemsServiceTests
+{
+    [Fact]
+    public async Task GetItemByIdAsync_ReturnsItem_WhenItemExists()
+    {
+        // Arrange
+        // Act
+        // Assert
+    }
+}
+```
+
+### Frontend Testing (Angular)
+**All services and components in the `/ui` project SHOULD have corresponding unit tests.**
+
+- Test files should be named: `{component/service}.spec.ts`
+- Use Jest as the testing framework (configured in the project)
+- Mock HTTP calls and dependencies
+- Test component logic, not implementation details
+- Focus on user interactions and state changes
+
+Example test structure:
+```typescript
+describe('ItemsService', () => {
+  it('should fetch items successfully', () => {
+    // Arrange
+    // Act
+    // Assert
+  });
+});
+```
+
+### Test Execution
+- Run backend tests: `dotnet test` from `/api.tests`
+- Run frontend tests: `npm test` from `/ui`
+- Run frontend tests with coverage: `npm run test:coverage` from `/ui`
+
+### Testing Best Practices
+- **ALL tests MUST follow the Arrange-Act-Assert (AAA) pattern with comments**
+  - Use `// Arrange` for test setup and initialization
+  - Use `// Act` for executing the method under test
+  - Use `// Assert` for verifying the results
+- Write tests for new features before marking tasks as complete
+- Keep tests focused and isolated
+- Use descriptive test names that explain what is being tested
+- Mock external dependencies (database, HTTP calls, etc.)
+- Test both success and failure scenarios
+- Avoid testing framework internals or private methods
+- All new services MUST have unit tests before being considered complete
+- Existing services without tests should have tests added when modified
