@@ -137,7 +137,7 @@ public class LoopInvitationService : ILoopInvitationService
         return invitation;
     }
 
-    public async Task<LoopInvitation?> AcceptInvitationAsync(string token)
+    public async Task<LoopInvitation?> AcceptInvitationAsync(string token, string? currentUserId = null)
     {
         var filter = Builders<LoopInvitation>.Filter.And(
             Builders<LoopInvitation>.Filter.Eq(i => i.InvitationToken, token),
@@ -152,8 +152,29 @@ public class LoopInvitationService : ILoopInvitationService
             return null;
         }
 
-        // If invitation has a user ID, use that; otherwise find user by email
-        string? userId = invitation.InvitedUserId;
+        // Determine which user to use for accepting the invitation
+        string? userId = null;
+
+        // Priority 1: Use current authenticated user if provided (for dev convenience)
+        // In dev, this allows any logged-in user to accept the invitation
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            var currentUser = await _userService.GetUserByIdAsync(currentUserId);
+            if (currentUser != null)
+            {
+                userId = currentUserId;
+                _logger.LogInformation("Using authenticated user {UserId} ({Email}) to accept invitation for {InvitedEmail}", 
+                    userId, currentUser.Email, invitation.InvitedEmail);
+            }
+        }
+
+        // Priority 2: Use invitation's user ID if available
+        if (string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(invitation.InvitedUserId))
+        {
+            userId = invitation.InvitedUserId;
+        }
+
+        // Priority 3: Find user by invitation email
         if (string.IsNullOrEmpty(userId))
         {
             var user = await _userService.GetUserByEmailAsync(invitation.InvitedEmail);
@@ -169,10 +190,11 @@ public class LoopInvitationService : ILoopInvitationService
         // Add user to loop
         await _loopService.AddMemberToLoopAsync(invitation.LoopId, userId);
 
-        // Update invitation status
+        // Update invitation status and link it to the accepting user
         var update = Builders<LoopInvitation>.Update
             .Set(i => i.Status, InvitationStatus.Accepted)
-            .Set(i => i.AcceptedAt, DateTime.UtcNow);
+            .Set(i => i.AcceptedAt, DateTime.UtcNow)
+            .Set(i => i.InvitedUserId, userId);
 
         var options = new FindOneAndUpdateOptions<LoopInvitation>
         {

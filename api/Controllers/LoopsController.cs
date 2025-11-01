@@ -366,7 +366,15 @@ public class LoopsController : ControllerBase
     {
         try
         {
-            var invitation = await _invitationService.AcceptInvitationAsync(token);
+            // Try to get current user if authenticated (for dev convenience)
+            string? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                currentUserId = GetUserId();
+                _logger.LogInformation("Authenticated user {UserId} accepting invitation by token", currentUserId);
+            }
+
+            var invitation = await _invitationService.AcceptInvitationAsync(token, currentUserId);
             if (invitation == null)
             {
                 return StatusCode(410, new { message = "Invitation not found or has expired" });

@@ -137,6 +137,10 @@ public class AuthController : ControllerBase
             }
 
             _logger.LogInformation("User found for email: {Email}, checking password", request.Email);
+            
+            // DEBUG: Log password hash for debugging
+            _logger.LogInformation("🔍 DEBUG: Password hash from database for {Email}: {PasswordHash}", request.Email, user.PasswordHash);
+            _logger.LogInformation("🔍 DEBUG: Password provided length: {Length}", request.Password?.Length ?? 0);
 
             // Verify password
             var passwordValid = _passwordService.VerifyPassword(request.Password, user.PasswordHash);
