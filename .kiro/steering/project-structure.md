@@ -51,9 +51,10 @@ Examples:
 
 - Create test files following the pattern: `{ServiceName}Tests.cs`
 - Use xUnit as the testing framework
-- Mock dependencies using Moq or NSubstitute
+- Mock dependencies using Moq
 - Test all public methods and edge cases
 - Aim for high code coverage on business logic
+- Testing project folder strutcture should match that of the project under test
 
 Example test structure:
 ```csharp
@@ -62,9 +63,9 @@ public class ItemsServiceTests
     [Fact]
     public async Task GetItemByIdAsync_ReturnsItem_WhenItemExists()
     {
-        // Arrange
-        // Act
-        // Assert
+        // arrange
+        // act
+        // assert
     }
 }
 ```
@@ -82,9 +83,9 @@ Example test structure:
 ```typescript
 describe('ItemsService', () => {
   it('should fetch items successfully', () => {
-    // Arrange
-    // Act
-    // Assert
+    // arrange
+    // act
+    // assert
   });
 });
 ```
