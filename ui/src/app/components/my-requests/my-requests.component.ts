@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItemRequestService } from '../../services/item-request.service';
 import { ItemRequest, RequestStatus } from '../../models/item-request.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
     selector: 'app-my-requests',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, ToolbarComponent],
     templateUrl: './my-requests.component.html',
     styleUrls: ['./my-requests.component.css']
 })

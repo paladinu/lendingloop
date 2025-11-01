@@ -208,13 +208,6 @@
   - _Requirements: 4.4, 7.2_
 
 - [x] 7.4 Create reusable ToolbarComponent for user information and logout
-
-
-
-
-
-
-
   - Extract toolbar from MainComponent into a standalone, reusable ToolbarComponent
   - Component should display user's first and last name with dropdown menu
   - Include logout button with proper functionality in the dropdown
@@ -223,6 +216,17 @@
   - Ensure consistent appearance and functionality across the application
   - Remove duplicate toolbar code from MainComponent after extraction
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
+
+- [x] 7.5 Add toolbar to remaining authenticated pages
+
+
+
+
+
+  - Add toolbar component to ItemRequestListComponent
+  - Add toolbar component to MyRequestsComponent
+  - Ensure consistent appearance with other pages
+  - _Requirements: 8.1, 8.2, 8.4_
 
 - [-] 8. Implement email service for verification
 

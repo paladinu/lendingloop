@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyRequestsComponent } from './my-requests.component';
 import { ItemRequestService } from '../../services/item-request.service';
+import { AuthService } from '../../services/auth.service';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ItemRequest, RequestStatus } from '../../models/item-request.interface';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -9,17 +11,37 @@ describe('MyRequestsComponent', () => {
     let component: MyRequestsComponent;
     let fixture: ComponentFixture<MyRequestsComponent>;
     let itemRequestService: any;
+    let mockAuthService: any;
+    let mockRouter: any;
+    let mockActivatedRoute: any;
 
     beforeEach(async () => {
         const itemRequestServiceSpy = {
             getMyRequests: jest.fn().mockReturnValue(of([])),
-            cancelRequest: jest.fn()
+            cancelRequest: jest.fn(),
+            getPendingRequests: jest.fn().mockReturnValue(of([]))
+        };
+
+        mockAuthService = {
+            getCurrentUser: jest.fn().mockReturnValue(of(null)),
+            logout: jest.fn()
+        };
+
+        mockRouter = {
+            navigate: jest.fn()
+        };
+
+        mockActivatedRoute = {
+            snapshot: { params: {} }
         };
 
         await TestBed.configureTestingModule({
             imports: [MyRequestsComponent],
             providers: [
-                { provide: ItemRequestService, useValue: itemRequestServiceSpy }
+                { provide: ItemRequestService, useValue: itemRequestServiceSpy },
+                { provide: AuthService, useValue: mockAuthService },
+                { provide: Router, useValue: mockRouter },
+                { provide: ActivatedRoute, useValue: mockActivatedRoute }
             ],
             schemas: [NO_ERRORS_SCHEMA]
         }).compileComponents();
