@@ -8,6 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../services/auth.service';
 import { UserProfile } from '../../models/auth.interface';
+import { ItemRequestService } from '../../services/item-request.service';
 
 @Component({
   selector: 'app-toolbar',
@@ -25,16 +26,19 @@ import { UserProfile } from '../../models/auth.interface';
   styleUrls: ['./toolbar.component.css']
 })
 export class ToolbarComponent implements OnInit {
-  title = 'Shared Items Manager';
+  title = 'Lending Loop';
   currentUser: UserProfile | null = null;
+  pendingRequestCount = 0;
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private itemRequestService: ItemRequestService
   ) { }
 
   ngOnInit(): void {
     this.loadCurrentUser();
+    this.loadPendingRequestCount();
   }
 
   loadCurrentUser(): void {
@@ -46,6 +50,17 @@ export class ToolbarComponent implements OnInit {
         console.error('Error loading current user:', err);
         // If we can't get the current user, redirect to login
         this.logout();
+      }
+    });
+  }
+
+  loadPendingRequestCount(): void {
+    this.itemRequestService.getPendingRequests().subscribe({
+      next: (requests) => {
+        this.pendingRequestCount = requests.length;
+      },
+      error: (err) => {
+        console.error('Error loading pending request count:', err);
       }
     });
   }

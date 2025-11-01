@@ -81,6 +81,11 @@
         <div class="item-status" *ngIf="!item.isAvailable">
           <span class="badge unavailable">Unavailable</span>
         </div>
+        <app-item-request-button
+          [itemId]="item.id!"
+          [ownerId]="item.userId"
+          (requestCreated)="onRequestCreated($event)"
+        ></app-item-request-button>
       </div>
     </div>
   </div>

@@ -1,0 +1,131 @@
+<div class="container mt-4">
+    <h2>My Requests</h2>
+
+    <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+    </div>
+
+    <div *ngIf="isLoading" class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!isLoading && !hasRequests" class="alert alert-info">
+        You haven't made any item requests yet.
+    </div>
+
+    <!-- Pending Requests -->
+    <div *ngIf="pendingRequests.length > 0" class="mb-4">
+        <h3>Pending</h3>
+        <div class="list-group">
+            <div *ngFor="let request of pendingRequests" class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">
+                            {{ request.itemName || 'Item' }}
+                            <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
+                                {{ request.status }}
+                            </span>
+                        </h5>
+                        <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
+                        <small class="text-muted">Requested: {{ request.requestedAt | date:'short' }}</small>
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            (click)="onCancel(request)"
+                        >
+                            Cancel Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approved Requests -->
+    <div *ngIf="approvedRequests.length > 0" class="mb-4">
+        <h3>Currently Borrowing</h3>
+        <div class="list-group">
+            <div *ngFor="let request of approvedRequests" class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">
+                            {{ request.itemName || 'Item' }}
+                            <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
+                                {{ request.status }}
+                            </span>
+                        </h5>
+                        <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
+                        <small class="text-muted">Approved: {{ request.respondedAt | date:'short' }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Requests -->
+    <div *ngIf="completedRequests.length > 0" class="mb-4">
+        <h3>Completed</h3>
+        <div class="list-group">
+            <div *ngFor="let request of completedRequests" class="list-group-item">
+                <div>
+                    <h5 class="mb-1">
+                        {{ request.itemName || 'Item' }}
+                        <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
+                            {{ request.status }}
+                        </span>
+                    </h5>
+                    <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
+                    <small class="text-muted">Completed: {{ request.completedAt | date:'short' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejected Requests -->
+    <div *ngIf="rejectedRequests.length > 0" class="mb-4">
+        <h3>Rejected</h3>
+        <div class="list-group">
+            <div *ngFor="let request of rejectedRequests" class="list-group-item">
+                <div>
+                    <h5 class="mb-1">
+                        {{ request.itemName || 'Item' }}
+                        <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
+                            {{ request.status }}
+                        </span>
+                    </h5>
+                    <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
+                    <small class="text-muted">Rejected: {{ request.respondedAt | date:'short' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancelled Requests -->
+    <div *ngIf="cancelledRequests.length > 0" class="mb-4">
+        <h3>Cancelled</h3>
+        <div class="list-group">
+            <div *ngFor="let request of cancelledRequests" class="list-group-item">
+                <div>
+                    <h5 class="mb-1">
+                        {{ request.itemName || 'Item' }}
+                        <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
+                            {{ request.status }}
+                        </span>
+                    </h5>
+                    <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
+                    <small class="text-muted">Cancelled: {{ request.respondedAt | date:'short' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

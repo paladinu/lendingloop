@@ -1,0 +1,11 @@
+.item-request-button-container {
+    margin-top: 1rem;
+}
+
+.btn {
+    width: 100%;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+}

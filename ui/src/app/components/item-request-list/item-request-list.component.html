@@ -1,0 +1,80 @@
+<div class="container mt-4">
+    <h2>Item Requests</h2>
+
+    <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+    </div>
+
+    <div *ngIf="isLoading" class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!isLoading && !hasAnyRequests" class="alert alert-info">
+        No pending or active requests for your items.
+    </div>
+
+    <!-- Pending Requests -->
+    <div *ngIf="hasPendingRequests" class="mb-4">
+        <h3>Pending Requests</h3>
+        <div class="list-group">
+            <div *ngFor="let request of pendingRequests" class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ request.itemName || 'Item' }}</h5>
+                        <p class="mb-1">Requested by: {{ request.requesterName || 'User' }}</p>
+                        <small class="text-muted">{{ request.requestedAt | date:'short' }}</small>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            (click)="onApprove(request)"
+                        >
+                            Approve
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            (click)="onReject(request)"
+                        >
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approved Requests -->
+    <div *ngIf="hasApprovedRequests" class="mb-4">
+        <h3>Currently Borrowed</h3>
+        <div class="list-group">
+            <div *ngFor="let request of approvedRequests" class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ request.itemName || 'Item' }}</h5>
+                        <p class="mb-1">Borrowed by: {{ request.requesterName || 'User' }}</p>
+                        <small class="text-muted">Approved: {{ request.respondedAt | date:'short' }}</small>
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            (click)="onComplete(request)"
+                        >
+                            Mark as Returned
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

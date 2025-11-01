@@ -14,6 +14,8 @@ import { LoopMembersComponent } from './components/loop-members/loop-members.com
 import { AcceptInvitationComponent } from './components/accept-invitation/accept-invitation.component';
 import { ItemVisibilityComponent } from './components/item-visibility/item-visibility.component';
 import { ItemAddComponent } from './components/item-add/item-add.component';
+import { ItemRequestListComponent } from './components/item-request-list/item-request-list.component';
+import { MyRequestsComponent } from './components/my-requests/my-requests.component';
 
 export const routes: Routes = [
     // Authentication routes (no guard needed)
@@ -58,6 +60,16 @@ export const routes: Routes = [
         path: 'items/:id/visibility',
         component: ItemVisibilityComponent,
         canActivate: [AuthGuard]
+    },
+
+    // Item Request routes (protected)
+    {
+        path: 'requests',
+        canActivate: [AuthGuard],
+        children: [
+            { path: '', component: ItemRequestListComponent },
+            { path: 'my-requests', component: MyRequestsComponent }
+        ]
     },
 
     // Protected main app route

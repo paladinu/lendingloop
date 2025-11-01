@@ -1,0 +1,12 @@
+.list-group-item {
+    padding: 1rem;
+}
+
+h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.badge {
+    margin-left: 0.5rem;
+}

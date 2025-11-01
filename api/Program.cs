@@ -106,6 +106,9 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
     // Register ItemsService
     builder.Services.AddScoped<IItemsService, ItemsService>();
     
+    // Register ItemRequestService
+    builder.Services.AddScoped<IItemRequestService, ItemRequestService>();
+    
     // Register UserService
     builder.Services.AddScoped<IUserService, UserService>();
     

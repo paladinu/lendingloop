@@ -12,4 +12,5 @@ public interface IItemsService
     Task<List<SharedItem>> GetItemsByLoopIdAsync(string loopId);
     Task<SharedItem?> UpdateItemVisibilityAsync(string itemId, string userId, List<string> loopIds, bool visibleToAllLoops, bool visibleToFutureLoops);
     Task<SharedItem?> GetItemByIdAsync(string itemId);
+    Task<SharedItem?> UpdateItemAvailabilityAsync(string itemId, bool isAvailable);
 }

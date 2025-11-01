@@ -6,11 +6,13 @@ import { LoopService } from '../../services/loop.service';
 import { Loop } from '../../models/loop.interface';
 import { SharedItem } from '../../models/shared-item.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { ItemRequestButtonComponent } from '../item-request-button/item-request-button.component';
+import { ItemRequest } from '../../models/item-request.interface';
 
 @Component({
   selector: 'app-loop-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ToolbarComponent],
+  imports: [CommonModule, FormsModule, ToolbarComponent, ItemRequestButtonComponent],
   templateUrl: './loop-detail.component.html',
   styleUrls: ['./loop-detail.component.css']
 })
@@ -98,5 +100,11 @@ export class LoopDetailComponent implements OnInit {
 
   navigateBack(): void {
     this.router.navigate(['/loops']);
+  }
+
+  onRequestCreated(request: ItemRequest): void {
+    // Optionally refresh the items list to show updated availability
+    console.log('Request created:', request);
+    // Could show a success message or refresh items
   }
 }

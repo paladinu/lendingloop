@@ -1,25 +1,43 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ToolbarComponent } from './toolbar.component';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { ItemRequestService } from '../../services/item-request.service';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
   let fixture: ComponentFixture<ToolbarComponent>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: any;
+  let mockItemRequestService: any;
+  let mockRouter: any;
+  let mockActivatedRoute: any;
 
   beforeEach(async () => {
-    mockAuthService = jasmine.createSpyObj('AuthService', ['getCurrentUser', 'logout']);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockAuthService = {
+      getCurrentUser: jest.fn().mockReturnValue(of(null)),
+      logout: jest.fn()
+    };
+    mockItemRequestService = {
+      getPendingRequests: jest.fn().mockReturnValue(of([]))
+    };
+    mockRouter = {
+      navigate: jest.fn()
+    };
+    mockActivatedRoute = {
+      snapshot: { params: {} }
+    };
 
     await TestBed.configureTestingModule({
       imports: [ToolbarComponent],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
-        { provide: Router, useValue: mockRouter }
-      ]
+        { provide: ItemRequestService, useValue: mockItemRequestService },
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ToolbarComponent);
@@ -27,7 +45,6 @@ describe('ToolbarComponent', () => {
   });
 
   it('should create', () => {
-    mockAuthService.getCurrentUser.and.returnValue(of(null));
     expect(component).toBeTruthy();
   });
 });

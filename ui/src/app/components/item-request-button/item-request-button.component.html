@@ -1,0 +1,19 @@
+<div *ngIf="showButton" class="item-request-button-container">
+    <button
+        class="btn"
+        [ngClass]="{
+            'btn-primary': !existingRequest,
+            'btn-warning': existingRequest?.status === RequestStatus.Pending,
+            'btn-success': existingRequest?.status === RequestStatus.Approved
+        }"
+        [disabled]="isButtonDisabled"
+        (click)="onRequestItem()"
+    >
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+        {{ buttonText }}
+    </button>
+
+    <div *ngIf="errorMessage" class="alert alert-danger mt-2" role="alert">
+        {{ errorMessage }}
+    </div>
+</div>

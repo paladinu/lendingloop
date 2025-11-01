@@ -101,6 +101,21 @@ public class ItemsService : IItemsService
         return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
     }
 
+    public async Task<SharedItem?> UpdateItemAvailabilityAsync(string itemId, bool isAvailable)
+    {
+        var filter = Builders<SharedItem>.Filter.Eq(item => item.Id, itemId);
+        var update = Builders<SharedItem>.Update
+            .Set(item => item.IsAvailable, isAvailable)
+            .Set(item => item.UpdatedAt, DateTime.UtcNow);
+        
+        var options = new FindOneAndUpdateOptions<SharedItem>
+        {
+            ReturnDocument = ReturnDocument.After
+        };
+
+        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+    }
+
     private async Task EnsureIndexesAsync()
     {
         try
