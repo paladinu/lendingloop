@@ -42,6 +42,37 @@ public class ItemsController : ControllerBase
         }
     }
 
+    [HttpGet("{id}")]
+    public async Task<ActionResult<SharedItem>> GetItemById(string id)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            var item = await _itemsService.GetItemByIdAsync(id);
+            if (item == null)
+            {
+                return NotFound($"Item with id {id} not found.");
+            }
+
+            // Only allow users to view their own items
+            if (item.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            return Ok(item);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
     [HttpPost]
     public async Task<ActionResult<SharedItem>> CreateItem([FromBody] SharedItem item)
     {
