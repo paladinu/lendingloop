@@ -27,7 +27,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_ReturnsNonEmptyToken_WhenUserProvided()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -36,10 +36,10 @@ public class JwtTokenServiceTests
             LastName = "Doe"
         };
 
-        // Act
+        //act
         var token = _service.GenerateToken(user);
 
-        // Assert
+        //assert
         Assert.NotNull(token);
         Assert.NotEmpty(token);
     }
@@ -47,7 +47,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_ReturnsValidJwtFormat_WhenUserProvided()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -56,10 +56,10 @@ public class JwtTokenServiceTests
             LastName = "Doe"
         };
 
-        // Act
+        //act
         var token = _service.GenerateToken(user);
 
-        // Assert
+        //assert
         var parts = token.Split('.');
         Assert.Equal(3, parts.Length); // JWT has 3 parts: header.payload.signature
     }
@@ -67,7 +67,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_IncludesUserId_InToken()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -76,12 +76,12 @@ public class JwtTokenServiceTests
             LastName = "Doe"
         };
 
-        // Act
+        //act
         var token = _service.GenerateToken(user);
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
 
-        // Assert
+        //assert
         var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "userId");
         Assert.NotNull(userIdClaim);
         Assert.Equal("user123", userIdClaim.Value);
@@ -90,7 +90,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_IncludesEmail_InToken()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -99,12 +99,12 @@ public class JwtTokenServiceTests
             LastName = "Doe"
         };
 
-        // Act
+        //act
         var token = _service.GenerateToken(user);
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
 
-        // Assert
+        //assert
         var emailClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email);
         Assert.NotNull(emailClaim);
         Assert.Equal("test@example.com", emailClaim.Value);
@@ -113,7 +113,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_IncludesName_InToken()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -122,12 +122,12 @@ public class JwtTokenServiceTests
             LastName = "Doe"
         };
 
-        // Act
+        //act
         var token = _service.GenerateToken(user);
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
 
-        // Assert
+        //assert
         var firstNameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.GivenName);
         var lastNameClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Surname);
         Assert.NotNull(firstNameClaim);
@@ -139,7 +139,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_SetsExpirationTime_BasedOnConfiguration()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -149,12 +149,12 @@ public class JwtTokenServiceTests
         };
         var beforeGeneration = DateTime.UtcNow;
 
-        // Act
+        //act
         var token = _service.GenerateToken(user);
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
 
-        // Assert
+        //assert
         Assert.True(jwtToken.ValidTo > beforeGeneration.AddMinutes(59));
         Assert.True(jwtToken.ValidTo <= beforeGeneration.AddHours(1).AddMinutes(1));
     }
@@ -162,7 +162,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateToken_ReturnsDifferentTokens_ForSameUser()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Id = "user123",
@@ -171,12 +171,12 @@ public class JwtTokenServiceTests
             LastName = "Doe"
         };
 
-        // Act
+        //act
         var token1 = _service.GenerateToken(user);
         System.Threading.Thread.Sleep(1000); // Wait to ensure different timestamp
         var token2 = _service.GenerateToken(user);
 
-        // Assert
+        //assert
         Assert.NotEqual(token1, token2); // Different timestamps should produce different tokens
     }
 }

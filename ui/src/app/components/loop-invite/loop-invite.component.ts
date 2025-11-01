@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
 import { LoopMember } from '../../models/loop-member.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-loop-invite',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToolbarComponent],
   templateUrl: './loop-invite.component.html',
   styleUrls: ['./loop-invite.component.css']
 })

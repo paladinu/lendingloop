@@ -4,11 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
 import { LoopMember } from '../../models/loop-member.interface';
 import { Loop } from '../../models/loop.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-loop-members',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ToolbarComponent],
   templateUrl: './loop-members.component.html',
   styleUrls: ['./loop-members.component.css']
 })

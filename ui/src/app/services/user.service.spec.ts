@@ -50,18 +50,18 @@ describe('UserService', () => {
   });
 
   it('should be created', () => {
-    // Assert
+    //assert
     expect(service).toBeTruthy();
   });
 
   describe('getCurrentUser', () => {
     it('should fetch current user successfully', (done) => {
-      // Arrange
+      //arrange
       // (no additional setup needed)
 
-      // Act
+      //act
       service.getCurrentUser().subscribe(user => {
-        // Assert
+        //assert
         expect(user).toEqual(mockUserProfile);
         done();
       });
@@ -72,14 +72,14 @@ describe('UserService', () => {
     });
 
     it('should handle 401 error and redirect to login', (done) => {
-      // Arrange
+      //arrange
       const errorResponse = { message: 'Unauthorized' };
 
-      // Act
+      //act
       service.getCurrentUser().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('Authentication required. Please log in again.');
           expect(authService.logout).toHaveBeenCalled();
           expect(router.navigate).toHaveBeenCalledWith(['/login']);
@@ -92,14 +92,14 @@ describe('UserService', () => {
     });
 
     it('should handle 403 error', (done) => {
-      // Arrange
+      //arrange
       const errorResponse = { message: 'Forbidden' };
 
-      // Act
+      //act
       service.getCurrentUser().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('You do not have permission to perform this action.');
           done();
         }
@@ -110,14 +110,14 @@ describe('UserService', () => {
     });
 
     it('should handle generic error', (done) => {
-      // Arrange
+      //arrange
       const errorResponse = { message: 'Server error' };
 
-      // Act
+      //act
       service.getCurrentUser().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('Server error');
           done();
         }
@@ -130,12 +130,12 @@ describe('UserService', () => {
 
   describe('getUserById', () => {
     it('should fetch user by id successfully', (done) => {
-      // Arrange
+      //arrange
       const userId = '123';
 
-      // Act
+      //act
       service.getUserById(userId).subscribe(user => {
-        // Assert
+        //assert
         expect(user).toEqual(mockUserProfile);
         done();
       });
@@ -146,15 +146,15 @@ describe('UserService', () => {
     });
 
     it('should handle 404 error', (done) => {
-      // Arrange
+      //arrange
       const userId = 'nonexistent';
       const errorResponse = { message: 'User not found' };
 
-      // Act
+      //act
       service.getUserById(userId).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('User not found.');
           done();
         }
@@ -165,15 +165,15 @@ describe('UserService', () => {
     });
 
     it('should handle 401 error and redirect to login', (done) => {
-      // Arrange
+      //arrange
       const userId = '123';
       const errorResponse = { message: 'Unauthorized' };
 
-      // Act
+      //act
       service.getUserById(userId).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('Authentication required. Please log in again.');
           expect(authService.logout).toHaveBeenCalled();
           expect(router.navigate).toHaveBeenCalledWith(['/login']);
@@ -186,14 +186,14 @@ describe('UserService', () => {
     });
 
     it('should handle error without message property', (done) => {
-      // Arrange
+      //arrange
       const userId = '123';
 
-      // Act
+      //act
       service.getUserById(userId).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toContain('500 Internal Server Error');
           done();
         }

@@ -138,9 +138,16 @@ public class AuthController : ControllerBase
 
             _logger.LogInformation("User found for email: {Email}, checking password", request.Email);
             
+            // Additional validation for password (should be caught by ModelState, but adding for null safety)
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                _logger.LogWarning("Login failed - password is null or empty for email: {Email}", request.Email);
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
+            
             // DEBUG: Log password hash for debugging
             _logger.LogInformation("🔍 DEBUG: Password hash from database for {Email}: {PasswordHash}", request.Email, user.PasswordHash);
-            _logger.LogInformation("🔍 DEBUG: Password provided length: {Length}", request.Password?.Length ?? 0);
+            _logger.LogInformation("🔍 DEBUG: Password provided length: {Length}", request.Password.Length);
 
             // Verify password
             var passwordValid = _passwordService.VerifyPassword(request.Password, user.PasswordHash);

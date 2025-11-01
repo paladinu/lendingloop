@@ -56,18 +56,18 @@ describe('ItemsService', () => {
   });
 
   it('should be created', () => {
-    // Assert
+    //assert
     expect(service).toBeTruthy();
   });
 
   describe('getItems', () => {
     it('should fetch items successfully', (done) => {
-      // Arrange
+      //arrange
       const mockItems: SharedItem[] = [mockItem];
 
-      // Act
+      //act
       service.getItems().subscribe(items => {
-        // Assert
+        //assert
         expect(items).toEqual(mockItems);
         expect(items.length).toBe(1);
         done();
@@ -79,14 +79,14 @@ describe('ItemsService', () => {
     });
 
     it('should handle 401 error and redirect to login', (done) => {
-      // Arrange
+      //arrange
       const errorResponse = { message: 'Unauthorized' };
 
-      // Act
+      //act
       service.getItems().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('Authentication required. Please log in again.');
           expect(authService.logout).toHaveBeenCalled();
           expect(router.navigate).toHaveBeenCalledWith(['/login']);
@@ -99,14 +99,14 @@ describe('ItemsService', () => {
     });
 
     it('should handle 403 error', (done) => {
-      // Arrange
+      //arrange
       const errorResponse = { message: 'Forbidden' };
 
-      // Act
+      //act
       service.getItems().subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBe('You do not have permission to perform this action.');
           done();
         }
@@ -119,7 +119,7 @@ describe('ItemsService', () => {
 
   describe('createItem', () => {
     it('should create item successfully', (done) => {
-      // Arrange
+      //arrange
       const newItem: Partial<SharedItem> = {
         name: 'New Item',
         description: 'New Description',
@@ -129,9 +129,9 @@ describe('ItemsService', () => {
         visibleToFutureLoops: false
       };
 
-      // Act
+      //act
       service.createItem(newItem).subscribe(item => {
-        // Assert
+        //assert
         expect(item).toEqual(mockItem);
         done();
       });
@@ -143,17 +143,17 @@ describe('ItemsService', () => {
     });
 
     it('should handle create error', (done) => {
-      // Arrange
+      //arrange
       const newItem: Partial<SharedItem> = {
         name: 'New Item',
         description: 'New Description'
       };
 
-      // Act
+      //act
       service.createItem(newItem).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBeTruthy();
           done();
         }
@@ -166,13 +166,13 @@ describe('ItemsService', () => {
 
   describe('uploadItemImage', () => {
     it('should upload image successfully', (done) => {
-      // Arrange
+      //arrange
       const itemId = '1';
       const mockFile = new File(['image content'], 'test.jpg', { type: 'image/jpeg' });
 
-      // Act
+      //act
       service.uploadItemImage(itemId, mockFile).subscribe(item => {
-        // Assert
+        //assert
         expect(item).toEqual(mockItem);
         done();
       });
@@ -184,15 +184,15 @@ describe('ItemsService', () => {
     });
 
     it('should handle upload error', (done) => {
-      // Arrange
+      //arrange
       const itemId = '1';
       const mockFile = new File(['image content'], 'test.jpg', { type: 'image/jpeg' });
 
-      // Act
+      //act
       service.uploadItemImage(itemId, mockFile).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBeTruthy();
           done();
         }
@@ -205,12 +205,12 @@ describe('ItemsService', () => {
 
   describe('getItemById', () => {
     it('should fetch item by id successfully', (done) => {
-      // Arrange
+      //arrange
       const itemId = '1';
 
-      // Act
+      //act
       service.getItemById(itemId).subscribe(item => {
-        // Assert
+        //assert
         expect(item).toEqual(mockItem);
         done();
       });
@@ -221,14 +221,14 @@ describe('ItemsService', () => {
     });
 
     it('should handle not found error', (done) => {
-      // Arrange
+      //arrange
       const itemId = 'nonexistent';
 
-      // Act
+      //act
       service.getItemById(itemId).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.message).toBeTruthy();
           done();
         }
@@ -241,16 +241,16 @@ describe('ItemsService', () => {
 
   describe('updateItemVisibility', () => {
     it('should update visibility successfully', (done) => {
-      // Arrange
+      //arrange
       const itemId = '1';
       const visibleToLoopIds = ['loop1', 'loop2'];
       const visibleToAllLoops = true;
       const visibleToFutureLoops = true;
 
-      // Act
+      //act
       service.updateItemVisibility(itemId, visibleToLoopIds, visibleToAllLoops, visibleToFutureLoops)
         .subscribe(item => {
-          // Assert
+          //assert
           expect(item).toEqual(mockItem);
           done();
         });
@@ -266,18 +266,18 @@ describe('ItemsService', () => {
     });
 
     it('should handle update error', (done) => {
-      // Arrange
+      //arrange
       const itemId = '1';
       const visibleToLoopIds = ['loop1'];
       const visibleToAllLoops = false;
       const visibleToFutureLoops = false;
 
-      // Act
+      //act
       service.updateItemVisibility(itemId, visibleToLoopIds, visibleToAllLoops, visibleToFutureLoops)
         .subscribe({
           next: () => fail('should have failed'),
           error: (error) => {
-            // Assert
+            //assert
             expect(error.message).toBeTruthy();
             done();
           }

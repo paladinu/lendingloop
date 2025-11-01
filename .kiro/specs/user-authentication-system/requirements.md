@@ -96,3 +96,14 @@ This document specifies the requirements for a user authentication and registrat
 3. THE Authentication_System SHALL implement secure session management with appropriate timeout policies
 4. THE Authentication_System SHALL log authentication events for security monitoring purposes
 5. THE Registration_System SHALL validate and sanitize all user input to prevent security vulnerabilities
+
+### Requirement 8
+
+**User Story:** As a user, I want the toolbar with the user information and logout options to be a component that is reused on every page, so that I can log out from anywhere in the site without having to navigate.
+
+#### Acceptance Criteria
+
+1. THE Authentication_System SHALL display a toolbar component containing user information on every authenticated page
+2. THE Authentication_System SHALL include a logout option in the toolbar that is accessible from any authenticated screen
+3. WHEN a user views any authenticated page, THE Authentication_System SHALL display the user's first name and last name in the toolbar
+4. THE Authentication_System SHALL maintain consistent toolbar appearance and functionality across all pages

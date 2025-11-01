@@ -39,19 +39,19 @@ describe('AuthService', () => {
   });
 
   it('should be created', () => {
-    // Assert
+    //assert
     expect(service).toBeTruthy();
   });
 
   describe('login', () => {
     it('should login successfully and store auth data', (done) => {
-      // Arrange
+      //arrange
       const email = 'test@example.com';
       const password = 'password123';
 
-      // Act
+      //act
       service.login(email, password).subscribe(response => {
-        // Assert
+        //assert
         expect(response).toEqual(mockAuthResponse);
         expect(localStorage.getItem('auth_token')).toBe(mockAuthResponse.token);
         expect(localStorage.getItem('current_user')).toBe(JSON.stringify(mockUserProfile));
@@ -65,16 +65,16 @@ describe('AuthService', () => {
     });
 
     it('should handle login error', (done) => {
-      // Arrange
+      //arrange
       const email = 'test@example.com';
       const password = 'wrongpassword';
       const errorResponse = { message: 'Invalid credentials' };
 
-      // Act
+      //act
       service.login(email, password).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.status).toBe(401);
           done();
         }
@@ -87,7 +87,7 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('should register successfully', (done) => {
-      // Arrange
+      //arrange
       const registerRequest: RegisterRequest = {
         email: 'newuser@example.com',
         password: 'password123',
@@ -101,9 +101,9 @@ describe('AuthService', () => {
         user: { ...mockUserProfile, email: registerRequest.email }
       };
 
-      // Act
+      //act
       service.register(registerRequest).subscribe(response => {
-        // Assert
+        //assert
         expect(response).toEqual(mockRegisterResponse);
         done();
       });
@@ -115,7 +115,7 @@ describe('AuthService', () => {
     });
 
     it('should handle registration error', (done) => {
-      // Arrange
+      //arrange
       const registerRequest: RegisterRequest = {
         email: 'existing@example.com',
         password: 'password123',
@@ -124,11 +124,11 @@ describe('AuthService', () => {
         streetAddress: '456 Oak Ave'
       };
 
-      // Act
+      //act
       service.register(registerRequest).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.status).toBe(400);
           done();
         }
@@ -141,34 +141,34 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should logout successfully and clear auth data', () => {
-      // Arrange
+      //arrange
       localStorage.setItem('auth_token', mockAuthResponse.token);
       localStorage.setItem('current_user', JSON.stringify(mockUserProfile));
 
-      // Act
+      //act
       service.logout();
 
       const req = httpMock.expectOne(`${API_URL}/logout`);
       expect(req.request.method).toBe('POST');
       req.flush({});
 
-      // Assert
+      //assert
       expect(localStorage.getItem('auth_token')).toBeNull();
       expect(localStorage.getItem('current_user')).toBeNull();
     });
 
     it('should clear auth data even if logout request fails', () => {
-      // Arrange
+      //arrange
       localStorage.setItem('auth_token', mockAuthResponse.token);
       localStorage.setItem('current_user', JSON.stringify(mockUserProfile));
 
-      // Act
+      //act
       service.logout();
 
       const req = httpMock.expectOne(`${API_URL}/logout`);
       req.flush({}, { status: 500, statusText: 'Server Error' });
 
-      // Assert
+      //assert
       expect(localStorage.getItem('auth_token')).toBeNull();
       expect(localStorage.getItem('current_user')).toBeNull();
     });
@@ -176,12 +176,12 @@ describe('AuthService', () => {
 
   describe('getCurrentUser', () => {
     it('should return current user observable', (done) => {
-      // Arrange
+      //arrange
       service['currentUserSubject'].next(mockUserProfile);
 
-      // Act
+      //act
       service.getCurrentUser().subscribe(user => {
-        // Assert
+        //assert
         expect(user).toEqual(mockUserProfile);
         done();
       });
@@ -190,66 +190,66 @@ describe('AuthService', () => {
 
   describe('isAuthenticated', () => {
     it('should return true for valid token', () => {
-      // Arrange
+      //arrange
       const futureExp = Math.floor(Date.now() / 1000) + 3600;
       const validToken = `header.${btoa(JSON.stringify({ exp: futureExp }))}.signature`;
       localStorage.setItem('auth_token', validToken);
 
-      // Act
+      //act
       const result = service.isAuthenticated();
 
-      // Assert
+      //assert
       expect(result).toBe(true);
     });
 
     it('should return false for expired token', () => {
-      // Arrange
+      //arrange
       const pastExp = Math.floor(Date.now() / 1000) - 3600;
       const expiredToken = `header.${btoa(JSON.stringify({ exp: pastExp }))}.signature`;
       localStorage.setItem('auth_token', expiredToken);
 
-      // Act
+      //act
       const result = service.isAuthenticated();
 
-      // Assert
+      //assert
       expect(result).toBe(false);
     });
 
     it('should return false when no token exists', () => {
-      // Arrange
+      //arrange
       localStorage.removeItem('auth_token');
 
-      // Act
+      //act
       const result = service.isAuthenticated();
 
-      // Assert
+      //assert
       expect(result).toBe(false);
     });
 
     it('should return false for invalid token format', () => {
-      // Arrange
+      //arrange
       localStorage.setItem('auth_token', 'invalid-token');
 
-      // Act
+      //act
       const result = service.isAuthenticated();
 
-      // Assert
+      //assert
       expect(result).toBe(false);
     });
   });
 
   describe('verifyEmail', () => {
     it('should verify email successfully', (done) => {
-      // Arrange
+      //arrange
       const token = 'verification-token-123';
       const mockResponse: VerificationResponse = {
         message: 'Email verified successfully',
         success: true
       };
 
-      // Act
+      //act
       service.verifyEmail(token).subscribe(response => {
-        // Assert
+        //assert
         expect(response).toEqual(mockResponse);
         done();
       });
@@ -261,14 +261,14 @@ describe('AuthService', () => {
     });
 
     it('should handle verification error', (done) => {
-      // Arrange
+      //arrange
       const token = 'invalid-token';
 
-      // Act
+      //act
       service.verifyEmail(token).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.status).toBe(400);
           done();
         }
@@ -281,13 +281,13 @@ describe('AuthService', () => {
 
   describe('resendVerificationEmail', () => {
     it('should resend verification email successfully', (done) => {
-      // Arrange
+      //arrange
       const email = 'test@example.com';
       const mockResponse = { message: 'Verification email sent' };
 
-      // Act
+      //act
       service.resendVerificationEmail(email).subscribe(response => {
-        // Assert
+        //assert
         expect(response).toEqual(mockResponse);
         done();
       });
@@ -299,14 +299,14 @@ describe('AuthService', () => {
     });
 
     it('should handle resend error', (done) => {
-      // Arrange
+      //arrange
       const email = 'nonexistent@example.com';
 
-      // Act
+      //act
       service.resendVerificationEmail(email).subscribe({
         next: () => fail('should have failed'),
         error: (error) => {
-          // Assert
+          //assert
           expect(error.status).toBe(404);
           done();
         }
@@ -319,25 +319,25 @@ describe('AuthService', () => {
 
   describe('getToken', () => {
     it('should return token from localStorage', () => {
-      // Arrange
+      //arrange
       const token = 'test-token-123';
       localStorage.setItem('auth_token', token);
 
-      // Act
+      //act
       const result = service.getToken();
 
-      // Assert
+      //assert
       expect(result).toBe(token);
     });
 
     it('should return null when no token exists', () => {
-      // Arrange
+      //arrange
       localStorage.removeItem('auth_token');
 
-      // Act
+      //act
       const result = service.getToken();
 
-      // Assert
+      //assert
       expect(result).toBeNull();
     });
   });

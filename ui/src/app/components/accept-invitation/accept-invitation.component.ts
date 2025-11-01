@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-accept-invitation',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ToolbarComponent],
   templateUrl: './accept-invitation.component.html',
   styleUrls: ['./accept-invitation.component.css']
 })

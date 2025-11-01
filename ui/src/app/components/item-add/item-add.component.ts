@@ -12,6 +12,7 @@ import { LoopService } from '../../services/loop.service';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
 import { VisibilitySelectorComponent } from '../visibility-selector/visibility-selector.component';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-item-add',
@@ -24,7 +25,8 @@ import { VisibilitySelectorComponent } from '../visibility-selector/visibility-s
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    VisibilitySelectorComponent
+    VisibilitySelectorComponent,
+    ToolbarComponent
   ],
   templateUrl: './item-add.component.html',
   styleUrls: ['./item-add.component.css']

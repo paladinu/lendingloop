@@ -55,7 +55,7 @@ public class EmailServiceTests
     [Fact]
     public void Constructor_WithValidConfiguration_ShouldInitializeSuccessfully()
     {
-        // Act & Assert
+        //act & Assert
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         Assert.NotNull(emailService);
     }
@@ -63,13 +63,13 @@ public class EmailServiceTests
     [Fact]
     public void Constructor_WithInvalidSmtpHost_ShouldThrowException()
     {
-        // Arrange
+        //arrange
         var invalidConfig = CreateTestConfiguration(new Dictionary<string, string>
         {
             ["Email:SmtpHost"] = ""
         });
 
-        // Act & Assert
+        //act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new EmailService(invalidConfig, _mockLogger.Object));
         
@@ -79,13 +79,13 @@ public class EmailServiceTests
     [Fact]
     public void Constructor_WithInvalidSmtpPort_ShouldThrowException()
     {
-        // Arrange
+        //arrange
         var invalidConfig = CreateTestConfiguration(new Dictionary<string, string>
         {
             ["Email:SmtpPort"] = "0"
         });
 
-        // Act & Assert
+        //act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new EmailService(invalidConfig, _mockLogger.Object));
         
@@ -95,13 +95,13 @@ public class EmailServiceTests
     [Fact]
     public void Constructor_WithInvalidFromEmail_ShouldThrowException()
     {
-        // Arrange
+        //arrange
         var invalidConfig = CreateTestConfiguration(new Dictionary<string, string>
         {
             ["Email:FromEmail"] = "invalid-email"
         });
 
-        // Act & Assert
+        //act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new EmailService(invalidConfig, _mockLogger.Object));
         
@@ -111,13 +111,13 @@ public class EmailServiceTests
     [Fact]
     public void Constructor_WithInvalidBaseUrl_ShouldThrowException()
     {
-        // Arrange
+        //arrange
         var invalidConfig = CreateTestConfiguration(new Dictionary<string, string>
         {
             ["Email:BaseUrl"] = "not-a-url"
         });
 
-        // Act & Assert
+        //act & Assert
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new EmailService(invalidConfig, _mockLogger.Object));
         
@@ -127,7 +127,7 @@ public class EmailServiceTests
     [Fact]
     public async Task SendVerificationEmailAsync_WithValidUser_ShouldReturnTrue()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -136,31 +136,31 @@ public class EmailServiceTests
         };
         var token = "test-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.True(result);
     }
 
     [Fact]
     public async Task SendVerificationEmailAsync_WithNullUser_ShouldReturnFalse()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var token = "test-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(null!, token);
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task SendVerificationEmailAsync_WithEmptyEmail_ShouldReturnFalse()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -169,17 +169,17 @@ public class EmailServiceTests
         };
         var token = "test-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task SendVerificationEmailAsync_WithEmptyToken_ShouldReturnFalse()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -187,17 +187,17 @@ public class EmailServiceTests
             FirstName = "John"
         };
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, "");
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task SendPasswordResetEmailAsync_WithValidUser_ShouldReturnTrue()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -206,31 +206,31 @@ public class EmailServiceTests
         };
         var token = "reset-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendPasswordResetEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.True(result);
     }
 
     [Fact]
     public async Task SendPasswordResetEmailAsync_WithNullUser_ShouldReturnFalse()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var token = "reset-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendPasswordResetEmailAsync(null!, token);
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task SendPasswordResetEmailAsync_WithEmptyEmail_ShouldReturnFalse()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -239,17 +239,17 @@ public class EmailServiceTests
         };
         var token = "reset-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendPasswordResetEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task SendPasswordResetEmailAsync_WithEmptyToken_ShouldReturnFalse()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -257,36 +257,36 @@ public class EmailServiceTests
             FirstName = "John"
         };
 
-        // Act
+        //act
         var result = await emailService.SendPasswordResetEmailAsync(user, "");
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task TestEmailConfigurationAsync_WithValidConfiguration_ShouldReturnTrue()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
 
-        // Act
+        //act
         var result = await emailService.TestEmailConfigurationAsync();
 
-        // Assert
+        //assert
         Assert.True(result);
     }
 
     [Fact]
     public void GetEmailHealthStatus_WithValidConfiguration_ShouldReturnHealthyStatus()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
 
-        // Act
+        //act
         var status = emailService.GetEmailHealthStatus();
 
-        // Assert
+        //assert
         Assert.NotNull(status);
         Assert.True(status.IsConfigured);
         Assert.True(status.TestMode);
@@ -299,7 +299,7 @@ public class EmailServiceTests
     [Fact]
     public void GetEmailHealthStatus_WithMissingCredentials_ShouldReturnNotConfigured()
     {
-        // Arrange
+        //arrange
         var configWithoutCredentials = CreateTestConfiguration(new Dictionary<string, string>
         {
             ["Email:SmtpUsername"] = "",
@@ -307,10 +307,10 @@ public class EmailServiceTests
         });
         var emailService = new EmailService(configWithoutCredentials, _mockLogger.Object);
 
-        // Act
+        //act
         var status = emailService.GetEmailHealthStatus();
 
-        // Assert
+        //assert
         Assert.NotNull(status);
         Assert.False(status.IsConfigured);
         Assert.True(status.TestMode);
@@ -329,7 +329,7 @@ public class EmailServiceTests
     [InlineData("", false)]
     public async Task SendVerificationEmailAsync_WithVariousEmailFormats_ShouldValidateCorrectly(string email, bool expectedResult)
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -338,17 +338,17 @@ public class EmailServiceTests
         };
         var token = "test-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.Equal(expectedResult, result);
     }
 
     [Fact]
     public async Task SendVerificationEmailAsync_InTestMode_ShouldLogEmailDetails()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -357,10 +357,10 @@ public class EmailServiceTests
         };
         var token = "test-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.True(result);
         // Verify that logging occurred (in a real scenario, you'd verify the log calls)
     }
@@ -368,7 +368,7 @@ public class EmailServiceTests
     [Fact]
     public async Task SendPasswordResetEmailAsync_InTestMode_ShouldLogEmailDetails()
     {
-        // Arrange
+        //arrange
         var emailService = new EmailService(_configuration, _mockLogger.Object);
         var user = new User
         {
@@ -377,10 +377,10 @@ public class EmailServiceTests
         };
         var token = "reset-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendPasswordResetEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.True(result);
         // Verify that logging occurred (in a real scenario, you'd verify the log calls)
     }

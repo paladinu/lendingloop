@@ -53,7 +53,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task CreateEmailInvitationAsync_CreatesInvitation_ForNewEmail()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitedByUserId = "user123";
         var email = "newuser@example.com";
@@ -80,10 +80,10 @@ public class LoopInvitationServiceTests
             It.IsAny<string>()))
             .ReturnsAsync(true);
 
-        // Act
+        //act
         var result = await _service.CreateEmailInvitationAsync(loopId, invitedByUserId, email);
 
-        // Assert
+        //assert
         Assert.Equal(loopId, result.LoopId);
         Assert.Equal(invitedByUserId, result.InvitedByUserId);
         Assert.Equal(email, result.InvitedEmail);
@@ -95,7 +95,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task CreateEmailInvitationAsync_ThrowsException_WhenUserIsAlreadyMember()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitedByUserId = "user123";
         var email = "existing@example.com";
@@ -106,7 +106,7 @@ public class LoopInvitationServiceTests
         _mockLoopService.Setup(s => s.IsUserLoopMemberAsync(loopId, existingUser.Id!))
             .ReturnsAsync(true);
 
-        // Act & Assert
+        //act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _service.CreateEmailInvitationAsync(loopId, invitedByUserId, email));
     }
@@ -114,7 +114,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task CreateEmailInvitationAsync_CreatesUserInvitation_WhenUserExistsButNotMember()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitedByUserId = "user123";
         var email = "existing@example.com";
@@ -130,10 +130,10 @@ public class LoopInvitationServiceTests
         _mockInvitationsCollection.Setup(c => c.InsertOneAsync(It.IsAny<LoopInvitation>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateEmailInvitationAsync(loopId, invitedByUserId, email);
 
-        // Assert
+        //assert
         Assert.Equal(loopId, result.LoopId);
         Assert.Equal(existingUser.Id, result.InvitedUserId);
         Assert.Equal(email, result.InvitedEmail);
@@ -142,7 +142,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task CreateUserInvitationAsync_CreatesInvitation_ForExistingUser()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitedByUserId = "user123";
         var invitedUserId = "user456";
@@ -156,10 +156,10 @@ public class LoopInvitationServiceTests
         _mockInvitationsCollection.Setup(c => c.InsertOneAsync(It.IsAny<LoopInvitation>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateUserInvitationAsync(loopId, invitedByUserId, invitedUserId);
 
-        // Assert
+        //assert
         Assert.Equal(loopId, result.LoopId);
         Assert.Equal(invitedByUserId, result.InvitedByUserId);
         Assert.Equal(invitedUserId, result.InvitedUserId);
@@ -170,7 +170,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task CreateUserInvitationAsync_ThrowsException_WhenUserIsAlreadyMember()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitedByUserId = "user123";
         var invitedUserId = "user456";
@@ -178,7 +178,7 @@ public class LoopInvitationServiceTests
         _mockLoopService.Setup(s => s.IsUserLoopMemberAsync(loopId, invitedUserId))
             .ReturnsAsync(true);
 
-        // Act & Assert
+        //act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _service.CreateUserInvitationAsync(loopId, invitedByUserId, invitedUserId));
     }
@@ -186,7 +186,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task CreateUserInvitationAsync_ThrowsException_WhenUserNotFound()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitedByUserId = "user123";
         var invitedUserId = "nonexistent";
@@ -196,7 +196,7 @@ public class LoopInvitationServiceTests
         _mockUserService.Setup(s => s.GetUserByIdAsync(invitedUserId))
             .ReturnsAsync((User)null!);
 
-        // Act & Assert
+        //act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _service.CreateUserInvitationAsync(loopId, invitedByUserId, invitedUserId));
     }
@@ -204,7 +204,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task AcceptInvitationAsync_AcceptsInvitation_WithValidToken()
     {
-        // Arrange
+        //arrange
         var token = "valid-token";
         var invitation = new LoopInvitation
         {
@@ -246,10 +246,10 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(acceptedInvitation);
 
-        // Act
+        //act
         var result = await _service.AcceptInvitationAsync(token);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Equal(InvitationStatus.Accepted, result.Status);
         Assert.NotNull(result.AcceptedAt);
@@ -258,7 +258,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task AcceptInvitationAsync_ReturnsNull_WithInvalidToken()
     {
-        // Arrange
+        //arrange
         var token = "invalid-token";
 
         var mockCursor = new Mock<IAsyncCursor<LoopInvitation>>();
@@ -272,17 +272,17 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.AcceptInvitationAsync(token);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task AcceptInvitationAsync_UsesCurrentUserId_WhenProvided()
     {
-        // Arrange
+        //arrange
         var token = "valid-token";
         var currentUserId = "currentUser123";
         var currentUser = new User { Id = currentUserId, Email = "current@example.com" };
@@ -328,10 +328,10 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(acceptedInvitation);
 
-        // Act
+        //act
         var result = await _service.AcceptInvitationAsync(token, currentUserId);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Equal(currentUserId, result.InvitedUserId);
     }
@@ -339,7 +339,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task AcceptInvitationByUserAsync_AcceptsInvitation_WhenUserMatches()
     {
-        // Arrange
+        //arrange
         var invitationId = "inv123";
         var userId = "user456";
         var invitation = new LoopInvitation
@@ -381,10 +381,10 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(acceptedInvitation);
 
-        // Act
+        //act
         var result = await _service.AcceptInvitationByUserAsync(invitationId, userId);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Equal(InvitationStatus.Accepted, result.Status);
     }
@@ -392,7 +392,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task GetPendingInvitationsForUserAsync_ReturnsInvitations_ForUser()
     {
-        // Arrange
+        //arrange
         var userId = "user123";
         var user = new User { Id = userId, Email = "user@example.com" };
         var invitations = new List<LoopInvitation>
@@ -416,17 +416,17 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetPendingInvitationsForUserAsync(userId);
 
-        // Assert
+        //assert
         Assert.Equal(2, result.Count);
     }
 
     [Fact]
     public async Task GetPendingInvitationsForLoopAsync_ReturnsInvitations_ForLoop()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var invitations = new List<LoopInvitation>
         {
@@ -446,10 +446,10 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetPendingInvitationsForLoopAsync(loopId);
 
-        // Assert
+        //assert
         Assert.Equal(2, result.Count);
         Assert.All(result, inv => Assert.Equal(loopId, inv.LoopId));
     }
@@ -457,7 +457,7 @@ public class LoopInvitationServiceTests
     [Fact]
     public async Task ExpireOldInvitationsAsync_ExpiresOldInvitations()
     {
-        // Arrange
+        //arrange
         _mockInvitationsCollection.Setup(c => c.UpdateManyAsync(
             It.IsAny<FilterDefinition<LoopInvitation>>(),
             It.IsAny<UpdateDefinition<LoopInvitation>>(),
@@ -465,10 +465,10 @@ public class LoopInvitationServiceTests
             default))
             .ReturnsAsync(new UpdateResult.Acknowledged(5, 5, null));
 
-        // Act
+        //act
         await _service.ExpireOldInvitationsAsync();
 
-        // Assert
+        //assert
         _mockInvitationsCollection.Verify(c => c.UpdateManyAsync(
             It.IsAny<FilterDefinition<LoopInvitation>>(),
             It.IsAny<UpdateDefinition<LoopInvitation>>(),

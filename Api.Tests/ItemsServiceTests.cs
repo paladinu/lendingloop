@@ -30,7 +30,7 @@ public class ItemsServiceTests
     [Fact]
     public async Task CreateItemAsync_SetsTimestamps_WhenCreatingItem()
     {
-        // Arrange
+        //arrange
         var item = new SharedItem
         {
             Name = "Test Item",
@@ -41,10 +41,10 @@ public class ItemsServiceTests
         _mockCollection.Setup(c => c.InsertOneAsync(It.IsAny<SharedItem>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateItemAsync(item);
 
-        // Assert
+        //assert
         Assert.NotEqual(default(DateTime), result.CreatedAt);
         Assert.NotEqual(default(DateTime), result.UpdatedAt);
         Assert.True((result.UpdatedAt - result.CreatedAt).TotalMilliseconds < 100, 
@@ -54,7 +54,7 @@ public class ItemsServiceTests
     [Fact]
     public async Task CreateItemAsync_PreservesItemProperties_WhenCreatingItem()
     {
-        // Arrange
+        //arrange
         var item = new SharedItem
         {
             Name = "Test Item",
@@ -68,10 +68,10 @@ public class ItemsServiceTests
         _mockCollection.Setup(c => c.InsertOneAsync(It.IsAny<SharedItem>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateItemAsync(item);
 
-        // Assert
+        //assert
         Assert.Equal("Test Item", result.Name);
         Assert.Equal("Test Description", result.Description);
         Assert.Equal("user123", result.UserId);
@@ -83,7 +83,7 @@ public class ItemsServiceTests
     [Fact]
     public async Task UpdateItemVisibilityAsync_UpdatesTimestamp_WhenUpdatingVisibility()
     {
-        // Arrange
+        //arrange
         var itemId = "item123";
         var userId = "user123";
         var loopIds = new List<string> { "loop1" };
@@ -106,10 +106,10 @@ public class ItemsServiceTests
             default))
             .ReturnsAsync(updatedItem);
 
-        // Act
+        //act
         var result = await _service.UpdateItemVisibilityAsync(itemId, userId, loopIds, false, true);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.True(result.UpdatedAt >= beforeUpdate);
     }
@@ -117,7 +117,7 @@ public class ItemsServiceTests
     [Fact]
     public async Task UpdateItemVisibilityAsync_ReturnsNull_WhenItemNotFound()
     {
-        // Arrange
+        //arrange
         var itemId = "nonexistent";
         var userId = "user123";
         var loopIds = new List<string>();
@@ -129,17 +129,17 @@ public class ItemsServiceTests
             default))
             .ReturnsAsync((SharedItem)null!);
 
-        // Act
+        //act
         var result = await _service.UpdateItemVisibilityAsync(itemId, userId, loopIds, false, false);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task UpdateItemVisibilityAsync_ReturnsNull_WhenUserDoesNotOwnItem()
     {
-        // Arrange
+        //arrange
         var itemId = "item123";
         var wrongUserId = "wrongUser";
         var loopIds = new List<string>();
@@ -151,10 +151,10 @@ public class ItemsServiceTests
             default))
             .ReturnsAsync((SharedItem)null!);
 
-        // Act
+        //act
         var result = await _service.UpdateItemVisibilityAsync(itemId, wrongUserId, loopIds, false, false);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 }

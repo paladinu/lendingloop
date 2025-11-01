@@ -68,18 +68,18 @@ describe('LoopService', () => {
   });
 
   it('should be created', () => {
-    // Assert
+    //assert
     expect(service).toBeTruthy();
   });
 
   describe('createLoop', () => {
     it('should create loop successfully', (done) => {
-      // Arrange
+      //arrange
       const loopName = 'New Loop';
 
-      // Act
+      //act
       service.createLoop(loopName).subscribe(loop => {
-        // Assert
+        //assert
         expect(loop).toEqual(mockLoop);
         done();
       });
@@ -93,12 +93,12 @@ describe('LoopService', () => {
 
   describe('getUserLoops', () => {
     it('should fetch user loops successfully', (done) => {
-      // Arrange
+      //arrange
       const mockLoops: Loop[] = [mockLoop];
 
-      // Act
+      //act
       service.getUserLoops().subscribe(loops => {
-        // Assert
+        //assert
         expect(loops).toEqual(mockLoops);
         expect(loops.length).toBe(1);
         done();
@@ -112,12 +112,12 @@ describe('LoopService', () => {
 
   describe('getLoopById', () => {
     it('should fetch loop by id successfully', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
 
-      // Act
+      //act
       service.getLoopById(loopId).subscribe(loop => {
-        // Assert
+        //assert
         expect(loop).toEqual(mockLoop);
         done();
       });
@@ -130,13 +130,13 @@ describe('LoopService', () => {
 
   describe('getLoopMembers', () => {
     it('should fetch loop members successfully', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
       const mockMembers: LoopMember[] = [mockLoopMember];
 
-      // Act
+      //act
       service.getLoopMembers(loopId).subscribe(members => {
-        // Assert
+        //assert
         expect(members).toEqual(mockMembers);
         expect(members.length).toBe(1);
         done();
@@ -150,13 +150,13 @@ describe('LoopService', () => {
 
   describe('getLoopItems', () => {
     it('should fetch loop items without search', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
       const mockResponse = { items: [mockItem], totalCount: 1 };
 
-      // Act
+      //act
       service.getLoopItems(loopId).subscribe(response => {
-        // Assert
+        //assert
         expect(response).toEqual(mockResponse);
         expect(response.items.length).toBe(1);
         expect(response.totalCount).toBe(1);
@@ -169,14 +169,14 @@ describe('LoopService', () => {
     });
 
     it('should fetch loop items with search parameter', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
       const searchTerm = 'test';
       const mockResponse = { items: [mockItem], totalCount: 1 };
 
-      // Act
+      //act
       service.getLoopItems(loopId, searchTerm).subscribe(response => {
-        // Assert
+        //assert
         expect(response).toEqual(mockResponse);
         done();
       });
@@ -189,13 +189,13 @@ describe('LoopService', () => {
 
   describe('inviteByEmail', () => {
     it('should invite user by email successfully', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
       const email = 'invited@example.com';
 
-      // Act
+      //act
       service.inviteByEmail(loopId, email).subscribe(invitation => {
-        // Assert
+        //assert
         expect(invitation).toEqual(mockInvitation);
         done();
       });
@@ -209,13 +209,13 @@ describe('LoopService', () => {
 
   describe('inviteUser', () => {
     it('should invite user by userId successfully', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
       const userId = 'user2';
 
-      // Act
+      //act
       service.inviteUser(loopId, userId).subscribe(invitation => {
-        // Assert
+        //assert
         expect(invitation).toEqual(mockInvitation);
         done();
       });
@@ -229,13 +229,13 @@ describe('LoopService', () => {
 
   describe('getPotentialInvitees', () => {
     it('should fetch potential invitees successfully', (done) => {
-      // Arrange
+      //arrange
       const loopId = 'loop1';
       const mockPotentialInvitees: LoopMember[] = [mockLoopMember];
 
-      // Act
+      //act
       service.getPotentialInvitees(loopId).subscribe(invitees => {
-        // Assert
+        //assert
         expect(invitees).toEqual(mockPotentialInvitees);
         expect(invitees.length).toBe(1);
         done();
@@ -249,12 +249,12 @@ describe('LoopService', () => {
 
   describe('acceptInvitationByToken', () => {
     it('should accept invitation by token successfully', (done) => {
-      // Arrange
+      //arrange
       const token = 'token123';
 
-      // Act
+      //act
       service.acceptInvitationByToken(token).subscribe(invitation => {
-        // Assert
+        //assert
         expect(invitation).toEqual(mockInvitation);
         done();
       });
@@ -268,12 +268,12 @@ describe('LoopService', () => {
 
   describe('acceptInvitationByUser', () => {
     it('should accept invitation by user successfully', (done) => {
-      // Arrange
+      //arrange
       const invitationId = 'inv1';
 
-      // Act
+      //act
       service.acceptInvitationByUser(invitationId).subscribe(invitation => {
-        // Assert
+        //assert
         expect(invitation).toEqual(mockInvitation);
         done();
       });
@@ -287,12 +287,12 @@ describe('LoopService', () => {
 
   describe('getPendingInvitations', () => {
     it('should fetch pending invitations successfully', (done) => {
-      // Arrange
+      //arrange
       const mockInvitations: LoopInvitation[] = [mockInvitation];
 
-      // Act
+      //act
       service.getPendingInvitations().subscribe(invitations => {
-        // Assert
+        //assert
         expect(invitations).toEqual(mockInvitations);
         expect(invitations.length).toBe(1);
         done();

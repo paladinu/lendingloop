@@ -207,6 +207,23 @@
   - Update item creation to associate with authenticated user
   - _Requirements: 4.4, 7.2_
 
+- [x] 7.4 Create reusable ToolbarComponent for user information and logout
+
+
+
+
+
+
+
+  - Extract toolbar from MainComponent into a standalone, reusable ToolbarComponent
+  - Component should display user's first and last name with dropdown menu
+  - Include logout button with proper functionality in the dropdown
+  - Add navigation buttons for Loops and Invitations
+  - Integrate toolbar into all authenticated pages (MainComponent, LoopListComponent, LoopDetailComponent, LoopCreateComponent, LoopInviteComponent, LoopInvitationsComponent, LoopMembersComponent, ItemAddComponent, ItemVisibilityComponent, AcceptInvitationComponent)
+  - Ensure consistent appearance and functionality across the application
+  - Remove duplicate toolbar code from MainComponent after extraction
+  - _Requirements: 8.1, 8.2, 8.3, 8.4_
+
 - [-] 8. Implement email service for verification
 
 
@@ -252,20 +269,30 @@
   - Update CORS settings for authentication endpoints
   - _Requirements: 2.2, 7.3, 7.4_
 
-- [ ]* 10. Testing and validation
-- [ ]* 10.1 Create unit tests for authentication services
+- [x] 10. Testing and validation
+
+
+
+
+- [x] 10.1 Create unit tests for authentication services
+
+
   - Write tests for password validation logic
   - Test JWT token generation and validation
   - Test user registration and login flows
   - _Requirements: All requirements_
 
-- [ ]* 10.2 Create integration tests for authentication API
+- [x] 10.2 Create integration tests for authentication API
+
+
   - Test complete registration and verification flow
   - Test login and logout functionality
   - Test protected route access and authorization
   - _Requirements: All requirements_
 
-- [ ]* 10.3 Create end-to-end tests for authentication UI
+- [x] 10.3 Create end-to-end tests for authentication UI
+
+
   - Test user registration through UI
   - Test login and logout through UI
   - Test protected route navigation and access

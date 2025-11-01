@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
 import { LoopInvitation } from '../../models/loop-invitation.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-loop-invitations',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ToolbarComponent],
   templateUrl: './loop-invitations.component.html',
   styleUrls: ['./loop-invitations.component.css']
 })

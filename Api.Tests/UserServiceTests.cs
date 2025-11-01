@@ -30,7 +30,7 @@ public class UserServiceTests
     [Fact]
     public async Task GetUserByEmailAsync_ReturnsUser_WhenUserExists()
     {
-        // Arrange
+        //arrange
         var email = "test@example.com";
         var expectedUser = new User { Id = "user123", Email = email };
 
@@ -49,10 +49,10 @@ public class UserServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetUserByEmailAsync(email);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Equal(email, result.Email);
         Assert.Equal("user123", result.Id);
@@ -61,7 +61,7 @@ public class UserServiceTests
     [Fact]
     public async Task GetUserByEmailAsync_ReturnsNull_WhenUserDoesNotExist()
     {
-        // Arrange
+        //arrange
         var email = "nonexistent@example.com";
 
         var mockCursor = new Mock<IAsyncCursor<User>>();
@@ -77,17 +77,17 @@ public class UserServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetUserByEmailAsync(email);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task GetUserByIdAsync_ReturnsUser_WhenUserExists()
     {
-        // Arrange
+        //arrange
         var userId = "user123";
         var expectedUser = new User { Id = userId, Email = "test@example.com" };
 
@@ -106,10 +106,10 @@ public class UserServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetUserByIdAsync(userId);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Equal(userId, result.Id);
     }
@@ -117,7 +117,7 @@ public class UserServiceTests
     [Fact]
     public async Task CreateUserAsync_SetsTimestamps_WhenCreatingUser()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Email = "newuser@example.com",
@@ -129,10 +129,10 @@ public class UserServiceTests
         _mockCollection.Setup(c => c.InsertOneAsync(It.IsAny<User>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateUserAsync(user);
 
-        // Assert
+        //assert
         Assert.NotEqual(default(DateTime), result.CreatedAt);
         Assert.NotEqual(default(DateTime), result.UpdatedAt);
         Assert.True((result.UpdatedAt - result.CreatedAt).TotalMilliseconds < 100);
@@ -141,7 +141,7 @@ public class UserServiceTests
     [Fact]
     public async Task CreateUserAsync_PreservesUserProperties_WhenCreatingUser()
     {
-        // Arrange
+        //arrange
         var user = new User
         {
             Email = "newuser@example.com",
@@ -154,10 +154,10 @@ public class UserServiceTests
         _mockCollection.Setup(c => c.InsertOneAsync(It.IsAny<User>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateUserAsync(user);
 
-        // Assert
+        //assert
         Assert.Equal("newuser@example.com", result.Email);
         Assert.Equal("hashedpassword", result.PasswordHash);
         Assert.Equal("John", result.FirstName);
@@ -168,7 +168,7 @@ public class UserServiceTests
     [Fact]
     public async Task UpdateUserAsync_UpdatesTimestamp_WhenUpdatingUser()
     {
-        // Arrange
+        //arrange
         var userId = "user123";
         var user = new User
         {
@@ -184,10 +184,10 @@ public class UserServiceTests
             default))
             .ReturnsAsync(new ReplaceOneResult.Acknowledged(1, 1, null));
 
-        // Act
+        //act
         var result = await _service.UpdateUserAsync(userId, user);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.NotEqual(default(DateTime), result.UpdatedAt);
     }
@@ -195,7 +195,7 @@ public class UserServiceTests
     [Fact]
     public async Task UpdateUserAsync_ReturnsNull_WhenUserNotFound()
     {
-        // Arrange
+        //arrange
         var userId = "nonexistent";
         var user = new User { Email = "test@example.com" };
 
@@ -206,17 +206,17 @@ public class UserServiceTests
             default))
             .ReturnsAsync(new ReplaceOneResult.Acknowledged(0, 0, null));
 
-        // Act
+        //act
         var result = await _service.UpdateUserAsync(userId, user);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task DeleteUserAsync_ReturnsTrue_WhenUserDeleted()
     {
-        // Arrange
+        //arrange
         var userId = "user123";
 
         _mockCollection.Setup(c => c.DeleteOneAsync(
@@ -224,17 +224,17 @@ public class UserServiceTests
             default))
             .ReturnsAsync(new DeleteResult.Acknowledged(1));
 
-        // Act
+        //act
         var result = await _service.DeleteUserAsync(userId);
 
-        // Assert
+        //assert
         Assert.True(result);
     }
 
     [Fact]
     public async Task DeleteUserAsync_ReturnsFalse_WhenUserNotFound()
     {
-        // Arrange
+        //arrange
         var userId = "nonexistent";
 
         _mockCollection.Setup(c => c.DeleteOneAsync(
@@ -242,17 +242,17 @@ public class UserServiceTests
             default))
             .ReturnsAsync(new DeleteResult.Acknowledged(0));
 
-        // Act
+        //act
         var result = await _service.DeleteUserAsync(userId);
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task VerifyEmailAsync_VerifiesUser_WhenTokenIsValid()
     {
-        // Arrange
+        //arrange
         var token = "valid-token";
         var verifiedUser = new User
         {
@@ -270,10 +270,10 @@ public class UserServiceTests
             default))
             .ReturnsAsync(verifiedUser);
 
-        // Act
+        //act
         var result = await _service.VerifyEmailAsync(token);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.True(result.IsEmailVerified);
         Assert.Null(result.EmailVerificationToken);
@@ -283,7 +283,7 @@ public class UserServiceTests
     [Fact]
     public async Task VerifyEmailAsync_ReturnsNull_WhenTokenIsInvalid()
     {
-        // Arrange
+        //arrange
         var token = "invalid-token";
 
         _mockCollection.Setup(c => c.FindOneAndUpdateAsync(
@@ -293,17 +293,17 @@ public class UserServiceTests
             default))
             .ReturnsAsync((User)null!);
 
-        // Act
+        //act
         var result = await _service.VerifyEmailAsync(token);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task VerifyEmailAsync_ReturnsNull_WhenTokenIsExpired()
     {
-        // Arrange
+        //arrange
         var token = "expired-token";
 
         _mockCollection.Setup(c => c.FindOneAndUpdateAsync(
@@ -313,10 +313,10 @@ public class UserServiceTests
             default))
             .ReturnsAsync((User)null!);
 
-        // Act
+        //act
         var result = await _service.VerifyEmailAsync(token);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 }

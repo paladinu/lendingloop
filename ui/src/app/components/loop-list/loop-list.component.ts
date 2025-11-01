@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
 import { Loop } from '../../models/loop.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-loop-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ToolbarComponent],
   templateUrl: './loop-list.component.html',
   styleUrls: ['./loop-list.component.css']
 })

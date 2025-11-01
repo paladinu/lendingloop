@@ -7,11 +7,12 @@ import { LoopService } from '../../services/loop.service';
 import { ItemsService } from '../../services/items.service';
 import { Loop } from '../../models/loop.interface';
 import { SharedItem } from '../../models/shared-item.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-item-visibility',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToolbarComponent],
   templateUrl: './item-visibility.component.html',
   styleUrls: ['./item-visibility.component.css']
 })

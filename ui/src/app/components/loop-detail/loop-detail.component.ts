@@ -5,11 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
 import { Loop } from '../../models/loop.interface';
 import { SharedItem } from '../../models/shared-item.interface';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-loop-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToolbarComponent],
   templateUrl: './loop-detail.component.html',
   styleUrls: ['./loop-detail.component.css']
 })

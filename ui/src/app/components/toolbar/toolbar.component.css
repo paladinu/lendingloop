@@ -1,0 +1,56 @@
+/* Toolbar styles */
+.app-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.toolbar-spacer {
+    flex: 1 1 auto;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 8px;
+}
+
+.user-menu-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-name {
+    font-size: 0.9rem;
+}
+
+.user-info {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.user-name-large {
+    font-weight: 500;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+.user-email {
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .user-name {
+        display: none;
+    }
+}

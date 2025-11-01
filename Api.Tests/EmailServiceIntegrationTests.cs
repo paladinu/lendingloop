@@ -45,7 +45,7 @@ public class EmailServiceIntegrationTests
     [Fact]
     public async Task SendVerificationEmailAsync_WithoutCredentials_ShouldReturnTrueInDevelopmentMode()
     {
-        // Arrange
+        //arrange
         var configuration = CreateIntegrationTestConfiguration();
         var emailService = new EmailService(configuration, _mockLogger.Object);
         var user = new User
@@ -56,10 +56,10 @@ public class EmailServiceIntegrationTests
         };
         var token = "integration-test-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         // Should return true because when credentials are empty, it logs the email instead of sending
         Assert.True(result);
     }
@@ -67,7 +67,7 @@ public class EmailServiceIntegrationTests
     [Fact]
     public async Task SendPasswordResetEmailAsync_WithoutCredentials_ShouldReturnTrueInDevelopmentMode()
     {
-        // Arrange
+        //arrange
         var configuration = CreateIntegrationTestConfiguration();
         var emailService = new EmailService(configuration, _mockLogger.Object);
         var user = new User
@@ -78,10 +78,10 @@ public class EmailServiceIntegrationTests
         };
         var token = "integration-reset-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendPasswordResetEmailAsync(user, token);
 
-        // Assert
+        //assert
         // Should return true because when credentials are empty, it logs the email instead of sending
         Assert.True(result);
     }
@@ -89,14 +89,14 @@ public class EmailServiceIntegrationTests
     [Fact]
     public async Task TestEmailConfigurationAsync_WithoutCredentials_ShouldReturnTrueInDevelopmentMode()
     {
-        // Arrange
+        //arrange
         var configuration = CreateIntegrationTestConfiguration();
         var emailService = new EmailService(configuration, _mockLogger.Object);
 
-        // Act
+        //act
         var result = await emailService.TestEmailConfigurationAsync();
 
-        // Assert
+        //assert
         // Should return true because when credentials are empty, it logs the email instead of sending
         Assert.True(result);
     }
@@ -104,14 +104,14 @@ public class EmailServiceIntegrationTests
     [Fact]
     public void GetEmailHealthStatus_WithIntegrationConfiguration_ShouldReturnCorrectStatus()
     {
-        // Arrange
+        //arrange
         var configuration = CreateIntegrationTestConfiguration();
         var emailService = new EmailService(configuration, _mockLogger.Object);
 
-        // Act
+        //act
         var status = emailService.GetEmailHealthStatus();
 
-        // Assert
+        //assert
         Assert.NotNull(status);
         Assert.False(status.IsConfigured); // False because credentials are empty
         Assert.False(status.TestMode);
@@ -124,7 +124,7 @@ public class EmailServiceIntegrationTests
     [Fact]
     public async Task EmailService_WithRetryLogic_ShouldHandleFailuresGracefully()
     {
-        // Arrange
+        //arrange
         var configuration = CreateIntegrationTestConfiguration();
         var emailService = new EmailService(configuration, _mockLogger.Object);
         var user = new User
@@ -134,17 +134,17 @@ public class EmailServiceIntegrationTests
         };
         var token = "test-token";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.False(result); // Should fail due to invalid email format
     }
 
     [Fact]
     public async Task EmailService_WithLongTimeout_ShouldHandleTimeoutGracefully()
     {
-        // Arrange
+        //arrange
         var settings = new Dictionary<string, string>
         {
             ["Email:SmtpHost"] = "nonexistent.smtp.server.com", // Non-existent server
@@ -175,10 +175,10 @@ public class EmailServiceIntegrationTests
         };
         var token = "test-token";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.False(result); // Should fail due to non-existent SMTP server
     }
 
@@ -192,7 +192,7 @@ public class EmailServiceIntegrationTests
         // This test would require real SMTP credentials to be configured
         // It should only be run manually with proper credentials
         
-        // Arrange
+        //arrange
         var settings = new Dictionary<string, string>
         {
             ["Email:SmtpHost"] = "smtp.gmail.com",
@@ -224,10 +224,10 @@ public class EmailServiceIntegrationTests
         };
         var token = "real-verification-token-123";
 
-        // Act
+        //act
         var result = await emailService.SendVerificationEmailAsync(user, token);
 
-        // Assert
+        //assert
         Assert.True(result);
     }
     */

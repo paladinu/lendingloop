@@ -3,10 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDividerModule } from '@angular/material/divider';
 import { ItemsService } from '../../services/items.service';
 import { AuthService } from '../../services/auth.service';
 import { LoopService } from '../../services/loop.service';
@@ -14,6 +11,7 @@ import { SharedItem } from '../../models/shared-item.interface';
 import { UserProfile } from '../../models/auth.interface';
 import { Loop } from '../../models/loop.interface';
 import { ItemCardComponent } from '../item-card/item-card.component';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
   selector: 'app-main',
@@ -23,17 +21,14 @@ import { ItemCardComponent } from '../item-card/item-card.component';
     RouterModule,
     MatCardModule,
     MatButtonModule,
-    MatToolbarModule,
     MatIconModule,
-    MatMenuModule,
-    MatDividerModule,
-    ItemCardComponent
+    ItemCardComponent,
+    ToolbarComponent
   ],
   templateUrl: './main.component.html',
   styleUrl: './main.component.css'
 })
 export class MainComponent implements OnInit {
-  title = 'Shared Items Manager';
   items: SharedItem[] = [];
   loading: boolean = false;
   error: string = '';
@@ -62,8 +57,6 @@ export class MainComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading current user:', err);
-        // If we can't get the current user, redirect to login
-        this.logout();
       }
     });
   }
@@ -83,18 +76,6 @@ export class MainComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
-
-  getUserDisplayName(): string {
-    if (this.currentUser) {
-      return `${this.currentUser.firstName} ${this.currentUser.lastName}`;
-    }
-    return 'User';
   }
 
   loadLoops(): void {

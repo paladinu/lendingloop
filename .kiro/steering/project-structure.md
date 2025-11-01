@@ -63,9 +63,9 @@ public class ItemsServiceTests
     [Fact]
     public async Task GetItemByIdAsync_ReturnsItem_WhenItemExists()
     {
-        // arrange
-        // act
-        // assert
+        //arrange
+        //act
+        //assert
     }
 }
 ```
@@ -83,9 +83,9 @@ Example test structure:
 ```typescript
 describe('ItemsService', () => {
   it('should fetch items successfully', () => {
-    // arrange
-    // act
-    // assert
+    //arrange
+    //act
+    //assert
   });
 });
 ```
@@ -97,9 +97,9 @@ describe('ItemsService', () => {
 
 ### Testing Best Practices
 - **ALL tests MUST follow the Arrange-Act-Assert (AAA) pattern with comments**
-  - Use `// Arrange` for test setup and initialization
-  - Use `// Act` for executing the method under test
-  - Use `// Assert` for verifying the results
+  - Use `//arrange` for test setup and initialization
+  - Use `//act` for executing the method under test
+  - Use `//assert` for verifying the results
 - Write tests for new features before marking tasks as complete
 - Keep tests focused and isolated
 - Use descriptive test names that explain what is being tested

@@ -39,17 +39,17 @@ public class LoopServiceTests
     [Fact]
     public async Task CreateLoopAsync_CreatesLoop_WithCreatorAsMember()
     {
-        // Arrange
+        //arrange
         var name = "Test Loop";
         var creatorId = "user123";
 
         _mockLoopsCollection.Setup(c => c.InsertOneAsync(It.IsAny<Loop>(), null, default))
             .Returns(Task.CompletedTask);
 
-        // Act
+        //act
         var result = await _service.CreateLoopAsync(name, creatorId);
 
-        // Assert
+        //assert
         Assert.Equal(name, result.Name);
         Assert.Equal(creatorId, result.CreatorId);
         Assert.Contains(creatorId, result.MemberIds);
@@ -61,7 +61,7 @@ public class LoopServiceTests
     [Fact]
     public async Task GetLoopByIdAsync_ReturnsLoop_WhenLoopExists()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var expectedLoop = new Loop { Id = loopId, Name = "Test Loop" };
 
@@ -80,10 +80,10 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetLoopByIdAsync(loopId);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Equal(loopId, result.Id);
     }
@@ -91,7 +91,7 @@ public class LoopServiceTests
     [Fact]
     public async Task GetLoopByIdAsync_ReturnsNull_WhenLoopDoesNotExist()
     {
-        // Arrange
+        //arrange
         var loopId = "nonexistent";
 
         var mockCursor = new Mock<IAsyncCursor<Loop>>();
@@ -105,17 +105,17 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetLoopByIdAsync(loopId);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task GetUserLoopsAsync_ReturnsLoops_WhenUserIsMember()
     {
-        // Arrange
+        //arrange
         var userId = "user123";
         var loops = new List<Loop>
         {
@@ -138,10 +138,10 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetUserLoopsAsync(userId);
 
-        // Assert
+        //assert
         Assert.Equal(2, result.Count);
         Assert.All(result, loop => Assert.Contains(userId, loop.MemberIds));
     }
@@ -149,7 +149,7 @@ public class LoopServiceTests
     [Fact]
     public async Task GetLoopMembersAsync_ReturnsMembers_WhenLoopExists()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var memberIds = new List<string> { "user1", "user2" };
         var loop = new Loop { Id = loopId, MemberIds = memberIds };
@@ -183,10 +183,10 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockUserCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetLoopMembersAsync(loopId);
 
-        // Assert
+        //assert
         Assert.Equal(2, result.Count);
         Assert.Contains(result, u => u.Id == "user1");
         Assert.Contains(result, u => u.Id == "user2");
@@ -195,7 +195,7 @@ public class LoopServiceTests
     [Fact]
     public async Task GetLoopMembersAsync_ReturnsEmptyList_WhenLoopDoesNotExist()
     {
-        // Arrange
+        //arrange
         var loopId = "nonexistent";
 
         var mockCursor = new Mock<IAsyncCursor<Loop>>();
@@ -209,17 +209,17 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetLoopMembersAsync(loopId);
 
-        // Assert
+        //assert
         Assert.Empty(result);
     }
 
     [Fact]
     public async Task IsUserLoopMemberAsync_ReturnsTrue_WhenUserIsMember()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var userId = "user123";
         var loop = new Loop { Id = loopId, MemberIds = new List<string> { userId } };
@@ -236,17 +236,17 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.IsUserLoopMemberAsync(loopId, userId);
 
-        // Assert
+        //assert
         Assert.True(result);
     }
 
     [Fact]
     public async Task IsUserLoopMemberAsync_ReturnsFalse_WhenUserIsNotMember()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var userId = "user123";
         var loop = new Loop { Id = loopId, MemberIds = new List<string> { "otherUser" } };
@@ -263,17 +263,17 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockCursor.Object);
 
-        // Act
+        //act
         var result = await _service.IsUserLoopMemberAsync(loopId, userId);
 
-        // Assert
+        //assert
         Assert.False(result);
     }
 
     [Fact]
     public async Task AddMemberToLoopAsync_AddsUser_WhenLoopExists()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var userId = "user123";
         var updatedLoop = new Loop
@@ -289,10 +289,10 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(updatedLoop);
 
-        // Act
+        //act
         var result = await _service.AddMemberToLoopAsync(loopId, userId);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.Contains(userId, result.MemberIds);
     }
@@ -300,7 +300,7 @@ public class LoopServiceTests
     [Fact]
     public async Task AddMemberToLoopAsync_ReturnsNull_WhenLoopDoesNotExist()
     {
-        // Arrange
+        //arrange
         var loopId = "nonexistent";
         var userId = "user123";
 
@@ -311,17 +311,17 @@ public class LoopServiceTests
             default))
             .ReturnsAsync((Loop)null!);
 
-        // Act
+        //act
         var result = await _service.AddMemberToLoopAsync(loopId, userId);
 
-        // Assert
+        //assert
         Assert.Null(result);
     }
 
     [Fact]
     public async Task RemoveMemberFromLoopAsync_RemovesUser_WhenLoopExists()
     {
-        // Arrange
+        //arrange
         var loopId = "loop123";
         var userId = "user123";
         var updatedLoop = new Loop
@@ -337,10 +337,10 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(updatedLoop);
 
-        // Act
+        //act
         var result = await _service.RemoveMemberFromLoopAsync(loopId, userId);
 
-        // Assert
+        //assert
         Assert.NotNull(result);
         Assert.DoesNotContain(userId, result.MemberIds);
     }
@@ -348,7 +348,7 @@ public class LoopServiceTests
     [Fact]
     public async Task GetPotentialInviteesFromOtherLoopsAsync_ReturnsUsers_FromOtherLoops()
     {
-        // Arrange
+        //arrange
         var userId = "user123";
         var currentLoopId = "loop1";
         var userLoops = new List<Loop>
@@ -397,10 +397,10 @@ public class LoopServiceTests
             default))
             .ReturnsAsync(mockUsersCursor.Object);
 
-        // Act
+        //act
         var result = await _service.GetPotentialInviteesFromOtherLoopsAsync(userId, currentLoopId);
 
-        // Assert
+        //assert
         Assert.Equal(2, result.Count);
         Assert.Contains(result, u => u.Id == "user3");
         Assert.Contains(result, u => u.Id == "user4");
