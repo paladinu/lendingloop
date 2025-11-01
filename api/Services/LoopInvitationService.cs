@@ -12,6 +12,7 @@ public class LoopInvitationService : ILoopInvitationService
     private readonly IUserService _userService;
     private readonly IEmailService _emailService;
     private readonly ILogger<LoopInvitationService> _logger;
+    private readonly IConfiguration _configuration;
 
     public LoopInvitationService(
         IMongoDatabase database,
@@ -30,6 +31,7 @@ public class LoopInvitationService : ILoopInvitationService
         _userService = userService;
         _emailService = emailService;
         _logger = logger;
+        _configuration = configuration;
         
         // Ensure indexes are created when service is instantiated
         _ = Task.Run(EnsureIndexesAsync);
@@ -66,6 +68,16 @@ public class LoopInvitationService : ILoopInvitationService
 
         await _invitationsCollection.InsertOneAsync(invitation);
         _logger.LogInformation("Email invitation created for {Email} to loop {LoopId}", email, loopId);
+
+        // In development, log the invitation token and acceptance URL
+        var environment = _configuration["ASPNETCORE_ENVIRONMENT"] ?? "Development";
+        if (environment == "Development")
+        {
+            var baseUrl = _configuration["Email:BaseUrl"] ?? "http://localhost:4200";
+            var acceptanceUrl = $"{baseUrl}/loops/accept-invitation?token={invitation.InvitationToken}";
+            _logger.LogInformation("🔗 DEV MODE: Invitation token: {Token}", invitation.InvitationToken);
+            _logger.LogInformation("🔗 DEV MODE: Acceptance URL: {Url}", acceptanceUrl);
+        }
 
         // Send invitation email
         var loop = await _loopService.GetLoopByIdAsync(loopId);
