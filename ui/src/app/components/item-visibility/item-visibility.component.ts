@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { LoopService } from '../../services/loop.service';
 import { ItemsService } from '../../services/items.service';
 import { Loop } from '../../models/loop.interface';
@@ -41,22 +42,27 @@ export class ItemVisibilityComponent implements OnInit {
 
   loadData(): void {
     this.loading = true;
-    Promise.all([
-      this.loopService.getUserLoops().toPromise(),
-      this.itemsService.getItemById(this.itemId!).toPromise()
-    ]).then(([loops, item]) => {
-      this.loops = loops || [];
-      this.item = item || null;
-      if (this.item) {
-        this.selectedLoopIds = new Set(this.item.visibleToLoopIds);
-        this.visibleToAllLoops = this.item.visibleToAllLoops;
-        this.visibleToFutureLoops = this.item.visibleToFutureLoops;
+    this.error = null;
+    
+    forkJoin({
+      loops: this.loopService.getUserLoops(),
+      item: this.itemsService.getItemById(this.itemId!)
+    }).subscribe({
+      next: ({ loops, item }) => {
+        this.loops = loops || [];
+        this.item = item || null;
+        if (this.item) {
+          this.selectedLoopIds = new Set(this.item.visibleToLoopIds);
+          this.visibleToAllLoops = this.item.visibleToAllLoops;
+          this.visibleToFutureLoops = this.item.visibleToFutureLoops;
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Failed to load data. Please try again.';
+        this.loading = false;
+        console.error('Error loading data:', err);
       }
-      this.loading = false;
-    }).catch(err => {
-      this.error = 'Failed to load data';
-      this.loading = false;
-      console.error('Error loading data:', err);
     });
   }
 
@@ -85,7 +91,7 @@ export class ItemVisibilityComponent implements OnInit {
         this.success = 'Visibility settings updated successfully';
         this.loading = false;
         setTimeout(() => {
-          this.router.navigate(['/items']);
+          this.router.navigate(['/']);
         }, 1500);
       },
       error: (err) => {
@@ -96,6 +102,37 @@ export class ItemVisibilityComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/items']);
+    this.router.navigate(['/']);
+  }
+
+  get hasNoVisibility(): boolean {
+    return !this.visibleToAllLoops && this.selectedLoopIds.size === 0;
+  }
+
+  validateAndSave(): void {
+    if (this.hasNoVisibility) {
+      const confirmed = confirm('This item will not be visible in any loops. Are you sure you want to continue?');
+      if (!confirmed) {
+        return;
+      }
+    }
+    this.onSubmit();
+  }
+
+  getLoopName(loopId: string): string {
+    const loop = this.loops.find(l => l.id === loopId);
+    return loop ? loop.name : 'Unknown Loop';
+  }
+
+  getLoopMemberCount(loopId: string): number | undefined {
+    const loop = this.loops.find(l => l.id === loopId);
+    return loop?.memberCount;
+  }
+
+  onAllLoopsChange(): void {
+    if (this.visibleToAllLoops) {
+      // Clear specific selections when "all loops" is enabled
+      this.selectedLoopIds.clear();
+    }
   }
 }

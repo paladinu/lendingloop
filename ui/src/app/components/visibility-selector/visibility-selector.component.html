@@ -1,0 +1,65 @@
+<div class="visibility-selector">
+  <div class="loops-section" *ngIf="loops.length > 0">
+    <h4>Select Loops</h4>
+    <div class="loop-checkboxes">
+      <div *ngFor="let loop of loops" class="checkbox-item">
+        <input 
+          type="checkbox" 
+          [id]="'loop-' + loop.id"
+          [checked]="isLoopSelected(loop.id)"
+          (change)="toggleLoop(loop.id)"
+          [disabled]="visibleToAllLoops"
+          [attr.aria-label]="'Share with ' + loop.name"
+        />
+        <label [for]="'loop-' + loop.id">
+          {{ loop.name }}
+          <span class="member-count" *ngIf="loop.memberCount">
+            ({{ loop.memberCount }} member{{ loop.memberCount !== 1 ? 's' : '' }})
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <div class="options-section">
+    <h4>Visibility Options</h4>
+    <div class="checkbox-item">
+      <input 
+        type="checkbox" 
+        id="allLoops"
+        [(ngModel)]="visibleToAllLoops"
+        (ngModelChange)="onAllLoopsChange()"
+        aria-label="Visible to all current loops"
+      />
+      <label for="allLoops">
+        Visible to all current loops
+        <span class="help-text">Automatically shares with all loops you're currently in</span>
+      </label>
+    </div>
+    <div class="checkbox-item">
+      <input 
+        type="checkbox" 
+        id="futureLoops"
+        [(ngModel)]="visibleToFutureLoops"
+        (ngModelChange)="onFutureLoopsChange()"
+        aria-label="Automatically add to future loops"
+      />
+      <label for="futureLoops">
+        Automatically add to future loops
+        <span class="help-text">Item will be visible in loops you join later</span>
+      </label>
+    </div>
+  </div>
+  
+  <div class="no-loops-message" *ngIf="loops.length === 0">
+    <p class="info-text">
+      <strong>You haven't joined any loops yet.</strong>
+    </p>
+    <p>To share items with others, you need to be part of at least one loop.</p>
+    <div class="action-links">
+      <a routerLink="/loops/create" class="action-link">Create a loop</a>
+      <span class="separator">or</span>
+      <a routerLink="/loops/invitations" class="action-link">check your invitations</a>
+    </div>
+  </div>
+</div>

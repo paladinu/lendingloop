@@ -1,0 +1,43 @@
+<mat-card class="item-card">
+  <img *ngIf="item.imageUrl" mat-card-image [src]="item.imageUrl" [alt]="item.name" class="item-image" />
+  
+  <mat-card-header>
+    <mat-card-title>{{ item.name }}</mat-card-title>
+    <mat-card-subtitle *ngIf="item.description">{{ item.description }}</mat-card-subtitle>
+  </mat-card-header>
+  
+  <mat-card-content>
+    <div class="item-details">
+      <div class="status-row">
+        <mat-chip [highlighted]="item.isAvailable" class="status-chip">
+          {{ item.isAvailable ? 'Available' : 'Not Available' }}
+        </mat-chip>
+      </div>
+      
+      <div class="visibility-info">
+        <mat-icon class="visibility-icon">visibility</mat-icon>
+        <span class="visibility-text">{{ getVisibilityText() }}</span>
+        <mat-icon 
+          *ngIf="item.visibleToFutureLoops" 
+          class="future-loops-icon" 
+          matTooltip="Automatically added to future loops"
+          aria-label="Automatically added to future loops">
+          schedule
+        </mat-icon>
+      </div>
+      
+      <div class="loop-names" *ngIf="!item.visibleToAllLoops && getLoopNames().length > 0">
+        <span class="loop-name" *ngFor="let loopName of getLoopNames()">
+          {{ loopName }}
+        </span>
+      </div>
+    </div>
+  </mat-card-content>
+  
+  <mat-card-actions *ngIf="isOwner">
+    <button mat-button (click)="onEditVisibility()" class="edit-visibility-btn">
+      <mat-icon>edit</mat-icon>
+      Edit Visibility
+    </button>
+  </mat-card-actions>
+</mat-card>

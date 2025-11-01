@@ -1,0 +1,110 @@
+<div class="item-add-container">
+  <!-- Breadcrumb Navigation -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">Add Item</span>
+  </nav>
+
+  <h1>Add New Item</h1>
+  <p class="subtitle">Share an item with your loops</p>
+
+  <!-- Success message -->
+  <div *ngIf="success" class="success-message" role="alert">
+    ✓ {{ success }}
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="error-message" role="alert">
+    ✗ {{ error }}
+  </div>
+
+  <mat-card class="add-item-card">
+    <mat-card-content>
+      <form (ngSubmit)="addItem()" class="add-item-form">
+        <div class="form-section">
+          <h3>Item Details</h3>
+          
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Item Name</mat-label>
+            <input 
+              matInput 
+              [(ngModel)]="newItemName" 
+              name="itemName" 
+              placeholder="Enter item name" 
+              required
+              [disabled]="loading"
+              aria-label="Item name"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description (optional)</mat-label>
+            <textarea 
+              matInput 
+              [(ngModel)]="newItemDescription" 
+              name="itemDescription" 
+              placeholder="Describe your item" 
+              rows="4" 
+              [disabled]="loading"
+              aria-label="Item description"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="file-input-container">
+            <label for="imageUpload" class="file-input-label">Item Image (optional)</label>
+            <input 
+              type="file" 
+              id="imageUpload" 
+              accept="image/*" 
+              (change)="onFileSelected($event)"
+              [disabled]="loading" 
+              class="file-input"
+              aria-label="Upload item image"
+            />
+            <span *ngIf="selectedImageFile" class="file-name">
+              <mat-icon class="file-icon">image</mat-icon>
+              {{ selectedImageFile.name }}
+            </span>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Visibility Settings</h3>
+          <p class="section-help">Choose which loops can see this item</p>
+          
+          <app-visibility-selector
+            [loops]="loops"
+            [selectedLoopIds]="selectedLoopIds"
+            [visibleToAllLoops]="visibleToAllLoops"
+            [visibleToFutureLoops]="visibleToFutureLoops"
+            (selectionChange)="onVisibilitySelectionChange($event)">
+          </app-visibility-selector>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            mat-button 
+            type="button" 
+            (click)="onCancel()" 
+            [disabled]="loading"
+            class="btn-cancel"
+          >
+            Cancel
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit" 
+            [disabled]="!newItemName.trim() || loading"
+            class="btn-submit"
+          >
+            <mat-icon *ngIf="!loading">add</mat-icon>
+            <span *ngIf="!loading">Add Item</span>
+            <span *ngIf="loading">Adding...</span>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

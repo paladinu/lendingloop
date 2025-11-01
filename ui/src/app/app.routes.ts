@@ -13,6 +13,7 @@ import { LoopInvitationsComponent } from './components/loop-invitations/loop-inv
 import { LoopMembersComponent } from './components/loop-members/loop-members.component';
 import { AcceptInvitationComponent } from './components/accept-invitation/accept-invitation.component';
 import { ItemVisibilityComponent } from './components/item-visibility/item-visibility.component';
+import { ItemAddComponent } from './components/item-add/item-add.component';
 
 export const routes: Routes = [
     // Authentication routes (no guard needed)
@@ -47,7 +48,12 @@ export const routes: Routes = [
         ]
     },
 
-    // Item visibility route (protected)
+    // Item routes (protected)
+    {
+        path: 'items/add',
+        component: ItemAddComponent,
+        canActivate: [AuthGuard]
+    },
     {
         path: 'items/:id/visibility',
         component: ItemVisibilityComponent,

@@ -1,0 +1,150 @@
+.visibility-selector {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.loops-section,
+.options-section {
+  margin-bottom: 20px;
+}
+
+.loops-section:last-child,
+.options-section:last-child {
+  margin-bottom: 0;
+}
+
+h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.loop-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.checkbox-item input[type="checkbox"] {
+  margin-top: 3px;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.checkbox-item input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.checkbox-item input[type="checkbox"]:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.checkbox-item label {
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.checkbox-item input[type="checkbox"]:disabled + label {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.member-count {
+  font-size: 12px;
+  color: #666;
+  font-weight: normal;
+}
+
+.help-text {
+  font-size: 12px;
+  color: #666;
+  font-weight: normal;
+  font-style: italic;
+}
+
+.no-loops-message {
+  text-align: center;
+  padding: 24px;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+}
+
+.no-loops-message .info-text {
+  margin: 0 0 8px 0;
+  color: #856404;
+}
+
+.no-loops-message p {
+  margin: 0 0 16px 0;
+  color: #856404;
+  font-size: 14px;
+}
+
+.action-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-link {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 4px;
+  background-color: white;
+  border: 1px solid #1976d2;
+  transition: all 0.2s;
+}
+
+.action-link:hover {
+  background-color: #1976d2;
+  color: white;
+}
+
+.action-link:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.separator {
+  color: #856404;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .visibility-selector {
+    padding: 12px;
+  }
+  
+  .action-links {
+    flex-direction: column;
+  }
+  
+  .separator {
+    display: none;
+  }
+}
