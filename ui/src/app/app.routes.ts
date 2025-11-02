@@ -14,6 +14,7 @@ import { LoopMembersComponent } from './components/loop-members/loop-members.com
 import { AcceptInvitationComponent } from './components/accept-invitation/accept-invitation.component';
 import { ItemVisibilityComponent } from './components/item-visibility/item-visibility.component';
 import { ItemAddComponent } from './components/item-add/item-add.component';
+import { ItemEditComponent } from './components/item-edit/item-edit.component';
 import { ItemRequestListComponent } from './components/item-request-list/item-request-list.component';
 import { MyRequestsComponent } from './components/my-requests/my-requests.component';
 
@@ -54,6 +55,11 @@ export const routes: Routes = [
     {
         path: 'items/add',
         component: ItemAddComponent,
+        canActivate: [AuthGuard]
+    },
+    {
+        path: 'items/:id/edit',
+        component: ItemEditComponent,
         canActivate: [AuthGuard]
     },
     {

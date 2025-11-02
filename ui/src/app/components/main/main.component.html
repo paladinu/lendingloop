@@ -36,7 +36,8 @@
 
         <div *ngIf="items.length > 0" class="items-grid">
             <app-item-card *ngFor="let item of items" [item]="item" [isOwner]="isItemOwner(item)" [loops]="loops"
-                (editVisibility)="onEditVisibility($event)">
+                (editVisibility)="onEditVisibility($event)"
+                (editItem)="onEditItem($event)">
             </app-item-card>
         </div>
     </section>

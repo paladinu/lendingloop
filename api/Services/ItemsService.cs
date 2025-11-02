@@ -116,6 +116,38 @@ public class ItemsService : IItemsService
         return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
     }
 
+    public async Task<SharedItem?> UpdateItemAsync(
+        string itemId,
+        string userId,
+        string name,
+        string description,
+        bool isAvailable,
+        List<string> visibleToLoopIds,
+        bool visibleToAllLoops,
+        bool visibleToFutureLoops)
+    {
+        var filter = Builders<SharedItem>.Filter.And(
+            Builders<SharedItem>.Filter.Eq(item => item.Id, itemId),
+            Builders<SharedItem>.Filter.Eq(item => item.UserId, userId)
+        );
+
+        var update = Builders<SharedItem>.Update
+            .Set(item => item.Name, name)
+            .Set(item => item.Description, description)
+            .Set(item => item.IsAvailable, isAvailable)
+            .Set(item => item.VisibleToLoopIds, visibleToLoopIds)
+            .Set(item => item.VisibleToAllLoops, visibleToAllLoops)
+            .Set(item => item.VisibleToFutureLoops, visibleToFutureLoops)
+            .Set(item => item.UpdatedAt, DateTime.UtcNow);
+
+        var options = new FindOneAndUpdateOptions<SharedItem>
+        {
+            ReturnDocument = ReturnDocument.After
+        };
+
+        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+    }
+
     private async Task EnsureIndexesAsync()
     {
         try

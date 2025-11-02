@@ -62,6 +62,13 @@ export class ItemsService {
         );
     }
 
+    updateItem(itemId: string, updates: Partial<SharedItem>): Observable<SharedItem> {
+        return this.http.put<SharedItem>(`${this.apiUrl}/${itemId}`, updates)
+            .pipe(
+                catchError(error => this.handleError(error))
+            );
+    }
+
     private handleError(error: HttpErrorResponse): Observable<never> {
         console.error('ItemsService error:', error);
 

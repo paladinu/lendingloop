@@ -95,6 +95,10 @@ export class MainComponent implements OnInit {
     this.router.navigate(['/items', itemId, 'visibility']);
   }
 
+  onEditItem(itemId: string): void {
+    this.router.navigate(['/items', itemId, 'edit']);
+  }
+
   isItemOwner(item: SharedItem): boolean {
     return this.currentUser?.id === item.userId;
   }

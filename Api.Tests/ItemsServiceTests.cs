@@ -157,4 +157,125 @@ public class ItemsServiceTests
         //assert
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task UpdateItemAsync_UpdatesAllFields_WhenUserOwnsItem()
+    {
+        //arrange
+        var itemId = "item123";
+        var userId = "user123";
+        var name = "Updated Name";
+        var description = "Updated Description";
+        var isAvailable = false;
+        var loopIds = new List<string> { "loop1", "loop2" };
+        var visibleToAllLoops = true;
+        var visibleToFutureLoops = true;
+
+        var updatedItem = new SharedItem
+        {
+            Id = itemId,
+            UserId = userId,
+            Name = name,
+            Description = description,
+            IsAvailable = isAvailable,
+            VisibleToLoopIds = loopIds,
+            VisibleToAllLoops = visibleToAllLoops,
+            VisibleToFutureLoops = visibleToFutureLoops,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _mockCollection.Setup(c => c.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<SharedItem>>(),
+            It.IsAny<UpdateDefinition<SharedItem>>(),
+            It.IsAny<FindOneAndUpdateOptions<SharedItem>>(),
+            default))
+            .ReturnsAsync(updatedItem);
+
+        //act
+        var result = await _service.UpdateItemAsync(itemId, userId, name, description, isAvailable, loopIds, visibleToAllLoops, visibleToFutureLoops);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(name, result.Name);
+        Assert.Equal(description, result.Description);
+        Assert.Equal(isAvailable, result.IsAvailable);
+        Assert.Equal(loopIds, result.VisibleToLoopIds);
+        Assert.Equal(visibleToAllLoops, result.VisibleToAllLoops);
+        Assert.Equal(visibleToFutureLoops, result.VisibleToFutureLoops);
+    }
+
+    [Fact]
+    public async Task UpdateItemAsync_UpdatesTimestamp_WhenUpdatingItem()
+    {
+        //arrange
+        var itemId = "item123";
+        var userId = "user123";
+        var beforeUpdate = DateTime.UtcNow;
+
+        var updatedItem = new SharedItem
+        {
+            Id = itemId,
+            UserId = userId,
+            Name = "Updated Name",
+            Description = "Updated Description",
+            IsAvailable = true,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _mockCollection.Setup(c => c.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<SharedItem>>(),
+            It.IsAny<UpdateDefinition<SharedItem>>(),
+            It.IsAny<FindOneAndUpdateOptions<SharedItem>>(),
+            default))
+            .ReturnsAsync(updatedItem);
+
+        //act
+        var result = await _service.UpdateItemAsync(itemId, userId, "Updated Name", "Updated Description", true, new List<string>(), false, false);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.True(result.UpdatedAt >= beforeUpdate);
+    }
+
+    [Fact]
+    public async Task UpdateItemAsync_ReturnsNull_WhenItemNotFound()
+    {
+        //arrange
+        var itemId = "nonexistent";
+        var userId = "user123";
+
+        _mockCollection.Setup(c => c.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<SharedItem>>(),
+            It.IsAny<UpdateDefinition<SharedItem>>(),
+            It.IsAny<FindOneAndUpdateOptions<SharedItem>>(),
+            default))
+            .ReturnsAsync((SharedItem)null!);
+
+        //act
+        var result = await _service.UpdateItemAsync(itemId, userId, "Name", "Description", true, new List<string>(), false, false);
+
+        //assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task UpdateItemAsync_ReturnsNull_WhenUserDoesNotOwnItem()
+    {
+        //arrange
+        var itemId = "item123";
+        var wrongUserId = "wrongUser";
+
+        _mockCollection.Setup(c => c.FindOneAndUpdateAsync(
+            It.IsAny<FilterDefinition<SharedItem>>(),
+            It.IsAny<UpdateDefinition<SharedItem>>(),
+            It.IsAny<FindOneAndUpdateOptions<SharedItem>>(),
+            default))
+            .ReturnsAsync((SharedItem)null!);
+
+        //act
+        var result = await _service.UpdateItemAsync(itemId, wrongUserId, "Name", "Description", true, new List<string>(), false, false);
+
+        //assert
+        Assert.Null(result);
+    }
 }

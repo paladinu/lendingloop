@@ -26,6 +26,7 @@ export class ItemCardComponent {
   @Input() loops: Loop[] = [];
   
   @Output() editVisibility = new EventEmitter<string>();
+  @Output() editItem = new EventEmitter<string>();
 
   getVisibilityText(): string {
     if (this.item.visibleToAllLoops) {
@@ -56,6 +57,12 @@ export class ItemCardComponent {
   onEditVisibility(): void {
     if (this.item.id) {
       this.editVisibility.emit(this.item.id);
+    }
+  }
+
+  onEditItem(): void {
+    if (this.item.id) {
+      this.editItem.emit(this.item.id);
     }
   }
 }

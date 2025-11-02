@@ -287,4 +287,109 @@ describe('ItemsService', () => {
       req.flush({ message: 'Update failed' }, { status: 400, statusText: 'Bad Request' });
     });
   });
+
+  describe('updateItem', () => {
+    it('should update item successfully', (done) => {
+      //arrange
+      const itemId = '1';
+      const updates: Partial<SharedItem> = {
+        name: 'Updated Name',
+        description: 'Updated Description',
+        isAvailable: false,
+        visibleToLoopIds: ['loop1'],
+        visibleToAllLoops: true,
+        visibleToFutureLoops: true
+      };
+
+      //act
+      service.updateItem(itemId, updates).subscribe(item => {
+        //assert
+        expect(item).toEqual(mockItem);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/${itemId}`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(updates);
+      req.flush(mockItem);
+    });
+
+    it('should handle 401 error and redirect to login', (done) => {
+      //arrange
+      const itemId = '1';
+      const updates: Partial<SharedItem> = { name: 'Updated Name' };
+
+      //act
+      service.updateItem(itemId, updates).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('Authentication required. Please log in again.');
+          expect(authService.logout).toHaveBeenCalled();
+          expect(router.navigate).toHaveBeenCalledWith(['/login']);
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/${itemId}`);
+      req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    });
+
+    it('should handle 403 forbidden error', (done) => {
+      //arrange
+      const itemId = '1';
+      const updates: Partial<SharedItem> = { name: 'Updated Name' };
+
+      //act
+      service.updateItem(itemId, updates).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('You do not have permission to perform this action.');
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/${itemId}`);
+      req.flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    });
+
+    it('should handle 404 not found error', (done) => {
+      //arrange
+      const itemId = 'nonexistent';
+      const updates: Partial<SharedItem> = { name: 'Updated Name' };
+
+      //act
+      service.updateItem(itemId, updates).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBeTruthy();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/${itemId}`);
+      req.flush({ message: 'Item not found' }, { status: 404, statusText: 'Not Found' });
+    });
+
+    it('should handle network error', (done) => {
+      //arrange
+      const itemId = '1';
+      const updates: Partial<SharedItem> = { name: 'Updated Name' };
+
+      //act
+      service.updateItem(itemId, updates).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBeTruthy();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/${itemId}`);
+      req.flush({ message: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
+    });
+  });
 });

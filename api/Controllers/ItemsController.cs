@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -159,6 +160,60 @@ public class ItemsController : ControllerBase
                 {
                     System.IO.File.Delete(filePath);
                 }
+                return NotFound($"Item with id {id} not found or you don't have permission to update it.");
+            }
+
+            return Ok(updatedItem);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<SharedItem>> UpdateItem(string id, [FromBody] UpdateItemRequest request)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            // Validate name is not empty
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest("Item name is required.");
+            }
+
+            // Validate that the item exists and belongs to the user
+            var item = await _itemsService.GetItemByIdAsync(id);
+            if (item == null)
+            {
+                return NotFound($"Item with id {id} not found.");
+            }
+
+            if (item.UserId != userId)
+            {
+                return Forbid();
+            }
+
+            // Update item
+            var updatedItem = await _itemsService.UpdateItemAsync(
+                id,
+                userId,
+                request.Name,
+                request.Description,
+                request.IsAvailable,
+                request.VisibleToLoopIds,
+                request.VisibleToAllLoops,
+                request.VisibleToFutureLoops
+            );
+
+            if (updatedItem == null)
+            {
                 return NotFound($"Item with id {id} not found or you don't have permission to update it.");
             }
 

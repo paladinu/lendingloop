@@ -1,0 +1,139 @@
+<app-toolbar></app-toolbar>
+
+<div class="item-edit-container">
+  <!-- Breadcrumb Navigation -->
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/" class="breadcrumb-link">Home</a>
+    <span class="breadcrumb-separator">›</span>
+    <span class="breadcrumb-current">Edit Item</span>
+  </nav>
+
+  <h1>Edit Item</h1>
+  <p class="subtitle">Update your item details</p>
+
+  <!-- Success message -->
+  <div *ngIf="success" class="success-message" role="alert">
+    ✓ {{ success }}
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="error-message" role="alert">
+    ✗ {{ error }}
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="loading && !item" class="loading-container">
+    <mat-icon class="loading-spinner">refresh</mat-icon>
+    <p>Loading item...</p>
+  </div>
+
+  <mat-card *ngIf="!loading || item" class="edit-item-card">
+    <mat-card-content>
+      <form (ngSubmit)="updateItem()" class="edit-item-form">
+        <div class="form-section">
+          <h3>Item Details</h3>
+          
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Item Name</mat-label>
+            <input 
+              matInput 
+              [(ngModel)]="itemName" 
+              name="itemName" 
+              placeholder="Enter item name" 
+              required
+              [disabled]="loading"
+              aria-label="Item name"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description (optional)</mat-label>
+            <textarea 
+              matInput 
+              [(ngModel)]="itemDescription" 
+              name="itemDescription" 
+              placeholder="Describe your item" 
+              rows="4" 
+              [disabled]="loading"
+              aria-label="Item description"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="availability-container">
+            <mat-checkbox 
+              [(ngModel)]="isAvailable" 
+              name="isAvailable"
+              [disabled]="loading"
+              aria-label="Item availability"
+            >
+              Item is available for lending
+            </mat-checkbox>
+          </div>
+
+          <div class="image-section">
+            <h4>Item Image</h4>
+            <div *ngIf="currentImageUrl" class="current-image-preview">
+              <img [src]="currentImageUrl" alt="Current item image" class="preview-image" />
+              <p class="image-label">Current Image</p>
+            </div>
+            
+            <div class="file-input-container">
+              <label for="imageUpload" class="file-input-label">
+                {{ currentImageUrl ? 'Change Image (optional)' : 'Add Image (optional)' }}
+              </label>
+              <input 
+                type="file" 
+                id="imageUpload" 
+                accept="image/*" 
+                (change)="onFileSelected($event)"
+                [disabled]="loading" 
+                class="file-input"
+                aria-label="Upload item image"
+              />
+              <span *ngIf="selectedImageFile" class="file-name">
+                <mat-icon class="file-icon">image</mat-icon>
+                {{ selectedImageFile.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Visibility Settings</h3>
+          <p class="section-help">Choose which loops can see this item</p>
+          
+          <app-visibility-selector
+            [loops]="loops"
+            [selectedLoopIds]="selectedLoopIds"
+            [visibleToAllLoops]="visibleToAllLoops"
+            [visibleToFutureLoops]="visibleToFutureLoops"
+            (selectionChange)="onVisibilitySelectionChange($event)">
+          </app-visibility-selector>
+        </div>
+
+        <div class="form-actions">
+          <button 
+            mat-button 
+            type="button" 
+            (click)="onCancel()" 
+            [disabled]="loading"
+            class="btn-cancel"
+          >
+            Cancel
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit" 
+            [disabled]="!itemName.trim() || loading"
+            class="btn-submit"
+          >
+            <mat-icon *ngIf="!loading">save</mat-icon>
+            <span *ngIf="!loading">Save Changes</span>
+            <span *ngIf="loading">Saving...</span>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
