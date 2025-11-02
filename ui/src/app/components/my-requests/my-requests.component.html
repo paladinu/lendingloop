@@ -1,73 +1,119 @@
 <app-toolbar></app-toolbar>
 
-<div class="container mt-4">
-    <h2>My Requests</h2>
-
-    <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ successMessage }}
-        <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ errorMessage }}
-        <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
-    </div>
-
-    <div *ngIf="isLoading" class="text-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+<div class="my-requests-container">
+    <div class="header">
+        <h1>My Requests</h1>
+        <div class="header-stats" *ngIf="hasRequests">
+            <div class="stat-badge pending" *ngIf="pendingRequests.length > 0">
+                <span class="stat-number">{{ pendingRequests.length }}</span>
+                <span class="stat-label">Pending</span>
+            </div>
+            <div class="stat-badge approved" *ngIf="approvedRequests.length > 0">
+                <span class="stat-number">{{ approvedRequests.length }}</span>
+                <span class="stat-label">Borrowing</span>
+            </div>
+            <div class="stat-badge completed" *ngIf="completedRequests.length > 0">
+                <span class="stat-number">{{ completedRequests.length }}</span>
+                <span class="stat-label">Completed</span>
+            </div>
         </div>
     </div>
 
-    <div *ngIf="!isLoading && !hasRequests" class="alert alert-info">
-        You haven't made any item requests yet.
+    <div *ngIf="successMessage" class="alert alert-success">
+        <span class="alert-icon">✓</span>
+        <span class="alert-message">{{ successMessage }}</span>
+        <button type="button" class="alert-close" (click)="successMessage = ''" aria-label="Close">×</button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+        <span class="alert-icon">⚠</span>
+        <span class="alert-message">{{ errorMessage }}</span>
+        <button type="button" class="alert-close" (click)="errorMessage = ''" aria-label="Close">×</button>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading your requests...</p>
+    </div>
+
+    <div *ngIf="!isLoading && !hasRequests" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p class="empty-title">No requests yet</p>
+        <p class="empty-description">Browse items in your loops and request to borrow them!</p>
     </div>
 
     <!-- Pending Requests -->
-    <div *ngIf="pendingRequests.length > 0" class="mb-4">
-        <h3>Pending</h3>
-        <div class="list-group">
-            <div *ngFor="let request of pendingRequests" class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-1">
-                            {{ request.itemName || 'Item' }}
-                            <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
-                                {{ request.status }}
-                            </span>
-                        </h5>
-                        <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
-                        <small class="text-muted">Requested: {{ request.requestedAt | date:'short' }}</small>
+    <div *ngIf="pendingRequests.length > 0" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">⏳</span>
+            Pending
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of pendingRequests" class="request-card pending-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge pending">Pending</span>
                     </div>
-                    <div>
-                        <button
-                            type="button"
-                            class="btn btn-danger"
-                            (click)="onCancel(request)"
-                        >
-                            Cancel Request
-                        </button>
+                </div>
+                <div class="card-body">
+                    <div class="owner-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Owner</span>
+                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                        </div>
                     </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Requested</span>
+                            <span class="info-value">{{ request.requestedAt | date:'short' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button
+                        type="button"
+                        class="btn btn-cancel"
+                        (click)="onCancel(request)"
+                    >
+                        <span class="btn-icon">✕</span>
+                        Cancel Request
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Approved Requests -->
-    <div *ngIf="approvedRequests.length > 0" class="mb-4">
-        <h3>Currently Borrowing</h3>
-        <div class="list-group">
-            <div *ngFor="let request of approvedRequests" class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-1">
-                            {{ request.itemName || 'Item' }}
-                            <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
-                                {{ request.status }}
-                            </span>
-                        </h5>
-                        <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
-                        <small class="text-muted">Approved: {{ request.respondedAt | date:'short' }}</small>
+    <div *ngIf="approvedRequests.length > 0" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">📦</span>
+            Currently Borrowing
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of approvedRequests" class="request-card approved-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge approved">Approved</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="owner-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Owner</span>
+                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                        </div>
+                    </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Approved</span>
+                            <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -75,57 +121,102 @@
     </div>
 
     <!-- Completed Requests -->
-    <div *ngIf="completedRequests.length > 0" class="mb-4">
-        <h3>Completed</h3>
-        <div class="list-group">
-            <div *ngFor="let request of completedRequests" class="list-group-item">
-                <div>
-                    <h5 class="mb-1">
-                        {{ request.itemName || 'Item' }}
-                        <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
-                            {{ request.status }}
-                        </span>
-                    </h5>
-                    <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
-                    <small class="text-muted">Completed: {{ request.completedAt | date:'short' }}</small>
+    <div *ngIf="completedRequests.length > 0" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">✓</span>
+            Completed
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of completedRequests" class="request-card completed-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge completed">Completed</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="owner-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Owner</span>
+                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                        </div>
+                    </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Completed</span>
+                            <span class="info-value">{{ request.completedAt | date:'short' }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Rejected Requests -->
-    <div *ngIf="rejectedRequests.length > 0" class="mb-4">
-        <h3>Rejected</h3>
-        <div class="list-group">
-            <div *ngFor="let request of rejectedRequests" class="list-group-item">
-                <div>
-                    <h5 class="mb-1">
-                        {{ request.itemName || 'Item' }}
-                        <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
-                            {{ request.status }}
-                        </span>
-                    </h5>
-                    <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
-                    <small class="text-muted">Rejected: {{ request.respondedAt | date:'short' }}</small>
+    <div *ngIf="rejectedRequests.length > 0" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">✕</span>
+            Rejected
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of rejectedRequests" class="request-card rejected-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge rejected">Rejected</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="owner-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Owner</span>
+                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                        </div>
+                    </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Rejected</span>
+                            <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Cancelled Requests -->
-    <div *ngIf="cancelledRequests.length > 0" class="mb-4">
-        <h3>Cancelled</h3>
-        <div class="list-group">
-            <div *ngFor="let request of cancelledRequests" class="list-group-item">
-                <div>
-                    <h5 class="mb-1">
-                        {{ request.itemName || 'Item' }}
-                        <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
-                            {{ request.status }}
-                        </span>
-                    </h5>
-                    <p class="mb-1">Owner: {{ request.ownerName || 'User' }}</p>
-                    <small class="text-muted">Cancelled: {{ request.respondedAt | date:'short' }}</small>
+    <div *ngIf="cancelledRequests.length > 0" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">⊘</span>
+            Cancelled
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of cancelledRequests" class="request-card cancelled-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge cancelled">Cancelled</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="owner-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Owner</span>
+                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                        </div>
+                    </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Cancelled</span>
+                            <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

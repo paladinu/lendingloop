@@ -1,80 +1,122 @@
 <app-toolbar></app-toolbar>
 
-<div class="container mt-4">
-    <h2>Item Requests</h2>
-
-    <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ successMessage }}
-        <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ errorMessage }}
-        <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
-    </div>
-
-    <div *ngIf="isLoading" class="text-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+<div class="item-requests-container">
+    <div class="header">
+        <h1>Item Requests</h1>
+        <div class="header-stats" *ngIf="hasAnyRequests">
+            <div class="stat-badge pending" *ngIf="hasPendingRequests">
+                <span class="stat-number">{{ pendingRequests.length }}</span>
+                <span class="stat-label">Pending</span>
+            </div>
+            <div class="stat-badge active" *ngIf="hasApprovedRequests">
+                <span class="stat-number">{{ approvedRequests.length }}</span>
+                <span class="stat-label">Active</span>
+            </div>
         </div>
     </div>
 
-    <div *ngIf="!isLoading && !hasAnyRequests" class="alert alert-info">
-        No pending or active requests for your items.
+    <div *ngIf="successMessage" class="alert alert-success">
+        <span class="alert-icon">✓</span>
+        <span class="alert-message">{{ successMessage }}</span>
+        <button type="button" class="alert-close" (click)="successMessage = ''" aria-label="Close">×</button>
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+        <span class="alert-icon">⚠</span>
+        <span class="alert-message">{{ errorMessage }}</span>
+        <button type="button" class="alert-close" (click)="errorMessage = ''" aria-label="Close">×</button>
+    </div>
+
+    <div *ngIf="isLoading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading requests...</p>
+    </div>
+
+    <div *ngIf="!isLoading && !hasAnyRequests" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p class="empty-title">No requests yet</p>
+        <p class="empty-description">When someone requests to borrow your items, they'll appear here.</p>
     </div>
 
     <!-- Pending Requests -->
-    <div *ngIf="hasPendingRequests" class="mb-4">
-        <h3>Pending Requests</h3>
-        <div class="list-group">
-            <div *ngFor="let request of pendingRequests" class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-1">{{ request.itemName || 'Item' }}</h5>
-                        <p class="mb-1">Requested by: {{ request.requesterName || 'User' }}</p>
-                        <small class="text-muted">{{ request.requestedAt | date:'short' }}</small>
+    <div *ngIf="hasPendingRequests" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">⏳</span>
+            Pending Requests
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of pendingRequests" class="request-card pending-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge pending">Pending</span>
                     </div>
-                    <div class="btn-group" role="group">
-                        <button
-                            type="button"
-                            class="btn btn-success"
-                            (click)="onApprove(request)"
-                        >
-                            Approve
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-danger"
-                            (click)="onReject(request)"
-                        >
-                            Reject
-                        </button>
+                </div>
+                <div class="card-body">
+                    <div class="requester-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Requested by</span>
+                            <span class="info-value">{{ request.requesterName || 'User' }}</span>
+                        </div>
                     </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Requested</span>
+                            <span class="info-value">{{ request.requestedAt | date:'short' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button type="button" class="btn btn-approve" (click)="onApprove(request)">
+                        <span class="btn-icon">✓</span>
+                        Approve
+                    </button>
+                    <button type="button" class="btn btn-reject" (click)="onReject(request)">
+                        <span class="btn-icon">✕</span>
+                        Reject
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Approved Requests -->
-    <div *ngIf="hasApprovedRequests" class="mb-4">
-        <h3>Currently Borrowed</h3>
-        <div class="list-group">
-            <div *ngFor="let request of approvedRequests" class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-1">{{ request.itemName || 'Item' }}</h5>
-                        <p class="mb-1">Borrowed by: {{ request.requesterName || 'User' }}</p>
-                        <small class="text-muted">Approved: {{ request.respondedAt | date:'short' }}</small>
+    <div *ngIf="hasApprovedRequests" class="requests-section">
+        <h2 class="section-title">
+            <span class="section-icon">📦</span>
+            Currently Borrowed
+        </h2>
+        <div class="requests-grid">
+            <div *ngFor="let request of approvedRequests" class="request-card approved-card">
+                <div class="card-header">
+                    <div class="item-info">
+                        <h3 class="item-name">{{ request.itemName || 'Item' }}</h3>
+                        <span class="status-badge approved">Active</span>
                     </div>
-                    <div>
-                        <button
-                            type="button"
-                            class="btn btn-primary"
-                            (click)="onComplete(request)"
-                        >
-                            Mark as Returned
-                        </button>
+                </div>
+                <div class="card-body">
+                    <div class="requester-info">
+                        <span class="info-icon">👤</span>
+                        <div class="info-text">
+                            <span class="info-label">Borrowed by</span>
+                            <span class="info-value">{{ request.requesterName || 'User' }}</span>
+                        </div>
                     </div>
+                    <div class="date-info">
+                        <span class="info-icon">📅</span>
+                        <div class="info-text">
+                            <span class="info-label">Approved</span>
+                            <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button type="button" class="btn btn-complete" (click)="onComplete(request)">
+                        <span class="btn-icon">✓</span>
+                        Mark as Returned
+                    </button>
                 </div>
             </div>
         </div>
