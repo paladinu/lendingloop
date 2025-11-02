@@ -8,9 +8,10 @@
     </linearGradient>
   </defs>
   
-  <!-- Stylized L with loop -->
+  <!-- Stylized L with e-shaped loop -->
   <path d="M 10 10 L 10 50 L 30 50" fill="none" stroke="url(#grad3)" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="30" cy="30" r="15" fill="none" stroke="url(#grad3)" stroke-width="6"/>
+  <!-- Arc creating an 'e' shape (circle on left with horizontal bar cutting through) -->
+  <path d="M 15 30 A 15 15 0 1 1 15 30.01 M 20 30 L 40 30" fill="none" stroke="url(#grad3)" stroke-width="6" stroke-linecap="round"/>
   
   <!-- Second L with loop -->
   <path d="M 50 10 L 50 50 L 70 50" fill="none" stroke="url(#grad3)" stroke-width="6" stroke-linecap="round"/>
