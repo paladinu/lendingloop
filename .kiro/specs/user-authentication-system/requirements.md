@@ -2,16 +2,14 @@
 
 ## Introduction
 
-This document specifies the requirements for a user authentication and registration system that will secure access to the shared items management application. The system will require users to authenticate before accessing any functionality and will include comprehensive user registration with email verification.
+This document specifies the technical requirements for implementing user authentication and registration for the LendingLoop platform.
 
 ## Glossary
 
 - **Authentication_System**: The software component responsible for verifying user identity through login credentials
 - **Registration_System**: The software component that handles new user account creation
 - **User_Session**: An authenticated state that persists user login status across application interactions
-- **Email_Verification**: The process of confirming user email address ownership through a verification link or code
 - **Password_Policy**: The set of rules governing acceptable password complexity and security requirements
-- **User_Profile**: The collection of user information including personal details and authentication credentials
 
 ## Requirements
 

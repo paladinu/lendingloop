@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document defines the requirements for an Item Request System that enables users to request items from other users within their loops. The system implements a request-approval workflow where items remain marked as available until the owner explicitly approves a request. This ensures owners maintain control over their items while facilitating borrowing within trusted communities.
+This document specifies the technical requirements for implementing the item request and approval workflow for the LendingLoop platform.
 
 ## Glossary
 
@@ -10,12 +10,7 @@ This document defines the requirements for an Item Request System that enables u
 - **Requester**: A user who submits a request to borrow an item from another user
 - **Owner**: A user who owns a shared item and has the authority to approve or reject borrow requests
 - **Item Request**: A formal request from a Requester to borrow a specific SharedItem from an Owner
-- **SharedItem**: An item that a user has made available for lending within their loops
 - **Request Status**: The current state of an Item Request (Pending, Approved, Rejected, Cancelled, Completed)
-- **Pending Request**: An Item Request that has been submitted but not yet approved or rejected by the Owner
-- **Loop**: A trusted group of users who can view and request each other's shared items
-- **API**: The backend REST API that handles Item Request operations
-- **UI**: The Angular frontend application that displays and manages Item Requests
 
 ## Requirements
 

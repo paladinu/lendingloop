@@ -2,15 +2,12 @@
 
 ## Introduction
 
-This feature enables users to edit their shared items after creation. Currently, users can create items and update visibility settings separately, but there is no comprehensive edit interface for modifying all item properties in one place. This feature will provide a dedicated edit screen where users can modify all fields of their shared items, including name, description, availability status, image, and visibility settings.
+This document specifies the technical requirements for implementing a comprehensive item editing interface that allows users to modify all item properties in a single screen.
 
 ## Glossary
 
 - **Item Management System**: The Angular frontend and .NET backend components that handle CRUD operations for shared items
-- **Shared Item**: An item that a user has added to the system to share with members of their loops
-- **Item Owner**: The authenticated user who created a specific shared item
 - **Edit Screen**: A dedicated UI component that displays a form for modifying all properties of a shared item
-- **Visibility Settings**: Configuration that determines which loops can see a shared item (specific loops, all loops, or future loops)
 
 ## Requirements
 

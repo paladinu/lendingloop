@@ -2,17 +2,12 @@
 
 ## Introduction
 
-The Custom Loops feature enables users to create and manage sharing groups called "loops" where members can share items with each other. Users can invite others via email or from existing loops, control item visibility across loops, and browse all items available within their loops through a searchable interface.
+This document specifies the technical requirements for implementing loop creation, member invitation, item visibility controls, and loop landing pages for the LendingLoop platform.
 
 ## Glossary
 
-- **Loop**: A sharing group where members can view and access items shared by other members
-- **Loop Member**: A user who has accepted an invitation and belongs to a loop
-- **Loop Creator**: The user who initially creates a loop
-- **Item**: A shareable resource that can be made visible to one or more loops
 - **Loop Invitation**: An email-based or in-app request to join a loop
 - **Loop Landing Page**: The main interface displaying all items available within a specific loop
-- **Item Visibility Setting**: Configuration that determines which loops can view a specific item
 - **System**: The Custom Loops application
 
 ## Requirements

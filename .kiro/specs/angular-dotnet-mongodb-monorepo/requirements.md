@@ -2,17 +2,12 @@
 
 ## Introduction
 
-This document specifies the requirements for a monorepo containing an Angular UI and a C# .NET Core API, configured for seamless local development against a locally installed MongoDB instance. The system enables users to manage shared items through a simple web interface with full-stack CRUD operations.
+This document specifies the technical requirements for the monorepo structure, development environment configuration, and initial CRUD operations for the LendingLoop platform.
 
 ## Glossary
 
-- **Monorepo**: A single Git repository containing multiple related projects (UI and API).
-- **Angular UI**: The frontend web application built with Angular framework.
-- **API**: The backend C# .NET 8 Web API application.
-- **MongoDB**: The NoSQL database system running locally on the host machine.
-- **SharedItem**: The core data entity representing items that can be shared between users.
-- **CORS**: Cross-Origin Resource Sharing, a security mechanism for web browsers.
-- **Proxy Configuration**: Angular development server configuration that forwards API requests to the backend.
+- **Monorepo**: A single Git repository containing multiple related projects (UI and API)
+- **Proxy Configuration**: Angular development server configuration that forwards API requests to the backend
 
 ## Requirements
 
