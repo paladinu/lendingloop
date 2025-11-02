@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Circular logo with interlocking loops -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5c6bc0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#grad1)"/>
+  
+  <!-- Interlocking loops forming infinity symbol -->
+  <path d="M 60 100 Q 60 70, 80 70 Q 100 70, 100 100 Q 100 130, 80 130 Q 60 130, 60 100 Z" 
+        fill="none" stroke="white" stroke-width="8" opacity="0.9"/>
+  <path d="M 140 100 Q 140 70, 120 70 Q 100 70, 100 100 Q 100 130, 120 130 Q 140 130, 140 100 Z" 
+        fill="none" stroke="white" stroke-width="8" opacity="0.9"/>
+  
+  <!-- Center connection -->
+  <circle cx="100" cy="100" r="12" fill="white"/>
+  
+  <!-- Letter L stylized -->
+  <text x="100" y="110" font-family="Arial, sans-serif" font-size="24" font-weight="bold" 
+        fill="#3f51b5" text-anchor="middle">L</text>
+</svg>

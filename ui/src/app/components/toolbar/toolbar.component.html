@@ -1,5 +1,8 @@
 <mat-toolbar color="primary" class="app-toolbar">
-    <span class="toolbar-title">{{ title }}</span>
+    <div class="toolbar-brand">
+        <img src="assets/logo-minimal.svg" alt="Lending Loop Logo" class="toolbar-logo">
+        <span class="toolbar-title">{{ title }}</span>
+    </div>
     <span class="toolbar-spacer"></span>
 
     <button mat-button routerLink="/loops" class="nav-button">

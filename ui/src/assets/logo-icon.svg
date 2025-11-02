@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Compact icon version - perfect for toolbar -->
+  <defs>
+    <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7986cb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Two interlocking loops forming infinity -->
+  <path d="M 14 24 Q 14 14, 20 14 Q 24 14, 24 24 Q 24 34, 20 34 Q 14 34, 14 24 Z" 
+        fill="none" stroke="url(#grad4)" stroke-width="3.5"/>
+  <path d="M 34 24 Q 34 14, 28 14 Q 24 14, 24 24 Q 24 34, 28 34 Q 34 34, 34 24 Z" 
+        fill="none" stroke="url(#grad4)" stroke-width="3.5"/>
+  
+  <!-- Center highlight -->
+  <circle cx="24" cy="24" r="4" fill="#3f51b5"/>
+  <circle cx="24" cy="24" r="2" fill="white"/>
+</svg>

@@ -6,6 +6,18 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.toolbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toolbar-logo {
+    height: 36px;
+    width: 36px;
+    filter: brightness(0) invert(1);
+}
+
 .toolbar-title {
     font-size: 1.2rem;
     font-weight: 500;
@@ -62,5 +74,14 @@
 @media (max-width: 768px) {
     .user-name {
         display: none;
+    }
+    
+    .toolbar-title {
+        display: none;
+    }
+    
+    .toolbar-logo {
+        height: 32px;
+        width: 32px;
     }
 }
