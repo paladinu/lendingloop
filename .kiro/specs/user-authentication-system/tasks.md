@@ -228,6 +228,35 @@
   - Ensure consistent appearance with other pages
   - _Requirements: 8.1, 8.2, 8.4_
 
+- [x] 7.6 Implement intelligent post-login routing
+
+
+
+
+- [x] 7.6.1 Add intended route storage to AuthGuard and AuthService
+
+
+  - Update AuthGuard to capture and store attempted route URL when redirecting unauthenticated users
+  - Add methods to AuthService for storing, retrieving, and clearing intended route in sessionStorage
+  - _Requirements: 9.1, 9.5_
+
+- [x] 7.6.2 Create post-login route determination endpoint
+
+
+  - Add GetPostLoginRoute endpoint to AuthController
+  - Implement logic to query user's loops and determine appropriate route
+  - Create PostLoginRouteResponse DTO
+  - _Requirements: 9.2, 9.3, 9.4_
+
+- [x] 7.6.3 Implement post-login routing logic in LoginComponent
+
+
+  - Update LoginComponent to check for stored intended route after successful login
+  - If intended route exists, navigate to it and clear storage
+  - If no intended route, call backend to determine route based on loop count
+  - Navigate to loops list for multiple loops, specific loop for single loop
+  - _Requirements: 9.2, 9.3, 9.4, 9.5_
+
 - [-] 8. Implement email service for verification
 
 

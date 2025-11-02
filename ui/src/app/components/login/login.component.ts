@@ -48,16 +48,37 @@ export class LoginComponent {
           console.log('Token stored:', this.authService.getToken());
           console.log('Is authenticated:', this.authService.isAuthenticated());
 
-          // Check if there's a return URL stored by the AuthGuard
-          const returnUrl = localStorage.getItem('returnUrl') || '/';
-          localStorage.removeItem('returnUrl');
-
-          console.log('Navigating to:', returnUrl);
-
-          // Add a small delay to ensure authentication state is properly set
-          setTimeout(() => {
-            this.router.navigate([returnUrl]);
-          }, 100);
+          // Check if there's an intended route stored by the AuthGuard
+          const intendedRoute = this.authService.getIntendedRoute();
+          
+          if (intendedRoute) {
+            // User was trying to access a specific route, redirect there
+            console.log('Navigating to intended route:', intendedRoute);
+            this.authService.clearIntendedRoute();
+            
+            setTimeout(() => {
+              this.router.navigate([intendedRoute]);
+            }, 100);
+          } else {
+            // No intended route, determine route based on user's loops
+            console.log('No intended route, determining post-login route from backend');
+            
+            this.authService.getPostLoginRoute().subscribe({
+              next: (routeResponse) => {
+                console.log('Navigating to determined route:', routeResponse.route);
+                setTimeout(() => {
+                  this.router.navigate([routeResponse.route]);
+                }, 100);
+              },
+              error: (error) => {
+                console.error('Error determining post-login route:', error);
+                // Fallback to loops page if there's an error
+                setTimeout(() => {
+                  this.router.navigate(['/loops']);
+                }, 100);
+              }
+            });
+          }
         },
         error: (error) => {
           this.isLoading = false;

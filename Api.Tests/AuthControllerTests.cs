@@ -17,6 +17,7 @@ public class AuthControllerTests
     private readonly Mock<IPasswordService> _mockPasswordService;
     private readonly Mock<IJwtTokenService> _mockJwtTokenService;
     private readonly Mock<IEmailService> _mockEmailService;
+    private readonly Mock<ILoopService> _mockLoopService;
     private readonly Mock<ILogger<AuthController>> _mockLogger;
     private readonly AuthController _controller;
 
@@ -26,6 +27,7 @@ public class AuthControllerTests
         _mockPasswordService = new Mock<IPasswordService>();
         _mockJwtTokenService = new Mock<IJwtTokenService>();
         _mockEmailService = new Mock<IEmailService>();
+        _mockLoopService = new Mock<ILoopService>();
         _mockLogger = new Mock<ILogger<AuthController>>();
 
         _controller = new AuthController(
@@ -33,6 +35,7 @@ public class AuthControllerTests
             _mockPasswordService.Object,
             _mockJwtTokenService.Object,
             _mockEmailService.Object,
+            _mockLoopService.Object,
             _mockLogger.Object
         );
     }

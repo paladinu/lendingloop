@@ -31,7 +31,10 @@ describe('LoginComponent', () => {
     const authServiceMock = {
       login: jest.fn(),
       getToken: jest.fn().mockReturnValue('test-token'),
-      isAuthenticated: jest.fn().mockReturnValue(true)
+      isAuthenticated: jest.fn().mockReturnValue(true),
+      getIntendedRoute: jest.fn().mockReturnValue(null),
+      clearIntendedRoute: jest.fn(),
+      getPostLoginRoute: jest.fn().mockReturnValue(of({ route: '/loops' }))
     } as unknown as jest.Mocked<AuthService>;
 
     await TestBed.configureTestingModule({
@@ -127,9 +130,11 @@ describe('LoginComponent', () => {
     expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123');
   });
 
-  it('should navigate to main page on successful login', async () => {
+  it('should navigate to determined route on successful login when no intended route', async () => {
     //arrange
     authService.login.mockReturnValue(of(mockAuthResponse));
+    authService.getIntendedRoute.mockReturnValue(null);
+    authService.getPostLoginRoute.mockReturnValue(of({ route: '/loops' }));
     component.loginForm.patchValue({
       email: 'test@example.com',
       password: 'password123'
@@ -140,7 +145,28 @@ describe('LoginComponent', () => {
 
     //assert
     await new Promise(resolve => setTimeout(resolve, 150));
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(authService.getIntendedRoute).toHaveBeenCalled();
+    expect(authService.getPostLoginRoute).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/loops']);
+  });
+
+  it('should navigate to intended route on successful login when intended route exists', async () => {
+    //arrange
+    authService.login.mockReturnValue(of(mockAuthResponse));
+    authService.getIntendedRoute.mockReturnValue('/loops/123');
+    component.loginForm.patchValue({
+      email: 'test@example.com',
+      password: 'password123'
+    });
+
+    //act
+    component.onSubmit();
+
+    //assert
+    await new Promise(resolve => setTimeout(resolve, 150));
+    expect(authService.getIntendedRoute).toHaveBeenCalled();
+    expect(authService.clearIntendedRoute).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/loops/123']);
   });
 
   it('should display error message on login failure', async () => {

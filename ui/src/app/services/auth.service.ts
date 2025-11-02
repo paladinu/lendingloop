@@ -18,6 +18,7 @@ export class AuthService {
     private readonly API_URL = 'http://localhost:8080/api/auth';
     private readonly TOKEN_KEY = 'auth_token';
     private readonly USER_KEY = 'current_user';
+    private readonly INTENDED_ROUTE_KEY = 'intended_route';
 
     private currentUserSubject = new BehaviorSubject<UserProfile | null>(null);
     public currentUser$ = this.currentUserSubject.asObservable();
@@ -137,6 +138,22 @@ export class AuthService {
         const token = localStorage.getItem(this.TOKEN_KEY);
         console.log('AuthService - getToken called, token exists:', !!token);
         return token;
+    }
+
+    setIntendedRoute(route: string): void {
+        sessionStorage.setItem(this.INTENDED_ROUTE_KEY, route);
+    }
+
+    getIntendedRoute(): string | null {
+        return sessionStorage.getItem(this.INTENDED_ROUTE_KEY);
+    }
+
+    clearIntendedRoute(): void {
+        sessionStorage.removeItem(this.INTENDED_ROUTE_KEY);
+    }
+
+    getPostLoginRoute(): Observable<{ route: string }> {
+        return this.http.get<{ route: string }>(`${this.API_URL}/post-login-route`);
     }
 
     private storeAuthData(authResponse: AuthResponse): void {

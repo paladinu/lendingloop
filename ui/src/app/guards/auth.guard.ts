@@ -36,7 +36,7 @@ export class AuthGuard implements CanActivate, CanActivateChild {
         }
 
         // Store the attempted URL for redirecting after login
-        localStorage.setItem('returnUrl', url);
+        this.authService.setIntendedRoute(url);
         console.log('AuthGuard - redirecting to login');
 
         // Redirect to login page

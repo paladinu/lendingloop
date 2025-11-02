@@ -107,3 +107,15 @@ This document specifies the requirements for a user authentication and registrat
 2. THE Authentication_System SHALL include a logout option in the toolbar that is accessible from any authenticated screen
 3. WHEN a user views any authenticated page, THE Authentication_System SHALL display the user's first name and last name in the toolbar
 4. THE Authentication_System SHALL maintain consistent toolbar appearance and functionality across all pages
+
+### Requirement 9
+
+**User Story:** As a visitor to the application, I want the login process to land me on my original route destination if I had one or on the my loops page if I have multiple loops or on my specific loop if I have only one so that I can get to where I want to go as quickly as possible.
+
+#### Acceptance Criteria
+
+1. WHEN a user attempts to access a protected route while unauthenticated, THE Authentication_System SHALL store the requested route destination
+2. WHEN a user completes login and has a stored route destination, THE Authentication_System SHALL redirect the user to that original destination
+3. WHEN a user completes login without a stored route destination and has multiple loops, THE Authentication_System SHALL redirect the user to the loops list page
+4. WHEN a user completes login without a stored route destination and has exactly one loop, THE Authentication_System SHALL redirect the user to that specific loop detail page
+5. THE Authentication_System SHALL clear the stored route destination after successful redirection

@@ -16,6 +16,7 @@ public class AuthController : ControllerBase
     private readonly IPasswordService _passwordService;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IEmailService _emailService;
+    private readonly ILoopService _loopService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
@@ -23,12 +24,14 @@ public class AuthController : ControllerBase
         IPasswordService passwordService,
         IJwtTokenService jwtTokenService,
         IEmailService emailService,
+        ILoopService loopService,
         ILogger<AuthController> logger)
     {
         _userService = userService;
         _passwordService = passwordService;
         _jwtTokenService = jwtTokenService;
         _emailService = emailService;
+        _loopService = loopService;
         _logger = logger;
     }
 
@@ -308,6 +311,53 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Error getting current user");
             return StatusCode(500, new { message = "An error occurred while retrieving user information" });
+        }
+    }
+
+    [HttpGet("post-login-route")]
+    [Authorize]
+    public async Task<ActionResult<PostLoginRouteResponse>> GetPostLoginRoute()
+    {
+        try
+        {
+            // Get user ID from JWT token claims
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            // Get user's loops
+            var loops = await _loopService.GetUserLoopsAsync(userId);
+            
+            string route;
+            if (loops.Count == 0)
+            {
+                // No loops, redirect to loops list (they can create one)
+                route = "/loops";
+            }
+            else if (loops.Count == 1)
+            {
+                // Single loop, redirect to that loop's detail page
+                route = $"/loops/{loops[0].Id}";
+            }
+            else
+            {
+                // Multiple loops, redirect to loops list
+                route = "/loops";
+            }
+
+            _logger.LogInformation("Determined post-login route for user {UserId}: {Route}", userId, route);
+
+            return Ok(new PostLoginRouteResponse
+            {
+                Route = route
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error determining post-login route");
+            return StatusCode(500, new { message = "An error occurred while determining the post-login route" });
         }
     }
 

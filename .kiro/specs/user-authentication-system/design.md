@@ -30,6 +30,7 @@ The user authentication system will provide secure login, registration, and sess
 2. **Login Flow**: User submits credentials → API validates → Generates JWT token → Returns token to client → Client stores token in localStorage
 3. **Protected Access**: Client includes JWT in requests → API validates token → Grants/denies access based on token validity
 4. **Session Persistence**: On application load, client checks localStorage for valid token → Validates token with API → Restores user session if valid
+5. **Post-Login Routing**: After successful login → Check for stored intended route → If exists, redirect to stored route → If not, query user's loops → If multiple loops, redirect to loops list → If single loop, redirect to that loop detail → Clear stored route after redirect
 
 ## Components and Interfaces
 
@@ -44,6 +45,10 @@ interface AuthService {
   getCurrentUser(): Observable<User | null>
   isAuthenticated(): boolean
   verifyEmail(token: string): Observable<VerificationResponse>
+  setIntendedRoute(route: string): void
+  getIntendedRoute(): string | null
+  clearIntendedRoute(): void
+  getPostLoginRoute(): Observable<string>
 }
 ```
 
@@ -52,6 +57,7 @@ interface AuthService {
 interface AuthGuard {
   canActivate(): boolean
   canActivateChild(): boolean
+  // Stores the attempted route when redirecting unauthenticated users
 }
 ```
 
@@ -88,6 +94,23 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     [Authorize]
     Task<ActionResult<UserProfile>> GetCurrentUser()
+    
+    [HttpGet("post-login-route")]
+    [Authorize]
+    Task<ActionResult<PostLoginRouteResponse>> GetPostLoginRoute()
+}
+```
+
+#### LoopsController (Referenced for Post-Login Routing)
+```csharp
+[ApiController]
+[Route("api/loops")]
+[Authorize]
+public class LoopsController : ControllerBase
+{
+    [HttpGet]
+    Task<ActionResult<List<Loop>>> GetUserLoops()
+    // Returns loops for the authenticated user to determine post-login routing
 }
 ```
 
@@ -181,6 +204,11 @@ public class PasswordValidationResult
     public bool IsValid { get; set; }
     public List<string> Errors { get; set; }
 }
+
+public class PostLoginRouteResponse
+{
+    public string Route { get; set; }
+}
 ```
 
 ## Security Implementation
@@ -222,6 +250,37 @@ public class PasswordValidationResult
 - **Account Changes**: Log user registration, email verification, and password changes
 - **Security Events**: Log suspicious activities such as multiple failed login attempts
 - **Log Storage**: Store logs securely with appropriate retention policies for security monitoring and compliance
+
+## Post-Login Routing Strategy
+
+### Routing Logic
+The system implements intelligent post-login routing to provide optimal user experience:
+
+1. **Intended Route Priority**: If the user attempted to access a specific protected route before authentication, redirect to that route after successful login
+2. **Multiple Loops**: If no intended route exists and the user has multiple loops, redirect to the loops list page (`/loops`)
+3. **Single Loop**: If no intended route exists and the user has exactly one loop, redirect directly to that loop's detail page (`/loops/{loopId}`)
+4. **Default Fallback**: If no loops exist, redirect to a default authenticated page
+
+### Implementation Details
+
+#### Frontend (Angular)
+- **AuthGuard**: Captures the attempted route URL when redirecting unauthenticated users and stores it in AuthService
+- **AuthService**: 
+  - Stores intended route in sessionStorage for persistence across page refreshes
+  - Provides methods to set, get, and clear the intended route
+  - After successful login, queries the backend to determine user's loop count
+  - Implements routing logic based on intended route and loop count
+- **LoginComponent**: After successful authentication, calls AuthService to determine and navigate to the appropriate route
+
+#### Backend (.NET Core)
+- **GetPostLoginRoute Endpoint**: Returns the appropriate route based on user's loop membership
+  - Queries loops where the authenticated user is a member
+  - Returns route based on loop count (list page for multiple, detail page for single)
+- **Loop Data**: Leverages existing loops data structure to determine user's loop membership
+
+### Route Storage
+- **Storage Mechanism**: Use sessionStorage (not localStorage) to store intended route, ensuring it's cleared when the browser session ends
+- **Cleanup**: Clear stored route after successful navigation to prevent stale redirects
 
 ## Error Handling
 
