@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Hexagon with interconnected loops -->
+  <defs>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7986cb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Hexagon outline -->
+  <polygon points="100,30 160,65 160,135 100,170 40,135 40,65" 
+           fill="none" stroke="url(#hexGrad)" stroke-width="6"/>
+  
+  <!-- Inner hexagon -->
+  <polygon points="100,60 140,80 140,120 100,140 60,120 60,80" 
+           fill="none" stroke="url(#hexGrad)" stroke-width="4" opacity="0.5"/>
+  
+  <!-- Loops at vertices -->
+  <circle cx="100" cy="30" r="12" fill="none" stroke="#5c6bc0" stroke-width="3"/>
+  <circle cx="160" cy="65" r="12" fill="none" stroke="#5c6bc0" stroke-width="3"/>
+  <circle cx="160" cy="135" r="12" fill="none" stroke="#5c6bc0" stroke-width="3"/>
+  <circle cx="100" cy="170" r="12" fill="none" stroke="#5c6bc0" stroke-width="3"/>
+  <circle cx="40" cy="135" r="12" fill="none" stroke="#5c6bc0" stroke-width="3"/>
+  <circle cx="40" cy="65" r="12" fill="none" stroke="#5c6bc0" stroke-width="3"/>
+  
+  <!-- Center LL -->
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="42" font-weight="bold" 
+        fill="#3f51b5" text-anchor="middle">LL</text>
+</svg>

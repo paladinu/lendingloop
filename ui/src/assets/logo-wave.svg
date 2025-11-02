@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Wave pattern representing flow of lending -->
+  <defs>
+    <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#5c6bc0;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#7986cb;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Wave layers -->
+  <path d="M 20 80 Q 50 60, 80 80 T 140 80 T 180 80" 
+        fill="none" stroke="url(#waveGrad1)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 20 100 Q 50 80, 80 100 T 140 100 T 180 100" 
+        fill="none" stroke="url(#waveGrad1)" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+  <path d="M 20 120 Q 50 100, 80 120 T 140 120 T 180 120" 
+        fill="none" stroke="url(#waveGrad1)" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+  
+  <!-- Circular flow indicator -->
+  <circle cx="100" cy="100" r="50" fill="none" stroke="#3f51b5" stroke-width="3" 
+          stroke-dasharray="10,5" opacity="0.3"/>
+  
+  <!-- Center circle with L -->
+  <circle cx="100" cy="100" r="30" fill="#3f51b5"/>
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="36" font-weight="bold" 
+        fill="white" text-anchor="middle">L</text>
+  
+  <!-- Flow arrows -->
+  <polygon points="170,75 180,80 170,85" fill="#5c6bc0"/>
+  <polygon points="30,115 20,120 30,125" fill="#5c6bc0"/>
+</svg>

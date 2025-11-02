@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Chain links forming a loop -->
+  <defs>
+    <linearGradient id="chainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5c6bc0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Top link -->
+  <ellipse cx="100" cy="60" rx="30" ry="20" fill="none" stroke="url(#chainGrad)" stroke-width="8"/>
+  
+  <!-- Right link -->
+  <ellipse cx="130" cy="100" rx="20" ry="30" fill="none" stroke="url(#chainGrad)" stroke-width="8"/>
+  
+  <!-- Bottom link -->
+  <ellipse cx="100" cy="140" rx="30" ry="20" fill="none" stroke="url(#chainGrad)" stroke-width="8"/>
+  
+  <!-- Left link -->
+  <ellipse cx="70" cy="100" rx="20" ry="30" fill="none" stroke="url(#chainGrad)" stroke-width="8"/>
+  
+  <!-- Center L monogram -->
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="48" font-weight="bold" 
+        fill="#3f51b5" text-anchor="middle">L</text>
+</svg>

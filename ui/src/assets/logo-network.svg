@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Network of connected nodes -->
+  <defs>
+    <linearGradient id="netGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7986cb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Connection lines -->
+  <line x1="100" y1="50" x2="150" y2="100" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  <line x1="100" y1="50" x2="50" y2="100" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  <line x1="150" y1="100" x2="150" y2="150" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  <line x1="50" y1="100" x2="50" y2="150" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  <line x1="150" y1="150" x2="100" y2="170" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  <line x1="50" y1="150" x2="100" y2="170" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  <line x1="50" y1="100" x2="150" y2="100" stroke="url(#netGrad)" stroke-width="3" opacity="0.4"/>
+  
+  <!-- Nodes -->
+  <circle cx="100" cy="50" r="15" fill="url(#netGrad)"/>
+  <circle cx="150" cy="100" r="15" fill="url(#netGrad)"/>
+  <circle cx="50" cy="100" r="15" fill="url(#netGrad)"/>
+  <circle cx="150" cy="150" r="15" fill="url(#netGrad)"/>
+  <circle cx="50" cy="150" r="15" fill="url(#netGrad)"/>
+  <circle cx="100" cy="170" r="15" fill="url(#netGrad)"/>
+  
+  <!-- Center node (larger) -->
+  <circle cx="100" cy="110" r="25" fill="#3f51b5"/>
+  <text x="100" y="120" font-family="Arial, sans-serif" font-size="24" font-weight="bold" 
+        fill="white" text-anchor="middle">L</text>
+</svg>

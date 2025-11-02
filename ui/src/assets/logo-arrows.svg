@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Circular arrows showing lending cycle -->
+  <defs>
+    <linearGradient id="arrowGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3f51b5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5c6bc0;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="arrowGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#5c6bc0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7986cb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Clockwise arrow -->
+  <path d="M 100 40 Q 150 40, 160 90 Q 160 140, 110 150" 
+        fill="none" stroke="url(#arrowGrad1)" stroke-width="12" stroke-linecap="round"/>
+  <polygon points="110,150 95,145 100,160" fill="#5c6bc0"/>
+  
+  <!-- Counter-clockwise arrow -->
+  <path d="M 100 160 Q 50 160, 40 110 Q 40 60, 90 50" 
+        fill="none" stroke="url(#arrowGrad2)" stroke-width="12" stroke-linecap="round"/>
+  <polygon points="90,50 105,55 100,40" fill="#7986cb"/>
+  
+  <!-- Center circle with LL -->
+  <circle cx="100" cy="100" r="35" fill="white" stroke="#3f51b5" stroke-width="4"/>
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="36" font-weight="bold" 
+        fill="#3f51b5" text-anchor="middle">LL</text>
+</svg>
