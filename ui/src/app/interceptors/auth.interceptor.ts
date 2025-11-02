@@ -25,7 +25,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     // Handle the request and catch authentication errors
     return next(authReq).pipe(
         catchError((error: HttpErrorResponse) => {
-            if (error.status === 401) {
+            if (error.status === 401 && shouldHandleUnauthorized(req.url)) {
                 console.log('AuthInterceptor - 401 error, redirecting to login');
                 // Token is invalid or expired
                 handleUnauthorized(authService, router);
@@ -39,6 +39,11 @@ function shouldAddToken(url: string): boolean {
     // Don't add token to login and register requests
     const excludedEndpoints = ['/auth/login', '/auth/register', '/auth/verify-email', '/auth/resend-verification'];
     return !excludedEndpoints.some(endpoint => url.includes(endpoint));
+}
+
+function shouldHandleUnauthorized(url: string): boolean {
+    // Don't handle 401 errors for logout endpoint to prevent infinite loops
+    return !url.includes('/auth/logout');
 }
 
 function handleUnauthorized(authService: AuthService, router: Router): void {
