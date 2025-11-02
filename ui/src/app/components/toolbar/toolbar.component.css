@@ -13,8 +13,8 @@
 }
 
 .toolbar-logo {
-    height: 36px;
-    width: 36px;
+    height: 64px;
+    width: auto;
     filter: brightness(0) invert(1);
 }
 
@@ -81,7 +81,7 @@
     }
     
     .toolbar-logo {
-        height: 32px;
-        width: 32px;
+        height: 64px;
+        width: 64px;
     }
 }
