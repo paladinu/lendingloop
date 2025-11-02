@@ -58,7 +58,7 @@ public class ItemRequestService : IItemRequestService
     {
         var filter = Builders<ItemRequest>.Filter.And(
             Builders<ItemRequest>.Filter.Eq(r => r.OwnerId, ownerId),
-            Builders<ItemRequest>.Filter.Eq(r => r.Status, RequestStatus.Pending)
+            Builders<ItemRequest>.Filter.In(r => r.Status, new[] { RequestStatus.Pending, RequestStatus.Approved })
         );
         var sort = Builders<ItemRequest>.Sort.Descending(r => r.RequestedAt);
         return await _requestsCollection.Find(filter).Sort(sort).ToListAsync();
