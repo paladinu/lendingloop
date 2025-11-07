@@ -56,13 +56,31 @@
   font-size: 1.25rem;
 }
 
+.loop-description {
+  margin: 0.5rem 0 1rem 0;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.public-badge {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.archived-badge {
+  color: #dc3545;
+  font-weight: 600;
+}
+
 .loop-actions {
   display: flex;
   gap: 1rem;
 }
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-settings {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -89,6 +107,15 @@
 
 .btn-secondary:hover {
   background-color: #e9ecef;
+}
+
+.btn-settings {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-settings:hover {
+  background-color: #545b62;
 }
 
 .search-section {

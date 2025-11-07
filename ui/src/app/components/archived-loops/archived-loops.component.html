@@ -1,0 +1,26 @@
+<app-toolbar></app-toolbar>
+
+<div class="archived-loops-container">
+  <h2>Archived Loops</h2>
+
+  <div *ngIf="loading" class="loading">Loading...</div>
+
+  <div *ngIf="!loading && loops.length === 0" class="empty-state">
+    <p>No archived loops</p>
+  </div>
+
+  <div *ngIf="!loading && loops.length > 0" class="loops-list">
+    <div *ngFor="let loop of loops" class="loop-card">
+      <h3>{{ loop.name }}</h3>
+      <p *ngIf="loop.description">{{ loop.description }}</p>
+      <div class="loop-meta">
+        <span>{{ loop.memberCount }} members</span>
+        <span>Archived: {{ loop.archivedAt | date:'short' }}</span>
+      </div>
+      <div class="loop-actions">
+        <button (click)="restoreLoop(loop.id!)" class="btn-primary">Restore</button>
+        <button (click)="deleteLoop(loop.id!)" class="btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

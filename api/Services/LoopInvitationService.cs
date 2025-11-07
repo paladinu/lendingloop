@@ -305,6 +305,13 @@ public class LoopInvitationService : ILoopInvitationService
         _logger.LogInformation("Expired {Count} old invitations", result.ModifiedCount);
     }
 
+    public async Task DeleteInvitationsForLoopAsync(string loopId)
+    {
+        var filter = Builders<LoopInvitation>.Filter.Eq(i => i.LoopId, loopId);
+        var result = await _invitationsCollection.DeleteManyAsync(filter);
+        _logger.LogInformation("Deleted {Count} invitations for loop {LoopId}", result.DeletedCount, loopId);
+    }
+
     private string GenerateSecureToken()
     {
         var bytes = new byte[32];

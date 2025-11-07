@@ -1,0 +1,83 @@
+<app-toolbar></app-toolbar>
+
+<div class="loop-settings-container">
+  <h2>Loop Settings</h2>
+
+  <div *ngIf="message" [class]="'message ' + messageType">
+    {{ message }}
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading settings...</div>
+
+  <form *ngIf="!loading" (ngSubmit)="saveSettings()" class="settings-form">
+    <div class="form-group">
+      <label for="name">Loop Name *</label>
+      <input
+        type="text"
+        id="name"
+        [(ngModel)]="settings.name"
+        name="name"
+        required
+        maxlength="100"
+        [disabled]="saving"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea
+        id="description"
+        [(ngModel)]="settings.description"
+        name="description"
+        rows="4"
+        maxlength="500"
+        [disabled]="saving"
+      ></textarea>
+      <small>{{ settings.description.length }}/500 characters</small>
+    </div>
+
+    <div class="form-group checkbox-group">
+      <label>
+        <input
+          type="checkbox"
+          [(ngModel)]="settings.isPublic"
+          name="isPublic"
+          [disabled]="saving"
+        />
+        Make this loop public (allows others to discover and request to join)
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" [disabled]="saving" class="btn-primary">
+        {{ saving ? 'Saving...' : 'Save Settings' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="management-section">
+    <h3>Loop Management</h3>
+
+    <div class="management-actions">
+      <button (click)="goToMembers()" class="btn-secondary">
+        Manage Members
+      </button>
+
+      <button (click)="goToTransferOwnership()" class="btn-secondary">
+        Transfer Ownership
+      </button>
+
+      <button *ngIf="!isArchived" (click)="archiveLoop()" class="btn-warning">
+        Archive Loop
+      </button>
+
+      <button *ngIf="isArchived" (click)="restoreLoop()" class="btn-success">
+        Restore Loop
+      </button>
+
+      <button (click)="deleteLoop()" class="btn-danger">
+        Delete Loop Permanently
+      </button>
+    </div>
+  </div>
+</div>

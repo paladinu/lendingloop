@@ -131,8 +131,23 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
     // Register Loop Invitation Service
     builder.Services.AddScoped<ILoopInvitationService, LoopInvitationService>();
     
+    // Register Loop Join Request Service
+    builder.Services.AddScoped<ILoopJoinRequestService, LoopJoinRequestService>();
+    
     // Register Database Migration Service
     builder.Services.AddScoped<DatabaseMigration>();
+    
+    // Set up dependencies for LoopService to avoid circular dependency
+    builder.Services.AddScoped(serviceProvider =>
+    {
+        var loopService = serviceProvider.GetRequiredService<ILoopService>() as LoopService;
+        var itemsService = serviceProvider.GetRequiredService<IItemsService>();
+        var loopInvitationService = serviceProvider.GetRequiredService<ILoopInvitationService>();
+        var loopJoinRequestService = serviceProvider.GetRequiredService<ILoopJoinRequestService>();
+        
+        loopService?.SetDependencies(itemsService, loopInvitationService, loopJoinRequestService);
+        return loopService!;
+    });
     
     // Migration endpoints are automatically available through controller registration
 }

@@ -56,4 +56,12 @@ export class LoopListComponent implements OnInit {
   navigateToHome(): void {
     this.router.navigate(['/']);
   }
+
+  navigateToArchivedLoops(): void {
+    this.router.navigate(['/loops/archived']);
+  }
+
+  navigateToPublicLoops(): void {
+    this.router.navigate(['/loops/public']);
+  }
 }

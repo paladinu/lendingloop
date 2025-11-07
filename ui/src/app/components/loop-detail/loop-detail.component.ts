@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
+import { AuthService } from '../../services/auth.service';
 import { Loop } from '../../models/loop.interface';
 import { SharedItem } from '../../models/shared-item.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
@@ -24,19 +25,28 @@ export class LoopDetailComponent implements OnInit {
   searchQuery = '';
   loading = false;
   error: string | null = null;
+  currentUserId: string | null = null;
+  isOwner: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private loopService: LoopService
+    private loopService: LoopService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loopId = this.route.snapshot.paramMap.get('id');
-    if (this.loopId) {
-      this.loadLoopDetails();
-      this.loadLoopItems();
-    }
+    
+    // Get current user
+    this.authService.getCurrentUser().subscribe(user => {
+      this.currentUserId = user?.id || null;
+      
+      if (this.loopId) {
+        this.loadLoopDetails();
+        this.loadLoopItems();
+      }
+    });
   }
 
   loadLoopDetails(): void {
@@ -45,6 +55,7 @@ export class LoopDetailComponent implements OnInit {
     this.loopService.getLoopById(this.loopId).subscribe({
       next: (loop) => {
         this.loop = loop;
+        this.isOwner = this.currentUserId === loop.creatorId;
       },
       error: (err) => {
         this.error = 'Failed to load loop details';
@@ -95,6 +106,12 @@ export class LoopDetailComponent implements OnInit {
   navigateToInvite(): void {
     if (this.loopId) {
       this.router.navigate(['/loops', this.loopId, 'invite']);
+    }
+  }
+
+  navigateToSettings(): void {
+    if (this.loopId) {
+      this.router.navigate(['/loops', this.loopId, 'settings']);
     }
   }
 

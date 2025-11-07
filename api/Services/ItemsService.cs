@@ -148,6 +148,29 @@ public class ItemsService : IItemsService
         return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
     }
 
+    public async Task RemoveLoopFromAllItemsAsync(string loopId)
+    {
+        var filter = Builders<SharedItem>.Filter.AnyEq(item => item.VisibleToLoopIds, loopId);
+        var update = Builders<SharedItem>.Update
+            .Pull(item => item.VisibleToLoopIds, loopId)
+            .Set(item => item.UpdatedAt, DateTime.UtcNow);
+
+        await _itemsCollection.UpdateManyAsync(filter, update);
+    }
+
+    public async Task RemoveLoopFromUserItemsAsync(string userId, string loopId)
+    {
+        var filter = Builders<SharedItem>.Filter.And(
+            Builders<SharedItem>.Filter.Eq(item => item.UserId, userId),
+            Builders<SharedItem>.Filter.AnyEq(item => item.VisibleToLoopIds, loopId)
+        );
+        var update = Builders<SharedItem>.Update
+            .Pull(item => item.VisibleToLoopIds, loopId)
+            .Set(item => item.UpdatedAt, DateTime.UtcNow);
+
+        await _itemsCollection.UpdateManyAsync(filter, update);
+    }
+
     private async Task EnsureIndexesAsync()
     {
         try

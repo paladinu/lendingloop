@@ -17,6 +17,9 @@ import { ItemAddComponent } from './components/item-add/item-add.component';
 import { ItemEditComponent } from './components/item-edit/item-edit.component';
 import { ItemRequestListComponent } from './components/item-request-list/item-request-list.component';
 import { MyRequestsComponent } from './components/my-requests/my-requests.component';
+import { PublicLoopsComponent } from './components/public-loops/public-loops.component';
+import { ArchivedLoopsComponent } from './components/archived-loops/archived-loops.component';
+import { LoopSettingsComponent } from './components/loop-settings/loop-settings.component';
 
 export const routes: Routes = [
     // Authentication routes (no guard needed)
@@ -45,9 +48,12 @@ export const routes: Routes = [
             { path: 'create', component: LoopCreateComponent },
             { path: 'invitations', component: LoopInvitationsComponent },
             { path: 'accept-invitation', component: AcceptInvitationComponent },
+            { path: 'public', component: PublicLoopsComponent },
+            { path: 'archived', component: ArchivedLoopsComponent },
             { path: ':id', component: LoopDetailComponent },
             { path: ':id/invite', component: LoopInviteComponent },
-            { path: ':id/members', component: LoopMembersComponent }
+            { path: ':id/members', component: LoopMembersComponent },
+            { path: ':id/settings', component: LoopSettingsComponent }
         ]
     },
 

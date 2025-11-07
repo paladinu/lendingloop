@@ -62,6 +62,175 @@ public class LoopsController : ControllerBase
         }
     }
 
+    // Public Loops Discovery - Use explicit route to avoid conflicts
+    [Route("public")]
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicLoops([FromQuery] int skip = 0, [FromQuery] int limit = 20)
+    {
+        try
+        {
+            var loops = await _loopService.GetPublicLoopsAsync(skip, limit);
+            
+            var enrichedLoops = new List<object>();
+            foreach (var loop in loops)
+            {
+                var items = await _itemsService.GetItemsByLoopIdAsync(loop.Id!);
+                enrichedLoops.Add(new
+                {
+                    loop.Id,
+                    loop.Name,
+                    loop.Description,
+                    loop.CreatedAt,
+                    MemberCount = loop.MemberIds.Count,
+                    ItemCount = items.Count
+                });
+            }
+
+            return Ok(enrichedLoops);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting public loops");
+            return StatusCode(500, new { message = "An error occurred while retrieving public loops" });
+        }
+    }
+
+    [Route("public/search")]
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> SearchPublicLoops([FromQuery] string q, [FromQuery] int skip = 0, [FromQuery] int limit = 20)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+        {
+            return BadRequest(new { message = "Search query is required" });
+        }
+
+        try
+        {
+            var loops = await _loopService.SearchPublicLoopsAsync(q, skip, limit);
+            
+            var enrichedLoops = new List<object>();
+            foreach (var loop in loops)
+            {
+                var items = await _itemsService.GetItemsByLoopIdAsync(loop.Id!);
+                enrichedLoops.Add(new
+                {
+                    loop.Id,
+                    loop.Name,
+                    loop.Description,
+                    loop.CreatedAt,
+                    MemberCount = loop.MemberIds.Count,
+                    ItemCount = items.Count
+                });
+            }
+
+            return Ok(enrichedLoops);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching public loops");
+            return StatusCode(500, new { message = "An error occurred while searching public loops" });
+        }
+    }
+
+    [Route("archived")]
+    [HttpGet]
+    public async Task<IActionResult> GetArchivedLoops()
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loops = await _loopService.GetArchivedLoopsAsync(userId);
+            
+            var enrichedLoops = new List<object>();
+            foreach (var loop in loops)
+            {
+                enrichedLoops.Add(new
+                {
+                    loop.Id,
+                    loop.Name,
+                    loop.Description,
+                    loop.CreatorId,
+                    loop.MemberIds,
+                    loop.IsArchived,
+                    loop.ArchivedAt,
+                    loop.CreatedAt,
+                    loop.UpdatedAt,
+                    MemberCount = loop.MemberIds.Count
+                });
+            }
+
+            return Ok(enrichedLoops);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting archived loops for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving archived loops" });
+        }
+    }
+
+    [Route("invitations/pending")]
+    [HttpGet]
+    public async Task<IActionResult> GetPendingInvitations()
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var invitations = await _invitationService.GetPendingInvitationsForUserAsync(userId);
+            
+            // Enrich invitations with loop and inviter information
+            var enrichedInvitations = new List<object>();
+            foreach (var invitation in invitations)
+            {
+                var loop = await _loopService.GetLoopByIdAsync(invitation.LoopId);
+                var inviter = await _userService.GetUserByIdAsync(invitation.InvitedByUserId);
+                
+                var inviterName = inviter != null
+                    ? $"{inviter.FirstName} {inviter.LastName}".Trim()
+                    : "Unknown";
+
+                if (string.IsNullOrEmpty(inviterName) || inviterName == "Unknown")
+                {
+                    inviterName = inviter?.Email ?? "Unknown";
+                }
+
+                enrichedInvitations.Add(new
+                {
+                    invitation.Id,
+                    invitation.LoopId,
+                    LoopName = loop?.Name ?? "Unknown",
+                    invitation.InvitedByUserId,
+                    InvitedByUserName = inviterName,
+                    invitation.InvitedEmail,
+                    invitation.InvitedUserId,
+                    invitation.InvitationToken,
+                    invitation.Status,
+                    invitation.ExpiresAt,
+                    invitation.CreatedAt,
+                    invitation.AcceptedAt
+                });
+            }
+
+            return Ok(enrichedInvitations);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting pending invitations for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving invitations" });
+        }
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetUserLoops()
     {
@@ -102,7 +271,7 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}")]
     public async Task<IActionResult> GetLoopById(string id)
     {
         var userId = GetUserId();
@@ -145,7 +314,7 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/members")]
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/members")]
     public async Task<IActionResult> GetLoopMembers(string id)
     {
         var userId = GetUserId();
@@ -180,7 +349,7 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/items")]
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/items")]
     public async Task<IActionResult> GetLoopItems(string id, [FromQuery] string? search = null)
     {
         var userId = GetUserId();
@@ -253,7 +422,7 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/invite-email")]
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/invite-email")]
     public async Task<IActionResult> InviteByEmail(string id, [FromBody] InviteByEmailRequest request)
     {
         var userId = GetUserId();
@@ -289,7 +458,7 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpPost("{id}/invite-user")]
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/invite-user")]
     public async Task<IActionResult> InviteUser(string id, [FromBody] InviteUserRequest request)
     {
         var userId = GetUserId();
@@ -325,7 +494,7 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpGet("{id}/potential-invitees")]
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/potential-invitees")]
     public async Task<IActionResult> GetPotentialInvitees(string id)
     {
         var userId = GetUserId();
@@ -415,8 +584,9 @@ public class LoopsController : ControllerBase
         }
     }
 
-    [HttpGet("invitations/pending")]
-    public async Task<IActionResult> GetPendingInvitations()
+    // Loop Settings Management
+    [HttpPut("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/settings")]
+    public async Task<IActionResult> UpdateLoopSettings(string id, [FromBody] UpdateLoopSettingsRequest request)
     {
         var userId = GetUserId();
         if (string.IsNullOrEmpty(userId))
@@ -426,47 +596,613 @@ public class LoopsController : ControllerBase
 
         try
         {
-            var invitations = await _invitationService.GetPendingInvitationsForUserAsync(userId);
-            
-            // Enrich invitations with loop and inviter information
-            var enrichedInvitations = new List<object>();
-            foreach (var invitation in invitations)
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
             {
-                var loop = await _loopService.GetLoopByIdAsync(invitation.LoopId);
-                var inviter = await _userService.GetUserByIdAsync(invitation.InvitedByUserId);
-                
-                var inviterName = inviter != null
-                    ? $"{inviter.FirstName} {inviter.LastName}".Trim()
-                    : "Unknown";
-
-                if (string.IsNullOrEmpty(inviterName) || inviterName == "Unknown")
-                {
-                    inviterName = inviter?.Email ?? "Unknown";
-                }
-
-                enrichedInvitations.Add(new
-                {
-                    invitation.Id,
-                    invitation.LoopId,
-                    LoopName = loop?.Name ?? "Unknown",
-                    invitation.InvitedByUserId,
-                    InvitedByUserName = inviterName,
-                    invitation.InvitedEmail,
-                    invitation.InvitedUserId,
-                    invitation.InvitationToken,
-                    invitation.Status,
-                    invitation.ExpiresAt,
-                    invitation.CreatedAt,
-                    invitation.AcceptedAt
-                });
+                return StatusCode(403, new { message = "Only the loop owner can update settings" });
             }
 
-            return Ok(enrichedInvitations);
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest(new { message = "Loop name is required" });
+            }
+
+            if (request.Description.Length > 500)
+            {
+                return BadRequest(new { message = "Description must be 500 characters or less" });
+            }
+
+            var loop = await _loopService.UpdateLoopSettingsAsync(id, request.Name, request.Description, request.IsPublic);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            return Ok(loop);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting pending invitations for user {UserId}", userId);
-            return StatusCode(500, new { message = "An error occurred while retrieving invitations" });
+            _logger.LogError(ex, "Error updating loop settings for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while updating loop settings" });
+        }
+    }
+
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/settings")]
+    public async Task<IActionResult> GetLoopSettings(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loop = await _loopService.GetLoopByIdAsync(id);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            var isMember = loop.MemberIds.Contains(userId);
+            if (!isMember)
+            {
+                return Forbid();
+            }
+
+            return Ok(new
+            {
+                loop.Name,
+                loop.Description,
+                loop.IsPublic
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting loop settings for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving loop settings" });
+        }
+    }
+
+    // Loop Archival
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/archive")]
+    public async Task<IActionResult> ArchiveLoop(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
+            {
+                return StatusCode(403, new { message = "Only the loop owner can archive the loop" });
+            }
+
+            var loop = await _loopService.ArchiveLoopAsync(id);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            return Ok(loop);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error archiving loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while archiving the loop" });
+        }
+    }
+
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/restore")]
+    public async Task<IActionResult> RestoreLoop(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
+            {
+                return StatusCode(403, new { message = "Only the loop owner can restore the loop" });
+            }
+
+            var loop = await _loopService.RestoreLoopAsync(id);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            return Ok(loop);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error restoring loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while restoring the loop" });
+        }
+    }
+
+    // Loop Deletion
+    [HttpDelete("{id:regex(^[[0-9a-fA-F]]{{24}}$)}")]
+    public async Task<IActionResult> DeleteLoop(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
+            {
+                return StatusCode(403, new { message = "Only the loop owner can delete the loop" });
+            }
+
+            var success = await _loopService.DeleteLoopAsync(id);
+            if (!success)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while deleting the loop" });
+        }
+    }
+
+    // Ownership Transfer
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/transfer-ownership")]
+    public async Task<IActionResult> InitiateOwnershipTransfer(string id, [FromBody] TransferOwnershipRequest request)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
+            {
+                return StatusCode(403, new { message = "Only the loop owner can transfer ownership" });
+            }
+
+            var loop = await _loopService.GetLoopByIdAsync(id);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            if (!loop.MemberIds.Contains(request.NewOwnerId))
+            {
+                return BadRequest(new { message = "New owner must be a member of the loop" });
+            }
+
+            var updatedLoop = await _loopService.InitiateOwnershipTransferAsync(id, userId, request.NewOwnerId);
+            if (updatedLoop == null)
+            {
+                return Conflict(new { message = "A pending ownership transfer already exists" });
+            }
+
+            return Ok(updatedLoop);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error initiating ownership transfer for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while initiating ownership transfer" });
+        }
+    }
+
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/transfer-ownership/accept")]
+    public async Task<IActionResult> AcceptOwnershipTransfer(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loop = await _loopService.AcceptOwnershipTransferAsync(id, userId);
+            if (loop == null)
+            {
+                return NotFound(new { message = "No pending transfer found for this user" });
+            }
+
+            return Ok(loop);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error accepting ownership transfer for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while accepting ownership transfer" });
+        }
+    }
+
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/transfer-ownership/decline")]
+    public async Task<IActionResult> DeclineOwnershipTransfer(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loop = await _loopService.DeclineOwnershipTransferAsync(id, userId);
+            if (loop == null)
+            {
+                return NotFound(new { message = "No pending transfer found for this user" });
+            }
+
+            return Ok(loop);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error declining ownership transfer for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while declining ownership transfer" });
+        }
+    }
+
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/transfer-ownership/cancel")]
+    public async Task<IActionResult> CancelOwnershipTransfer(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loop = await _loopService.CancelOwnershipTransferAsync(id, userId);
+            if (loop == null)
+            {
+                return NotFound(new { message = "No pending transfer found initiated by this user" });
+            }
+
+            return Ok(loop);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling ownership transfer for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while cancelling ownership transfer" });
+        }
+    }
+
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/transfer-ownership/pending")]
+    public async Task<IActionResult> GetPendingOwnershipTransfer(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isMember = await _loopService.IsUserLoopMemberAsync(id, userId);
+            if (!isMember)
+            {
+                return Forbid();
+            }
+
+            var transfer = await _loopService.GetPendingOwnershipTransferAsync(id);
+            if (transfer == null)
+            {
+                return Ok(new { hasPendingTransfer = false });
+            }
+
+            // Enrich with user names
+            var fromUser = await _userService.GetUserByIdAsync(transfer.FromUserId);
+            var toUser = await _userService.GetUserByIdAsync(transfer.ToUserId);
+
+            return Ok(new
+            {
+                hasPendingTransfer = true,
+                transfer.FromUserId,
+                FromUserName = fromUser != null ? $"{fromUser.FirstName} {fromUser.LastName}".Trim() : "Unknown",
+                transfer.ToUserId,
+                ToUserName = toUser != null ? $"{toUser.FirstName} {toUser.LastName}".Trim() : "Unknown",
+                transfer.TransferredAt,
+                transfer.Status
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting pending ownership transfer for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving pending transfer" });
+        }
+    }
+
+    // Member Management
+    [HttpDelete("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/members/{memberId:regex(^[[0-9a-fA-F]]{{24}}$)}")]
+    public async Task<IActionResult> RemoveMember(string id, string memberId)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
+            {
+                return StatusCode(403, new { message = "Only the loop owner can remove members" });
+            }
+
+            var loop = await _loopService.GetLoopByIdAsync(id);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            if (!loop.MemberIds.Contains(memberId))
+            {
+                return NotFound(new { message = "Member not found in loop" });
+            }
+
+            if (loop.CreatorId == memberId)
+            {
+                return BadRequest(new { message = "Cannot remove the loop owner" });
+            }
+
+            await _loopService.RemoveMemberFromLoopAsync(id, memberId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing member {MemberId} from loop {LoopId}", memberId, id);
+            return StatusCode(500, new { message = "An error occurred while removing the member" });
+        }
+    }
+
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/leave")]
+    public async Task<IActionResult> LeaveLoop(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loop = await _loopService.LeaveLoopAsync(id, userId);
+            if (loop == null)
+            {
+                var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+                if (isOwner)
+                {
+                    return BadRequest(new { message = "Loop owner must transfer ownership before leaving" });
+                }
+                return NotFound(new { message = "Loop not found or you are not a member" });
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error leaving loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while leaving the loop" });
+        }
+    }
+}
+
+// Separate controller for join requests
+[ApiController]
+[Route("api/loops")]
+[Authorize]
+public class LoopJoinRequestsController : ControllerBase
+{
+    private readonly ILoopJoinRequestService _joinRequestService;
+    private readonly ILoopService _loopService;
+    private readonly IUserService _userService;
+    private readonly ILogger<LoopJoinRequestsController> _logger;
+
+    public LoopJoinRequestsController(
+        ILoopJoinRequestService joinRequestService,
+        ILoopService loopService,
+        IUserService userService,
+        ILogger<LoopJoinRequestsController> logger)
+    {
+        _joinRequestService = joinRequestService;
+        _loopService = loopService;
+        _userService = userService;
+        _logger = logger;
+    }
+
+    private string GetUserId()
+    {
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    }
+
+    [HttpPost("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/join-requests")]
+    public async Task<IActionResult> CreateJoinRequest(string id, [FromBody] CreateJoinRequestRequest request)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var loop = await _loopService.GetLoopByIdAsync(id);
+            if (loop == null)
+            {
+                return NotFound(new { message = "Loop not found" });
+            }
+
+            if (!loop.IsPublic)
+            {
+                return StatusCode(403, new { message = "Cannot request to join a private loop" });
+            }
+
+            var joinRequest = await _joinRequestService.CreateJoinRequestAsync(id, userId, request.Message ?? string.Empty);
+            return Ok(joinRequest);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating join request for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while creating the join request" });
+        }
+    }
+
+    [HttpGet("{id:regex(^[[0-9a-fA-F]]{{24}}$)}/join-requests")]
+    public async Task<IActionResult> GetLoopJoinRequests(string id)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var isOwner = await _loopService.IsLoopOwnerAsync(id, userId);
+            if (!isOwner)
+            {
+                return StatusCode(403, new { message = "Only the loop owner can view join requests" });
+            }
+
+            var requests = await _joinRequestService.GetPendingJoinRequestsForLoopAsync(id);
+            
+            // Enrich with user information
+            var enrichedRequests = new List<object>();
+            foreach (var request in requests)
+            {
+                var user = await _userService.GetUserByIdAsync(request.UserId);
+                enrichedRequests.Add(new
+                {
+                    request.Id,
+                    request.LoopId,
+                    request.UserId,
+                    UserName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : "Unknown",
+                    UserEmail = user?.Email ?? "Unknown",
+                    request.Message,
+                    request.Status,
+                    request.CreatedAt
+                });
+            }
+
+            return Ok(enrichedRequests);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting join requests for loop {LoopId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving join requests" });
+        }
+    }
+
+    [HttpPost("join-requests/{requestId:regex(^[[0-9a-fA-F]]{{24}}$)}/approve")]
+    public async Task<IActionResult> ApproveJoinRequest(string requestId)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var request = await _joinRequestService.ApproveJoinRequestAsync(requestId, userId);
+            if (request == null)
+            {
+                return NotFound(new { message = "Join request not found or you are not authorized" });
+            }
+
+            return Ok(request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error approving join request {RequestId}", requestId);
+            return StatusCode(500, new { message = "An error occurred while approving the join request" });
+        }
+    }
+
+    [HttpPost("join-requests/{requestId:regex(^[[0-9a-fA-F]]{{24}}$)}/reject")]
+    public async Task<IActionResult> RejectJoinRequest(string requestId)
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var request = await _joinRequestService.RejectJoinRequestAsync(requestId, userId);
+            if (request == null)
+            {
+                return NotFound(new { message = "Join request not found or you are not authorized" });
+            }
+
+            return Ok(request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error rejecting join request {RequestId}", requestId);
+            return StatusCode(500, new { message = "An error occurred while rejecting the join request" });
+        }
+    }
+
+    [HttpGet("join-requests/my-requests")]
+    public async Task<IActionResult> GetMyJoinRequests()
+    {
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var requests = await _joinRequestService.GetUserJoinRequestsAsync(userId);
+            
+            // Enrich with loop information
+            var enrichedRequests = new List<object>();
+            foreach (var request in requests)
+            {
+                var loop = await _loopService.GetLoopByIdAsync(request.LoopId);
+                enrichedRequests.Add(new
+                {
+                    request.Id,
+                    request.LoopId,
+                    LoopName = loop?.Name ?? "Unknown",
+                    request.Message,
+                    request.Status,
+                    request.CreatedAt,
+                    request.RespondedAt
+                });
+            }
+
+            return Ok(enrichedRequests);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting join requests for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving your join requests" });
         }
     }
 }
@@ -484,4 +1220,21 @@ public class InviteByEmailRequest
 public class InviteUserRequest
 {
     public string UserId { get; set; } = string.Empty;
+}
+
+public class UpdateLoopSettingsRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsPublic { get; set; }
+}
+
+public class TransferOwnershipRequest
+{
+    public string NewOwnerId { get; set; } = string.Empty;
+}
+
+public class CreateJoinRequestRequest
+{
+    public string? Message { get; set; }
 }

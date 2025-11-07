@@ -1,0 +1,96 @@
+<app-toolbar></app-toolbar>
+
+<div class="public-loops-container">
+  <h2>Discover Public Loops</h2>
+
+  <div *ngIf="message" [class]="'message ' + messageType">
+    {{ message }}
+  </div>
+
+  <div class="search-section">
+    <div class="search-bar">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="onSearch()"
+        placeholder="Search loops by name or description..."
+        class="search-input"
+      />
+      <button (click)="onSearch()" class="btn-primary" [disabled]="loading">
+        Search
+      </button>
+      <button 
+        *ngIf="searchTerm" 
+        (click)="clearSearch()" 
+        class="btn-secondary"
+        [disabled]="loading"
+      >
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading && loops.length === 0" class="loading">
+    Loading public loops...
+  </div>
+
+  <div *ngIf="!loading && loops.length === 0" class="empty-state">
+    <p *ngIf="!searchTerm">No public loops available</p>
+    <p *ngIf="searchTerm">No loops found matching "{{ searchTerm }}"</p>
+  </div>
+
+  <div *ngIf="loops.length > 0" class="loops-grid">
+    <div *ngFor="let loop of loops" class="loop-card">
+      <div class="loop-header">
+        <h3>{{ loop.name }}</h3>
+        <span class="public-badge">Public</span>
+      </div>
+
+      <p *ngIf="loop.description" class="loop-description">
+        {{ loop.description }}
+      </p>
+
+      <div class="loop-meta">
+        <span class="meta-item">
+          <i class="icon-users"></i>
+          {{ loop.memberCount }} {{ loop.memberCount === 1 ? 'member' : 'members' }}
+        </span>
+        <span class="meta-item">
+          <i class="icon-items"></i>
+          {{ loop.itemCount }} {{ loop.itemCount === 1 ? 'item' : 'items' }}
+        </span>
+      </div>
+
+      <div class="loop-date">
+        Created {{ loop.createdAt | date:'mediumDate' }}
+      </div>
+
+      <div class="loop-actions">
+        <button 
+          *ngIf="!hasPendingRequest(loop.id!)"
+          (click)="requestToJoin(loop.id!, loop.name)" 
+          class="btn-primary"
+        >
+          Request to Join
+        </button>
+        <button 
+          *ngIf="hasPendingRequest(loop.id!)"
+          class="btn-pending"
+          disabled
+        >
+          Request Pending
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="hasMore && loops.length > 0" class="load-more-section">
+    <button 
+      (click)="loadMore()" 
+      class="btn-secondary"
+      [disabled]="loading"
+    >
+      {{ loading ? 'Loading...' : 'Load More' }}
+    </button>
+  </div>
+</div>

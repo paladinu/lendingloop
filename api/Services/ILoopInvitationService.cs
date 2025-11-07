@@ -11,4 +11,5 @@ public interface ILoopInvitationService
     Task<List<LoopInvitation>> GetPendingInvitationsForUserAsync(string userId);
     Task<List<LoopInvitation>> GetPendingInvitationsForLoopAsync(string loopId);
     Task ExpireOldInvitationsAsync();
+    Task DeleteInvitationsForLoopAsync(string loopId);
 }

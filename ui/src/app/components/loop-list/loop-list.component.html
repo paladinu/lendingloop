@@ -7,9 +7,17 @@
   
   <div class="header">
     <h1>My Loops</h1>
-    <button class="btn-create" (click)="navigateToCreateLoop()">
-      <span class="icon">+</span> Create Loop
-    </button>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="navigateToPublicLoops()">
+        🌐 Discover Public Loops
+      </button>
+      <button class="btn-secondary" (click)="navigateToArchivedLoops()">
+        📦 Archived Loops
+      </button>
+      <button class="btn-create" (click)="navigateToCreateLoop()">
+        <span class="icon">+</span> Create Loop
+      </button>
+    </div>
   </div>
 
   <div *ngIf="loading" class="loading">

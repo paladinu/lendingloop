@@ -8,6 +8,7 @@
   <div *ngIf="loop" class="loop-header">
     <div class="loop-info">
       <h1>{{ loop.name }}</h1>
+      <p *ngIf="loop.description" class="loop-description">{{ loop.description }}</p>
       <div class="loop-stats">
         <span class="stat">
           <span class="icon">👥</span>
@@ -17,9 +18,20 @@
           <span class="icon">📦</span>
           {{ loop.itemCount || 0 }} Items
         </span>
+        <span *ngIf="loop.isPublic" class="stat public-badge">
+          <span class="icon">🌐</span>
+          Public
+        </span>
+        <span *ngIf="loop.isArchived" class="stat archived-badge">
+          <span class="icon">📦</span>
+          Archived
+        </span>
       </div>
     </div>
     <div class="loop-actions">
+      <button *ngIf="isOwner" class="btn-settings" (click)="navigateToSettings()" title="Loop Settings">
+        ⚙️ Settings
+      </button>
       <button class="btn-secondary" (click)="navigateToMembers()">View Members</button>
       <button class="btn-primary" (click)="navigateToInvite()">Invite Members</button>
     </div>
