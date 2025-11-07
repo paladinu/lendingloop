@@ -46,6 +46,14 @@ Examples:
 
 ## Testing Guidelines
 
+### CRITICAL: Test Requirements for Task Completion
+**A task is NOT considered complete until ALL tests pass:**
+- Backend tests: `dotnet test` from `/api.tests` MUST show all tests passing
+- Frontend tests: `npm test` from `/ui` MUST show all tests passing
+- Both test suites MUST be run and verified before marking any task as complete
+- If implementing a task breaks existing tests, those tests MUST be fixed as part of the task
+- New functionality MUST include corresponding tests
+
 ### Backend Testing (.NET)
 **All services in the `/api` project MUST have corresponding unit tests in `/api.tests`.**
 
@@ -54,7 +62,8 @@ Examples:
 - Mock dependencies using Moq
 - Test all public methods and edge cases
 - Aim for high code coverage on business logic
-- Testing project folder strutcture should match that of the project under test
+- Testing project folder structure should match that of the project under test
+- **REQUIRED**: Run `dotnet test` from `/api.tests` after implementation to verify all tests pass
 
 Example test structure:
 ```csharp
@@ -78,6 +87,7 @@ public class ItemsServiceTests
 - Mock HTTP calls and dependencies
 - Test component logic, not implementation details
 - Focus on user interactions and state changes
+- **REQUIRED**: Run `npm test` from `/ui` after implementation to verify all tests pass
 
 Example test structure:
 ```typescript
@@ -94,13 +104,14 @@ describe('ItemsService', () => {
 - Run backend tests: `dotnet test` from `/api.tests`
 - Run frontend tests: `npm test` from `/ui`
 - Run frontend tests with coverage: `npm run test:coverage` from `/ui`
+- **MANDATORY**: Both test suites must pass before considering a task complete
 
 ### Testing Best Practices
 - **ALL tests MUST follow the Arrange-Act-Assert (AAA) pattern with comments**
   - Use `//arrange` for test setup and initialization
   - Use `//act` for executing the method under test
   - Use `//assert` for verifying the results
-- Write tests for new features before marking tasks as complete
+- Write tests for new features as part of the implementation
 - Keep tests focused and isolated
 - Use descriptive test names that explain what is being tested
 - Mock external dependencies (database, HTTP calls, etc.)
@@ -108,3 +119,12 @@ describe('ItemsService', () => {
 - Avoid testing framework internals or private methods
 - All new services MUST have unit tests before being considered complete
 - Existing services without tests should have tests added when modified
+- **If your changes break existing tests, fix them immediately as part of your task**
+
+### Task Completion Checklist
+Before marking any task as complete, verify:
+1. ✅ All code changes are implemented
+2. ✅ Backend tests pass: `dotnet test` from `/api.tests` shows 0 failures
+3. ✅ Frontend tests pass: `npm test` from `/ui` shows 0 failures
+4. ✅ New functionality has corresponding tests
+5. ✅ Any broken tests have been fixed
