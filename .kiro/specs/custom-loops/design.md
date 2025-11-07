@@ -586,12 +586,6 @@ erDiagram
 
 ## Future Enhancements
 
-1. **Loop Management**
-   - Loop descriptions and settings
-   - Loop privacy settings (public/private)
-   - Transfer loop ownership
-   - Archive/delete loops
-
 2. **Advanced Invitations**
    - Bulk invitations
    - Invitation templates
