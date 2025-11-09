@@ -1,10 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { LoopInviteComponent } from './loop-invite.component';
 import { LoopService } from '../../services/loop.service';
+import { NotificationService } from '../../services/notification.service';
+import { ItemRequestService } from '../../services/item-request.service';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { getMockToolbarServices } from '../../testing/mock-services';
 
 describe('LoopInviteComponent', () => {
   let component: LoopInviteComponent;
@@ -13,6 +17,8 @@ describe('LoopInviteComponent', () => {
   let mockActivatedRoute: any;
 
   beforeEach(async () => {
+    const toolbarMocks = getMockToolbarServices();
+
     mockLoopService = {
       inviteByEmail: jest.fn(),
       inviteUser: jest.fn(),
@@ -31,15 +37,14 @@ describe('LoopInviteComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [LoopInviteComponent, FormsModule],
+      imports: [LoopInviteComponent, FormsModule, ToolbarComponent],
       providers: [
+        provideHttpClient(),
         { provide: LoopService, useValue: mockLoopService },
+        { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
+        { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
-    })
-    .overrideComponent(LoopInviteComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
     })
     .compileComponents();
 

@@ -9,6 +9,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../services/auth.service';
 import { UserProfile } from '../../models/auth.interface';
 import { ItemRequestService } from '../../services/item-request.service';
+import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 
 @Component({
   selector: 'app-toolbar',
@@ -20,7 +21,8 @@ import { ItemRequestService } from '../../services/item-request.service';
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
-    MatDividerModule
+    MatDividerModule,
+    NotificationBellComponent
   ],
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.css']

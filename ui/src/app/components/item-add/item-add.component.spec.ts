@@ -2,12 +2,16 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { ItemAddComponent } from './item-add.component';
 import { ItemsService } from '../../services/items.service';
 import { LoopService } from '../../services/loop.service';
+import { NotificationService } from '../../services/notification.service';
+import { ItemRequestService } from '../../services/item-request.service';
 import { SharedItem } from '../../models/shared-item.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { getMockToolbarServices } from '../../testing/mock-services';
 
 describe('ItemAddComponent', () => {
   let component: ItemAddComponent;
@@ -17,6 +21,8 @@ describe('ItemAddComponent', () => {
   let mockRouter: jest.Mocked<Router>;
 
   beforeEach(async () => {
+    const toolbarMocks = getMockToolbarServices();
+
     mockItemsService = {
       createItem: jest.fn(),
       uploadItemImage: jest.fn(),
@@ -36,20 +42,19 @@ describe('ItemAddComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [ItemAddComponent, FormsModule],
+      imports: [ItemAddComponent, FormsModule, ToolbarComponent],
       providers: [
+        provideHttpClient(),
         provideRouter([
           { path: 'loops/create', component: ItemAddComponent },
           { path: 'loops/invitations', component: ItemAddComponent }
         ]),
         { provide: ItemsService, useValue: mockItemsService },
         { provide: LoopService, useValue: mockLoopService },
+        { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
+        { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: ActivatedRoute, useValue: activatedRouteMock }
       ]
-    })
-    .overrideComponent(ItemAddComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
     })
     .compileComponents();
 

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ItemRequestButtonComponent } from './item-request-button.component';
 import { ItemRequestService } from '../../services/item-request.service';
 import { AuthService } from '../../services/auth.service';
@@ -22,7 +23,7 @@ describe('ItemRequestButtonComponent', () => {
         };
 
         await TestBed.configureTestingModule({
-            imports: [ItemRequestButtonComponent],
+            imports: [ItemRequestButtonComponent, HttpClientTestingModule],
             providers: [
                 { provide: ItemRequestService, useValue: itemRequestServiceSpy },
                 { provide: AuthService, useValue: authServiceSpy }
@@ -35,14 +36,24 @@ describe('ItemRequestButtonComponent', () => {
 
         fixture = TestBed.createComponent(ItemRequestButtonComponent);
         component = fixture.componentInstance;
+        
+        // Prevent ngOnInit from running automatically
+        fixture.autoDetectChanges(false);
     });
 
     it('should create', () => {
+        //arrange
+        component.itemId = 'item123';
+        component.ownerId = 'owner123';
+        
+        //act
+        fixture.detectChanges();
+        
         //assert
         expect(component).toBeTruthy();
     });
 
-    it('should load existing request on init', () => {
+    it('should load existing request on init', (done) => {
         //arrange
         const mockRequests: ItemRequest[] = [
             {
@@ -64,11 +75,14 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //assert
-        expect(itemRequestService.getRequestsForItem).toHaveBeenCalledWith('item123');
-        expect(component.existingRequest).toEqual(mockRequests[0]);
+        setTimeout(() => {
+            expect(itemRequestService.getRequestsForItem).toHaveBeenCalledWith('item123');
+            expect(component.existingRequest).toEqual(mockRequests[0]);
+            done();
+        }, 0);
     });
 
-    it('should show "Request Item" when no existing request', () => {
+    it('should show "Request Item" when no existing request', (done) => {
         //arrange
         (authService.getCurrentUser as jest.Mock).mockReturnValue(of({ id: 'user123', email: 'test@test.com', firstName: 'Test', lastName: 'User' }));
         (itemRequestService.getRequestsForItem as jest.Mock).mockReturnValue(of([]));
@@ -79,11 +93,14 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //assert
-        expect(component.buttonText).toBe('Request Item');
-        expect(component.isButtonDisabled).toBe(false);
+        setTimeout(() => {
+            expect(component.buttonText).toBe('Request Item');
+            expect(component.isButtonDisabled).toBe(false);
+            done();
+        }, 0);
     });
 
-    it('should show "Pending Request" when pending request exists', () => {
+    it('should show "Pending Request" when pending request exists', (done) => {
         //arrange
         const mockRequest: ItemRequest = {
             id: 'req1',
@@ -103,11 +120,14 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //assert
-        expect(component.buttonText).toBe('Pending Request');
-        expect(component.isButtonDisabled).toBe(true);
+        setTimeout(() => {
+            expect(component.buttonText).toBe('Pending Request');
+            expect(component.isButtonDisabled).toBe(true);
+            done();
+        }, 0);
     });
 
-    it('should show "Currently Borrowed" when approved request exists', () => {
+    it('should show "Currently Borrowed" when approved request exists', (done) => {
         //arrange
         const mockRequest: ItemRequest = {
             id: 'req1',
@@ -127,11 +147,14 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //assert
-        expect(component.buttonText).toBe('Currently Borrowed');
-        expect(component.isButtonDisabled).toBe(true);
+        setTimeout(() => {
+            expect(component.buttonText).toBe('Currently Borrowed');
+            expect(component.isButtonDisabled).toBe(true);
+            done();
+        }, 0);
     });
 
-    it('should create request when button clicked', () => {
+    it('should create request when button clicked', (done) => {
         //arrange
         const mockRequest: ItemRequest = {
             id: 'req1',
@@ -153,15 +176,20 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //act
-        component.onRequestItem();
-
-        //assert
-        expect(itemRequestService.createRequest).toHaveBeenCalledWith('item123');
-        expect(component.existingRequest).toEqual(mockRequest);
-        expect(component.requestCreated.emit).toHaveBeenCalledWith(mockRequest);
+        setTimeout(() => {
+            component.onRequestItem();
+            
+            //assert
+            setTimeout(() => {
+                expect(itemRequestService.createRequest).toHaveBeenCalledWith('item123');
+                expect(component.existingRequest).toEqual(mockRequest);
+                expect(component.requestCreated.emit).toHaveBeenCalledWith(mockRequest);
+                done();
+            }, 0);
+        }, 0);
     });
 
-    it('should handle error when creating request', () => {
+    it('should handle error when creating request', (done) => {
         //arrange
         const errorMessage = 'Cannot request your own item';
 
@@ -176,14 +204,19 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //act
-        component.onRequestItem();
-
-        //assert
-        expect(component.errorMessage).toBe(errorMessage);
-        expect(component.isLoading).toBe(false);
+        setTimeout(() => {
+            component.onRequestItem();
+            
+            //assert
+            setTimeout(() => {
+                expect(component.errorMessage).toBe(errorMessage);
+                expect(component.isLoading).toBe(false);
+                done();
+            }, 0);
+        }, 0);
     });
 
-    it('should not show button when user is owner', () => {
+    it('should not show button when user is owner', (done) => {
         //arrange
         (authService.getCurrentUser as jest.Mock).mockReturnValue(of({ id: 'owner123', email: 'test@test.com', firstName: 'Test', lastName: 'User' }));
         (itemRequestService.getRequestsForItem as jest.Mock).mockReturnValue(of([]));
@@ -194,11 +227,14 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //assert
-        expect(component.showButton).toBe(false);
-        expect(component.isButtonDisabled).toBe(true);
+        setTimeout(() => {
+            expect(component.showButton).toBe(false);
+            expect(component.isButtonDisabled).toBe(true);
+            done();
+        }, 0);
     });
 
-    it('should disable button when loading', () => {
+    it('should disable button when loading', (done) => {
         //arrange
         (authService.getCurrentUser as jest.Mock).mockReturnValue(of({ id: 'user123', email: 'test@test.com', firstName: 'Test', lastName: 'User' }));
         (itemRequestService.getRequestsForItem as jest.Mock).mockReturnValue(of([]));
@@ -210,6 +246,9 @@ describe('ItemRequestButtonComponent', () => {
         component.ngOnInit();
 
         //assert
-        expect(component.isButtonDisabled).toBe(true);
+        setTimeout(() => {
+            expect(component.isButtonDisabled).toBe(true);
+            done();
+        }, 0);
     });
 });

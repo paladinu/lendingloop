@@ -1,12 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ItemEditComponent } from './item-edit.component';
 import { ItemsService } from '../../services/items.service';
 import { LoopService } from '../../services/loop.service';
+import { AuthService } from '../../services/auth.service';
+import { ItemRequestService } from '../../services/item-request.service';
+import { NotificationService } from '../../services/notification.service';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
-import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 describe('ItemEditComponent', () => {
   let component: ItemEditComponent;
@@ -15,6 +19,9 @@ describe('ItemEditComponent', () => {
   let loopService: jest.Mocked<LoopService>;
   let router: jest.Mocked<Router>;
   let activatedRoute: any;
+  let authService: jest.Mocked<AuthService>;
+  let itemRequestService: jest.Mocked<ItemRequestService>;
+  let notificationService: jest.Mocked<NotificationService>;
 
   const mockItem: SharedItem = {
     id: '1',
@@ -32,7 +39,19 @@ describe('ItemEditComponent', () => {
   };
 
   const mockLoops: Loop[] = [
-    { id: 'loop1', name: 'Loop 1', creatorId: 'user123', memberIds: ['user123'], createdAt: new Date(), updatedAt: new Date(), memberCount: 2 }
+    { 
+      id: 'loop1', 
+      name: 'Loop 1', 
+      description: 'Test Loop',
+      creatorId: 'user123', 
+      memberIds: ['user123'], 
+      createdAt: new Date(), 
+      updatedAt: new Date(), 
+      memberCount: 2,
+      isPublic: false,
+      isArchived: false,
+      ownershipHistory: []
+    }
   ];
 
   beforeEach(async () => {
@@ -50,6 +69,25 @@ describe('ItemEditComponent', () => {
       navigate: jest.fn()
     } as unknown as jest.Mocked<Router>;
 
+    const authServiceMock = {
+      getCurrentUser: jest.fn().mockReturnValue(of({ 
+        id: 'user1', 
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User'
+      })),
+      logout: jest.fn()
+    } as unknown as jest.Mocked<AuthService>;
+
+    const itemRequestServiceMock = {
+      getPendingRequests: jest.fn().mockReturnValue(of([]))
+    } as unknown as jest.Mocked<ItemRequestService>;
+
+    const notificationServiceMock = {
+      getUnreadCount: jest.fn().mockReturnValue(of(0)),
+      getNotifications: jest.fn().mockReturnValue(of([]))
+    } as unknown as jest.Mocked<NotificationService>;
+
     activatedRoute = {
       snapshot: {
         paramMap: {
@@ -61,23 +99,26 @@ describe('ItemEditComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ItemEditComponent],
       providers: [
+        provideHttpClient(),
         { provide: ItemsService, useValue: itemsServiceMock },
         { provide: LoopService, useValue: loopServiceMock },
         { provide: Router, useValue: routerMock },
-        { provide: ActivatedRoute, useValue: activatedRoute }
-      ]
-    })
-    .overrideComponent(ItemEditComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
-    })
-    .compileComponents();
+        { provide: ActivatedRoute, useValue: activatedRoute },
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: ItemRequestService, useValue: itemRequestServiceMock },
+        { provide: NotificationService, useValue: notificationServiceMock }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ItemEditComponent);
     component = fixture.componentInstance;
     itemsService = TestBed.inject(ItemsService) as jest.Mocked<ItemsService>;
     loopService = TestBed.inject(LoopService) as jest.Mocked<LoopService>;
     router = TestBed.inject(Router) as jest.Mocked<Router>;
+    authService = TestBed.inject(AuthService) as jest.Mocked<AuthService>;
+    itemRequestService = TestBed.inject(ItemRequestService) as jest.Mocked<ItemRequestService>;
+    notificationService = TestBed.inject(NotificationService) as jest.Mocked<NotificationService>;
   });
 
   it('should create', () => {
@@ -174,6 +215,7 @@ describe('ItemEditComponent', () => {
 
   it('should display error message on update failure', () => {
     //arrange
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     component.itemId = '1';
     component.itemName = 'Updated Name';
     itemsService.updateItem.mockReturnValue(throwError(() => new Error('Update failed')));
@@ -184,6 +226,7 @@ describe('ItemEditComponent', () => {
     //assert
     expect(component.error).toBe('Failed to update item. Please try again.');
     expect(component.loading).toBe(false);
+    consoleErrorSpy.mockRestore();
   });
 
   it('should navigate to main page on cancel', () => {
@@ -197,6 +240,7 @@ describe('ItemEditComponent', () => {
 
   it('should handle 403 forbidden error appropriately', () => {
     //arrange
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     component.itemId = '1';
     component.itemName = 'Updated Name';
     const error = new Error('403 Forbidden');
@@ -207,10 +251,12 @@ describe('ItemEditComponent', () => {
 
     //assert
     expect(component.error).toBe('You do not have permission to update this item');
+    consoleErrorSpy.mockRestore();
   });
 
   it('should handle 404 not found error appropriately', () => {
     //arrange
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     component.itemId = '1';
     component.itemName = 'Updated Name';
     const error = new Error('404 Not Found');
@@ -221,6 +267,7 @@ describe('ItemEditComponent', () => {
 
     //assert
     expect(component.error).toBe('Item not found');
+    consoleErrorSpy.mockRestore();
   });
 
   it('should handle file selection for image upload', () => {

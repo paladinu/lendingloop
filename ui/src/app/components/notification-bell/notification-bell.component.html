@@ -1,0 +1,26 @@
+<div class="notification-bell-container">
+  <button 
+    mat-icon-button 
+    (click)="toggleDropdown()"
+    class="notification-bell-button"
+    [class.active]="isDropdownOpen"
+    [attr.aria-label]="'Notifications' + (unreadCount > 0 ? ' (' + unreadCount + ' unread)' : '')"
+    [attr.aria-expanded]="isDropdownOpen">
+    <mat-icon 
+      [matBadge]="unreadCount > 0 ? unreadCount : null" 
+      [matBadgeHidden]="unreadCount === 0"
+      matBadgeColor="warn"
+      matBadgeSize="small"
+      aria-hidden="false">
+      notifications
+    </mat-icon>
+  </button>
+
+  <div class="dropdown-backdrop" *ngIf="isDropdownOpen" (click)="closeDropdown()"></div>
+
+  <app-notification-dropdown
+    [isOpen]="isDropdownOpen"
+    (notificationRead)="onNotificationRead($event)"
+    (closeDropdown)="closeDropdown()">
+  </app-notification-dropdown>
+</div>

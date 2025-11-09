@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ToolbarComponent } from './toolbar.component';
 import { AuthService } from '../../services/auth.service';
 import { ItemRequestService } from '../../services/item-request.service';
@@ -30,7 +31,7 @@ describe('ToolbarComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [ToolbarComponent],
+      imports: [ToolbarComponent, HttpClientTestingModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: ItemRequestService, useValue: mockItemRequestService },

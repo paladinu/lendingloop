@@ -7,12 +7,27 @@ public class ItemRequestService : IItemRequestService
 {
     private readonly IMongoCollection<ItemRequest> _requestsCollection;
     private readonly IItemsService _itemsService;
+    private readonly INotificationService _notificationService;
+    private readonly IEmailService _emailService;
+    private readonly IUserService _userService;
+    private readonly ILogger<ItemRequestService> _logger;
 
-    public ItemRequestService(IMongoDatabase database, IConfiguration configuration, IItemsService itemsService)
+    public ItemRequestService(
+        IMongoDatabase database, 
+        IConfiguration configuration, 
+        IItemsService itemsService,
+        INotificationService notificationService,
+        IEmailService emailService,
+        IUserService userService,
+        ILogger<ItemRequestService> logger)
     {
         var collectionName = configuration["MongoDB:ItemRequestsCollectionName"] ?? "itemrequests";
         _requestsCollection = database.GetCollection<ItemRequest>(collectionName);
         _itemsService = itemsService;
+        _notificationService = notificationService;
+        _emailService = emailService;
+        _userService = userService;
+        _logger = logger;
         
         // Ensure indexes are created when service is instantiated
         _ = Task.Run(EnsureIndexesAsync);
@@ -44,6 +59,16 @@ public class ItemRequestService : IItemRequestService
         };
 
         await _requestsCollection.InsertOneAsync(request);
+
+        // Send notifications to item owner
+        await SendNotificationsAsync(
+            item.UserId,           // recipient (owner)
+            requesterId,           // related user (requester)
+            itemId,
+            request.Id!,
+            NotificationType.ItemRequestCreated
+        );
+
         return request;
     }
 
@@ -129,6 +154,15 @@ public class ItemRequestService : IItemRequestService
         if (updatedRequest != null)
         {
             await UpdateItemAvailabilityAsync(request.ItemId, false);
+
+            // Send notifications to requester
+            await SendNotificationsAsync(
+                request.RequesterId,   // recipient (requester)
+                ownerId,               // related user (owner)
+                request.ItemId,
+                requestId,
+                NotificationType.ItemRequestApproved
+            );
         }
 
         return updatedRequest;
@@ -165,7 +199,21 @@ public class ItemRequestService : IItemRequestService
             ReturnDocument = ReturnDocument.After
         };
 
-        return await _requestsCollection.FindOneAndUpdateAsync(filter, update, options);
+        var updatedRequest = await _requestsCollection.FindOneAndUpdateAsync(filter, update, options);
+
+        // Send notifications to requester
+        if (updatedRequest != null)
+        {
+            await SendNotificationsAsync(
+                request.RequesterId,   // recipient (requester)
+                ownerId,               // related user (owner)
+                request.ItemId,
+                requestId,
+                NotificationType.ItemRequestRejected
+            );
+        }
+
+        return updatedRequest;
     }
 
     public async Task<ItemRequest?> CancelRequestAsync(string requestId, string requesterId)
@@ -199,7 +247,21 @@ public class ItemRequestService : IItemRequestService
             ReturnDocument = ReturnDocument.After
         };
 
-        return await _requestsCollection.FindOneAndUpdateAsync(filter, update, options);
+        var updatedRequest = await _requestsCollection.FindOneAndUpdateAsync(filter, update, options);
+
+        // Send notifications to owner
+        if (updatedRequest != null)
+        {
+            await SendNotificationsAsync(
+                request.OwnerId,       // recipient (owner)
+                requesterId,           // related user (requester)
+                request.ItemId,
+                requestId,
+                NotificationType.ItemRequestCancelled
+            );
+        }
+
+        return updatedRequest;
     }
 
     public async Task<ItemRequest?> CompleteRequestAsync(string requestId, string ownerId)
@@ -239,6 +301,15 @@ public class ItemRequestService : IItemRequestService
         if (updatedRequest != null)
         {
             await UpdateItemAvailabilityAsync(request.ItemId, true);
+
+            // Send notifications to requester
+            await SendNotificationsAsync(
+                request.RequesterId,   // recipient (requester)
+                ownerId,               // related user (owner)
+                request.ItemId,
+                requestId,
+                NotificationType.ItemRequestCompleted
+            );
         }
 
         return updatedRequest;
@@ -252,6 +323,94 @@ public class ItemRequestService : IItemRequestService
             // We need to add a method to IItemsService to update availability
             // For now, we'll need to update the ItemsService to add this method
             await _itemsService.UpdateItemAvailabilityAsync(itemId, isAvailable);
+        }
+    }
+
+    private async Task SendNotificationsAsync(
+        string recipientUserId, 
+        string relatedUserId, 
+        string itemId, 
+        string itemRequestId, 
+        NotificationType notificationType)
+    {
+        try
+        {
+            // Retrieve user details for notification context
+            var recipient = await _userService.GetUserByIdAsync(recipientUserId);
+            var relatedUser = await _userService.GetUserByIdAsync(relatedUserId);
+            var item = await _itemsService.GetItemByIdAsync(itemId);
+
+            if (recipient == null || relatedUser == null || item == null)
+            {
+                _logger.LogWarning("Unable to send notifications: Missing user or item data. RecipientId: {RecipientId}, RelatedUserId: {RelatedUserId}, ItemId: {ItemId}", 
+                    recipientUserId, relatedUserId, itemId);
+                return;
+            }
+
+            // Create notification message based on type
+            var relatedUserName = $"{relatedUser.FirstName} {relatedUser.LastName}".Trim();
+            string message = notificationType switch
+            {
+                NotificationType.ItemRequestCreated => $"{relatedUserName} requested to borrow your {item.Name}",
+                NotificationType.ItemRequestApproved => $"{relatedUserName} approved your request for {item.Name}",
+                NotificationType.ItemRequestRejected => $"{relatedUserName} declined your request for {item.Name}",
+                NotificationType.ItemRequestCompleted => $"{relatedUserName} marked your borrowing of {item.Name} as complete",
+                NotificationType.ItemRequestCancelled => $"{relatedUserName} cancelled their request for {item.Name}",
+                _ => "Item request status updated"
+            };
+
+            // Create in-app notification
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    recipientUserId,
+                    notificationType,
+                    message,
+                    itemId,
+                    itemRequestId,
+                    relatedUserId
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create in-app notification for user {UserId}, type {NotificationType}", 
+                    recipientUserId, notificationType);
+            }
+
+            // Send email notification
+            try
+            {
+                var recipientName = $"{recipient.FirstName} {recipient.LastName}".Trim();
+                bool emailSent = notificationType switch
+                {
+                    NotificationType.ItemRequestCreated => await _emailService.SendItemRequestCreatedEmailAsync(
+                        recipient.Email, recipientName, relatedUserName, item.Name, itemRequestId),
+                    NotificationType.ItemRequestApproved => await _emailService.SendItemRequestApprovedEmailAsync(
+                        recipient.Email, recipientName, relatedUserName, item.Name),
+                    NotificationType.ItemRequestRejected => await _emailService.SendItemRequestRejectedEmailAsync(
+                        recipient.Email, recipientName, relatedUserName, item.Name),
+                    NotificationType.ItemRequestCompleted => await _emailService.SendItemRequestCompletedEmailAsync(
+                        recipient.Email, recipientName, relatedUserName, item.Name),
+                    NotificationType.ItemRequestCancelled => await _emailService.SendItemRequestCancelledEmailAsync(
+                        recipient.Email, recipientName, relatedUserName, item.Name),
+                    _ => false
+                };
+
+                if (!emailSent)
+                {
+                    _logger.LogWarning("Email notification failed for user {UserId}, type {NotificationType}", 
+                        recipientUserId, notificationType);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email notification for user {UserId}, type {NotificationType}", 
+                    recipientUserId, notificationType);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send notifications for type {NotificationType}", notificationType);
         }
     }
 

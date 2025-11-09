@@ -384,4 +384,366 @@ public class EmailServiceTests
         Assert.True(result);
         // Verify that logging occurred (in a real scenario, you'd verify the log calls)
     }
+
+    [Fact]
+    public async Task SendItemRequestCreatedEmailAsync_WithValidData_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+        var requestId = "request123";
+
+        //act
+        var result = await emailService.SendItemRequestCreatedEmailAsync(ownerEmail, ownerName, requesterName, itemName, requestId);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCreatedEmailAsync_WithEmptyOwnerEmail_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+        var requestId = "request123";
+
+        //act
+        var result = await emailService.SendItemRequestCreatedEmailAsync(ownerEmail, ownerName, requesterName, itemName, requestId);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCreatedEmailAsync_WithEmptyItemName_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "";
+        var requestId = "request123";
+
+        //act
+        var result = await emailService.SendItemRequestCreatedEmailAsync(ownerEmail, ownerName, requesterName, itemName, requestId);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCreatedEmailAsync_WithEmptyRequestId_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+        var requestId = "";
+
+        //act
+        var result = await emailService.SendItemRequestCreatedEmailAsync(ownerEmail, ownerName, requesterName, itemName, requestId);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestApprovedEmailAsync_WithValidData_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestApprovedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestApprovedEmailAsync_WithEmptyRequesterEmail_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestApprovedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestApprovedEmailAsync_WithEmptyItemName_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "";
+
+        //act
+        var result = await emailService.SendItemRequestApprovedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestRejectedEmailAsync_WithValidData_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestRejectedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestRejectedEmailAsync_WithEmptyRequesterEmail_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestRejectedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestRejectedEmailAsync_WithEmptyItemName_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "";
+
+        //act
+        var result = await emailService.SendItemRequestRejectedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCompletedEmailAsync_WithValidData_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestCompletedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCompletedEmailAsync_WithEmptyRequesterEmail_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestCompletedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCompletedEmailAsync_WithEmptyItemName_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "";
+
+        //act
+        var result = await emailService.SendItemRequestCompletedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCancelledEmailAsync_WithValidData_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestCancelledEmailAsync(ownerEmail, ownerName, requesterName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCancelledEmailAsync_WithEmptyOwnerEmail_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestCancelledEmailAsync(ownerEmail, ownerName, requesterName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCancelledEmailAsync_WithEmptyItemName_ShouldReturnFalse()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "";
+
+        //act
+        var result = await emailService.SendItemRequestCancelledEmailAsync(ownerEmail, ownerName, requesterName, itemName);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCreatedEmailAsync_InTestMode_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+        var requestId = "request123";
+
+        //act
+        var result = await emailService.SendItemRequestCreatedEmailAsync(ownerEmail, ownerName, requesterName, itemName, requestId);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestApprovedEmailAsync_InTestMode_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestApprovedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestRejectedEmailAsync_InTestMode_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestRejectedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCompletedEmailAsync_InTestMode_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var requesterEmail = "requester@example.com";
+        var requesterName = "Jane Requester";
+        var ownerName = "John Owner";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestCompletedEmailAsync(requesterEmail, requesterName, ownerName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task SendItemRequestCancelledEmailAsync_InTestMode_ShouldReturnTrue()
+    {
+        //arrange
+        var emailService = new EmailService(_configuration, _mockLogger.Object);
+        var ownerEmail = "owner@example.com";
+        var ownerName = "John Owner";
+        var requesterName = "Jane Requester";
+        var itemName = "Power Drill";
+
+        //act
+        var result = await emailService.SendItemRequestCancelledEmailAsync(ownerEmail, ownerName, requesterName, itemName);
+
+        //assert
+        Assert.True(result);
+    }
 }

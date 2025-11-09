@@ -1,12 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { ItemVisibilityComponent } from './item-visibility.component';
 import { ItemsService } from '../../services/items.service';
 import { LoopService } from '../../services/loop.service';
+import { NotificationService } from '../../services/notification.service';
+import { ItemRequestService } from '../../services/item-request.service';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { getMockToolbarServices } from '../../testing/mock-services';
 
 describe('ItemVisibilityComponent', () => {
   let component: ItemVisibilityComponent;
@@ -41,6 +45,8 @@ describe('ItemVisibilityComponent', () => {
   ];
 
   beforeEach(async () => {
+    const toolbarMocks = getMockToolbarServices();
+
     mockItemsService = {
       getItemById: jest.fn(),
       updateItemVisibility: jest.fn(),
@@ -66,17 +72,16 @@ describe('ItemVisibilityComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [ItemVisibilityComponent],
+      imports: [ItemVisibilityComponent, ToolbarComponent],
       providers: [
+        provideHttpClient(),
         { provide: ItemsService, useValue: mockItemsService },
         { provide: LoopService, useValue: mockLoopService },
+        { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
+        { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
-    })
-    .overrideComponent(ItemVisibilityComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
     })
     .compileComponents();
 

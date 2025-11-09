@@ -20,6 +20,7 @@ import { MyRequestsComponent } from './components/my-requests/my-requests.compon
 import { PublicLoopsComponent } from './components/public-loops/public-loops.component';
 import { ArchivedLoopsComponent } from './components/archived-loops/archived-loops.component';
 import { LoopSettingsComponent } from './components/loop-settings/loop-settings.component';
+import { NotificationsPageComponent } from './components/notifications-page/notifications-page.component';
 
 export const routes: Routes = [
     // Authentication routes (no guard needed)
@@ -82,6 +83,13 @@ export const routes: Routes = [
             { path: '', component: ItemRequestListComponent },
             { path: 'my-requests', component: MyRequestsComponent }
         ]
+    },
+
+    // Notifications route (protected)
+    {
+        path: 'notifications',
+        component: NotificationsPageComponent,
+        canActivate: [AuthGuard]
     },
 
     // Protected main app route

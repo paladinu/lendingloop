@@ -43,10 +43,14 @@ describe('UserService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     authService = TestBed.inject(AuthService) as jest.Mocked<AuthService>;
     router = TestBed.inject(Router) as jest.Mocked<Router>;
+
+    // Suppress console.error during tests
+    jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
     httpMock.verify();
+    jest.restoreAllMocks();
   });
 
   it('should be created', () => {

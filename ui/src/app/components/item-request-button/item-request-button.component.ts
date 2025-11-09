@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItemRequestService } from '../../services/item-request.service';
 import { ItemRequest, RequestStatus } from '../../models/item-request.interface';
 import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-item-request-button',
@@ -11,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
     templateUrl: './item-request-button.component.html',
     styleUrls: ['./item-request-button.component.css']
 })
-export class ItemRequestButtonComponent implements OnInit {
+export class ItemRequestButtonComponent implements OnInit, OnDestroy {
     @Input() itemId!: string;
     @Input() ownerId!: string;
     @Output() requestCreated = new EventEmitter<ItemRequest>();
@@ -22,6 +23,8 @@ export class ItemRequestButtonComponent implements OnInit {
     currentUserId: string | null = null;
 
     RequestStatus = RequestStatus;
+    
+    private subscriptions = new Subscription();
 
     constructor(
         private itemRequestService: ItemRequestService,
@@ -29,10 +32,15 @@ export class ItemRequestButtonComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        this.authService.getCurrentUser().subscribe(user => {
+        const userSub = this.authService.getCurrentUser().subscribe(user => {
             this.currentUserId = user?.id || null;
             this.loadExistingRequest();
         });
+        this.subscriptions.add(userSub);
+    }
+
+    ngOnDestroy(): void {
+        this.subscriptions.unsubscribe();
     }
 
     loadExistingRequest(): void {
@@ -40,7 +48,7 @@ export class ItemRequestButtonComponent implements OnInit {
             return;
         }
 
-        this.itemRequestService.getRequestsForItem(this.itemId).subscribe({
+        const requestSub = this.itemRequestService.getRequestsForItem(this.itemId).subscribe({
             next: (requests) => {
                 // Find any pending or approved request from current user
                 this.existingRequest = requests.find(r =>
@@ -48,10 +56,11 @@ export class ItemRequestButtonComponent implements OnInit {
                     (r.status === RequestStatus.Pending || r.status === RequestStatus.Approved)
                 ) || null;
             },
-            error: (error) => {
-                console.error('Error loading requests:', error);
+            error: () => {
+                // Silently handle error - component will show default state
             }
         });
+        this.subscriptions.add(requestSub);
     }
 
     onRequestItem(): void {

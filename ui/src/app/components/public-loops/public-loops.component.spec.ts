@@ -1,11 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { PublicLoopsComponent } from './public-loops.component';
 import { LoopService } from '../../services/loop.service';
+import { NotificationService } from '../../services/notification.service';
+import { ItemRequestService } from '../../services/item-request.service';
 import { Loop } from '../../models/loop.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { getMockToolbarServices } from '../../testing/mock-services';
 
 describe('PublicLoopsComponent', () => {
   let component: PublicLoopsComponent;
@@ -40,6 +44,8 @@ describe('PublicLoopsComponent', () => {
   ];
 
   beforeEach(async () => {
+    const toolbarMocks = getMockToolbarServices();
+
     mockLoopService = {
       getPublicLoops: jest.fn(),
       searchPublicLoops: jest.fn(),
@@ -52,15 +58,14 @@ describe('PublicLoopsComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [PublicLoopsComponent, FormsModule],
+      imports: [PublicLoopsComponent, FormsModule, ToolbarComponent],
       providers: [
+        provideHttpClient(),
         { provide: LoopService, useValue: mockLoopService },
+        { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
+        { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: ActivatedRoute, useValue: activatedRouteMock }
       ]
-    })
-    .overrideComponent(PublicLoopsComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
     })
     .compileComponents();
 
@@ -91,6 +96,7 @@ describe('PublicLoopsComponent', () => {
 
   it('should handle error when loading public loops fails', (done) => {
     //arrange
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     mockLoopService.getPublicLoops.mockReturnValue(
       throwError(() => new Error('Failed to load'))
     );
@@ -102,6 +108,7 @@ describe('PublicLoopsComponent', () => {
     setTimeout(() => {
       expect(component.loading).toBe(false);
       expect(component.loops).toEqual([]);
+      consoleErrorSpy.mockRestore();
       done();
     }, 0);
   });

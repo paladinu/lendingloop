@@ -1,14 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { MainComponent } from './main.component';
 import { ItemsService } from '../../services/items.service';
 import { AuthService } from '../../services/auth.service';
 import { LoopService } from '../../services/loop.service';
+import { NotificationService } from '../../services/notification.service';
+import { ItemRequestService } from '../../services/item-request.service';
 import { SharedItem } from '../../models/shared-item.interface';
 import { UserProfile } from '../../models/auth.interface';
 import { Loop } from '../../models/loop.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { getMockToolbarServices } from '../../testing/mock-services';
 
 describe('MainComponent', () => {
   let component: MainComponent;
@@ -49,6 +53,8 @@ describe('MainComponent', () => {
   ];
 
   beforeEach(async () => {
+    const toolbarMocks = getMockToolbarServices();
+
     const itemsServiceMock = {
       getItems: jest.fn()
     } as unknown as jest.Mocked<ItemsService>;
@@ -71,18 +77,17 @@ describe('MainComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [MainComponent],
+      imports: [MainComponent, ToolbarComponent],
       providers: [
+        provideHttpClient(),
         { provide: ItemsService, useValue: itemsServiceMock },
         { provide: AuthService, useValue: authServiceMock },
         { provide: LoopService, useValue: loopServiceMock },
+        { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
+        { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: Router, useValue: routerMock },
         { provide: ActivatedRoute, useValue: activatedRouteMock }
       ]
-    })
-    .overrideComponent(MainComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
     })
     .compileComponents();
 
@@ -96,6 +101,16 @@ describe('MainComponent', () => {
     authService.getCurrentUser.mockReturnValue(of(mockUser));
     itemsService.getItems.mockReturnValue(of(mockItems));
     loopService.getUserLoops.mockReturnValue(of(mockLoops));
+    
+    // Prevent automatic change detection to avoid triggering child component lifecycle
+    fixture.autoDetectChanges(false);
+  });
+
+  afterEach(() => {
+    if (fixture) {
+      fixture.destroy();
+    }
+    jest.clearAllMocks();
   });
 
   it('should create', () => {

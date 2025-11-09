@@ -106,6 +106,34 @@ describe('ItemsService', () => {
 - Run frontend tests with coverage: `npm run test:coverage` from `/ui`
 - **MANDATORY**: Both test suites must pass before considering a task complete
 
+### Test Output Verbosity Control
+**To keep sessions efficient, use minimal verbosity flags when running tests:**
+
+#### .NET Tests
+- Use `dotnet test --verbosity minimal` for concise output
+- Use `dotnet test --nologo --verbosity quiet` for even less output
+- Only show full output when debugging specific test failures
+
+#### Jest/Angular Tests
+- Use `npm test -- --silent` to suppress verbose console output
+- Use `npm test -- --reporters=jest-silent-reporter` if available
+- Default `npm test` already provides reasonable output
+
+#### When to Show Full Output
+- Only request verbose output when investigating specific test failures
+- For successful test runs, minimal output showing pass/fail counts is sufficient
+- Focus on the summary line (e.g., "Passed! 45 tests passed")
+
+#### Reporting Test Results
+When tests pass, simply state:
+- "All backend tests pass (X tests)"
+- "All frontend tests pass (X tests)"
+
+When tests fail, show only:
+- The failed test names
+- The specific error messages
+- Relevant stack traces (not full output)
+
 ### Testing Best Practices
 - **ALL tests MUST follow the Arrange-Act-Assert (AAA) pattern with comments**
   - Use `//arrange` for test setup and initialization

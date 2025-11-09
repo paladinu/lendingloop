@@ -1,12 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { LoopMembersComponent } from './loop-members.component';
 import { LoopService } from '../../services/loop.service';
 import { UserService } from '../../services/user.service';
+import { NotificationService } from '../../services/notification.service';
+import { ItemRequestService } from '../../services/item-request.service';
 import { Loop } from '../../models/loop.interface';
 import { UserProfile } from '../../models/auth.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { getMockToolbarServices } from '../../testing/mock-services';
 
 describe('LoopMembersComponent', () => {
   let component: LoopMembersComponent;
@@ -48,6 +52,8 @@ describe('LoopMembersComponent', () => {
   ];
 
   beforeEach(async () => {
+    const toolbarMocks = getMockToolbarServices();
+
     mockLoopService = {
       getLoopById: jest.fn(),
       getLoopMembers: jest.fn(),
@@ -69,16 +75,15 @@ describe('LoopMembersComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [LoopMembersComponent],
+      imports: [LoopMembersComponent, ToolbarComponent],
       providers: [
+        provideHttpClient(),
         { provide: LoopService, useValue: mockLoopService },
         { provide: UserService, useValue: mockUserService },
+        { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
+        { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ]
-    })
-    .overrideComponent(LoopMembersComponent, {
-      remove: { imports: [ToolbarComponent] },
-      add: { imports: [] }
     })
     .compileComponents();
 

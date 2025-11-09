@@ -81,6 +81,7 @@ describe('ItemsService', () => {
     it('should handle 401 error and redirect to login', (done) => {
       //arrange
       const errorResponse = { message: 'Unauthorized' };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.getItems().subscribe({
@@ -90,6 +91,7 @@ describe('ItemsService', () => {
           expect(error.message).toBe('Authentication required. Please log in again.');
           expect(authService.logout).toHaveBeenCalled();
           expect(router.navigate).toHaveBeenCalledWith(['/login']);
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -101,6 +103,7 @@ describe('ItemsService', () => {
     it('should handle 403 error', (done) => {
       //arrange
       const errorResponse = { message: 'Forbidden' };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.getItems().subscribe({
@@ -108,6 +111,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBe('You do not have permission to perform this action.');
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -148,6 +152,7 @@ describe('ItemsService', () => {
         name: 'New Item',
         description: 'New Description'
       };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.createItem(newItem).subscribe({
@@ -155,6 +160,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -187,6 +193,7 @@ describe('ItemsService', () => {
       //arrange
       const itemId = '1';
       const mockFile = new File(['image content'], 'test.jpg', { type: 'image/jpeg' });
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.uploadItemImage(itemId, mockFile).subscribe({
@@ -194,6 +201,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -223,6 +231,7 @@ describe('ItemsService', () => {
     it('should handle not found error', (done) => {
       //arrange
       const itemId = 'nonexistent';
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.getItemById(itemId).subscribe({
@@ -230,6 +239,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -271,6 +281,7 @@ describe('ItemsService', () => {
       const visibleToLoopIds = ['loop1'];
       const visibleToAllLoops = false;
       const visibleToFutureLoops = false;
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.updateItemVisibility(itemId, visibleToLoopIds, visibleToAllLoops, visibleToFutureLoops)
@@ -279,6 +290,7 @@ describe('ItemsService', () => {
           error: (error) => {
             //assert
             expect(error.message).toBeTruthy();
+            consoleErrorSpy.mockRestore();
             done();
           }
         });
@@ -318,6 +330,7 @@ describe('ItemsService', () => {
       //arrange
       const itemId = '1';
       const updates: Partial<SharedItem> = { name: 'Updated Name' };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.updateItem(itemId, updates).subscribe({
@@ -327,6 +340,7 @@ describe('ItemsService', () => {
           expect(error.message).toBe('Authentication required. Please log in again.');
           expect(authService.logout).toHaveBeenCalled();
           expect(router.navigate).toHaveBeenCalledWith(['/login']);
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -339,6 +353,7 @@ describe('ItemsService', () => {
       //arrange
       const itemId = '1';
       const updates: Partial<SharedItem> = { name: 'Updated Name' };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.updateItem(itemId, updates).subscribe({
@@ -346,6 +361,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBe('You do not have permission to perform this action.');
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -358,6 +374,7 @@ describe('ItemsService', () => {
       //arrange
       const itemId = 'nonexistent';
       const updates: Partial<SharedItem> = { name: 'Updated Name' };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.updateItem(itemId, updates).subscribe({
@@ -365,6 +382,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
           done();
         }
       });
@@ -377,6 +395,7 @@ describe('ItemsService', () => {
       //arrange
       const itemId = '1';
       const updates: Partial<SharedItem> = { name: 'Updated Name' };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       //act
       service.updateItem(itemId, updates).subscribe({
@@ -384,6 +403,7 @@ describe('ItemsService', () => {
         error: (error) => {
           //assert
           expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
           done();
         }
       });

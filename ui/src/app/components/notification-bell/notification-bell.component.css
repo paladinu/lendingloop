@@ -1,0 +1,128 @@
+.notification-bell-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  height: 100%;
+}
+
+.notification-bell-button {
+  color: white;
+  transition: background-color 0.2s ease;
+  height: 48px;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.notification-bell-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.notification-bell-button.active {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.notification-bell-button mat-icon {
+  color: white;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.notification-bell-button:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Ensure badge is visible and prominent - matches toolbar badge style */
+.notification-bell-button ::ng-deep .mat-badge-content {
+  background-color: #f44336;
+  color: white;
+  font-weight: 600;
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 4px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  top: 4px;
+  right: 4px;
+  border-radius: 9px;
+}
+
+/* Backdrop overlay for mobile */
+.dropdown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1050;
+  display: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .notification-bell-container {
+    margin-right: 4px;
+  }
+  
+  .notification-bell-button {
+    height: 48px;
+    width: 48px;
+    min-width: 48px;
+    padding: 0;
+  }
+  
+  /* Ensure badge is still visible on mobile */
+  .notification-bell-button ::ng-deep .mat-badge-content {
+    font-size: 10px;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    padding: 0 3px;
+    top: 3px;
+    right: 3px;
+    border-width: 2px;
+  }
+  
+  /* Show backdrop on mobile */
+  .dropdown-backdrop {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-bell-container {
+    margin-right: 2px;
+  }
+  
+  .notification-bell-button {
+    height: 40px;
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+  }
+  
+  .notification-bell-button mat-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+  
+  .notification-bell-button ::ng-deep .mat-badge-content {
+    font-size: 9px;
+    min-width: 14px;
+    height: 14px;
+    line-height: 14px;
+    padding: 0 2px;
+    top: 2px;
+    right: 2px;
+    border-width: 1.5px;
+  }
+}

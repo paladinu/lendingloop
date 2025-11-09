@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ItemRequestListComponent } from './item-request-list.component';
 import { ItemRequestService } from '../../services/item-request.service';
 import { AuthService } from '../../services/auth.service';
@@ -37,7 +38,7 @@ describe('ItemRequestListComponent', () => {
         };
 
         await TestBed.configureTestingModule({
-            imports: [ItemRequestListComponent],
+            imports: [ItemRequestListComponent, HttpClientTestingModule],
             providers: [
                 { provide: ItemRequestService, useValue: itemRequestServiceSpy },
                 { provide: AuthService, useValue: mockAuthService },

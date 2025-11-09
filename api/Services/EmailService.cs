@@ -287,6 +287,153 @@ public class EmailService : IEmailService
         }
     }
 
+    public async Task<bool> SendItemRequestCreatedEmailAsync(string ownerEmail, string ownerName, string requesterName, string itemName, string requestId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ownerEmail))
+            {
+                _logger.LogError("Cannot send item request created email: owner email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                _logger.LogError("Cannot send item request created email: item name is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(requestId))
+            {
+                _logger.LogError("Cannot send item request created email: request ID is null or empty");
+                return false;
+            }
+
+            var requestUrl = $"{_emailConfig.BaseUrl}/item-requests/{requestId}";
+            var subject = $"New request for your item: {itemName}";
+            var body = GenerateItemRequestCreatedEmailBody(ownerName, requesterName, itemName, requestUrl);
+
+            return await SendEmailWithRetryAsync(ownerEmail, subject, body, "item request created");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send item request created email to {Email}", ownerEmail);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendItemRequestApprovedEmailAsync(string requesterEmail, string requesterName, string ownerName, string itemName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(requesterEmail))
+            {
+                _logger.LogError("Cannot send item request approved email: requester email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                _logger.LogError("Cannot send item request approved email: item name is null or empty");
+                return false;
+            }
+
+            var subject = $"Your request for {itemName} has been approved";
+            var body = GenerateItemRequestApprovedEmailBody(requesterName, ownerName, itemName);
+
+            return await SendEmailWithRetryAsync(requesterEmail, subject, body, "item request approved");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send item request approved email to {Email}", requesterEmail);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendItemRequestRejectedEmailAsync(string requesterEmail, string requesterName, string ownerName, string itemName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(requesterEmail))
+            {
+                _logger.LogError("Cannot send item request rejected email: requester email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                _logger.LogError("Cannot send item request rejected email: item name is null or empty");
+                return false;
+            }
+
+            var subject = $"Your request for {itemName} was not approved";
+            var body = GenerateItemRequestRejectedEmailBody(requesterName, ownerName, itemName);
+
+            return await SendEmailWithRetryAsync(requesterEmail, subject, body, "item request rejected");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send item request rejected email to {Email}", requesterEmail);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendItemRequestCompletedEmailAsync(string requesterEmail, string requesterName, string ownerName, string itemName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(requesterEmail))
+            {
+                _logger.LogError("Cannot send item request completed email: requester email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                _logger.LogError("Cannot send item request completed email: item name is null or empty");
+                return false;
+            }
+
+            var subject = $"Your borrowing of {itemName} is complete";
+            var body = GenerateItemRequestCompletedEmailBody(requesterName, ownerName, itemName);
+
+            return await SendEmailWithRetryAsync(requesterEmail, subject, body, "item request completed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send item request completed email to {Email}", requesterEmail);
+            return false;
+        }
+    }
+
+    public async Task<bool> SendItemRequestCancelledEmailAsync(string ownerEmail, string ownerName, string requesterName, string itemName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ownerEmail))
+            {
+                _logger.LogError("Cannot send item request cancelled email: owner email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                _logger.LogError("Cannot send item request cancelled email: item name is null or empty");
+                return false;
+            }
+
+            var subject = $"Request for {itemName} has been cancelled";
+            var body = GenerateItemRequestCancelledEmailBody(ownerName, requesterName, itemName);
+
+            return await SendEmailWithRetryAsync(ownerEmail, subject, body, "item request cancelled");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send item request cancelled email to {Email}", ownerEmail);
+            return false;
+        }
+    }
+
     public async Task<bool> TestEmailConfigurationAsync()
     {
         try
@@ -583,6 +730,373 @@ public class EmailService : IEmailService
         
         <div class='footer'>
             <p>Best regards,<br>The Shared Items App Team</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateItemRequestCreatedEmailBody(string ownerName, string requesterName, string itemName, string requestUrl)
+    {
+        var displayName = string.IsNullOrWhiteSpace(ownerName) ? "there" : ownerName;
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>New Item Request</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .button {{
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>New Request for Your Item</h1>
+    </div>
+    <div class='content'>
+        <h2>Hi {displayName},</h2>
+        <p><strong>{requesterName}</strong> has requested to borrow your item <strong>{itemName}</strong>.</p>
+        
+        <p>You can review the request details and decide whether to approve or decline it.</p>
+        
+        <div style='text-align: center;'>
+            <a href='{requestUrl}' class='button'>View Request</a>
+        </div>
+        
+        <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+        <p style='word-break: break-all; background-color: #e9ecef; padding: 10px; border-radius: 3px;'>{requestUrl}</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The LendingLoop Team</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateItemRequestApprovedEmailBody(string requesterName, string ownerName, string itemName)
+    {
+        var displayName = string.IsNullOrWhiteSpace(requesterName) ? "there" : requesterName;
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Request Approved</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #28a745;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .success {{
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>Request Approved!</h1>
+    </div>
+    <div class='content'>
+        <h2>Hi {displayName},</h2>
+        <div class='success'>
+            <p><strong>Good news!</strong> {ownerName} has approved your request to borrow <strong>{itemName}</strong>.</p>
+        </div>
+        
+        <p>You can now coordinate with {ownerName} to arrange pickup of the item.</p>
+        
+        <p>Please remember to return the item in good condition and mark the request as complete when you're done.</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The LendingLoop Team</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateItemRequestRejectedEmailBody(string requesterName, string ownerName, string itemName)
+    {
+        var displayName = string.IsNullOrWhiteSpace(requesterName) ? "there" : requesterName;
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Request Not Approved</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #dc3545;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .info {{
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #ffeaa7;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>Request Update</h1>
+    </div>
+    <div class='content'>
+        <h2>Hi {displayName},</h2>
+        <div class='info'>
+            <p>{ownerName} has declined your request to borrow <strong>{itemName}</strong>.</p>
+        </div>
+        
+        <p>Unfortunately, the item is not available at this time. This could be due to scheduling conflicts or other reasons.</p>
+        
+        <p>Don't worry! There are many other items available in your loops. Feel free to browse and request other items that might meet your needs.</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The LendingLoop Team</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateItemRequestCompletedEmailBody(string requesterName, string ownerName, string itemName)
+    {
+        var displayName = string.IsNullOrWhiteSpace(requesterName) ? "there" : requesterName;
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Borrowing Complete</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #17a2b8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .success {{
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #bee5eb;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>Borrowing Complete</h1>
+    </div>
+    <div class='content'>
+        <h2>Hi {displayName},</h2>
+        <div class='success'>
+            <p>{ownerName} has marked your borrowing of <strong>{itemName}</strong> as complete.</p>
+        </div>
+        
+        <p>Thank you for returning the item! We hope it was helpful for your needs.</p>
+        
+        <p>Your participation in the sharing community helps everyone access the items they need while reducing waste.</p>
+        
+        <p>Feel free to browse and request other items whenever you need them!</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The LendingLoop Team</p>
+            <p><em>This is an automated email. Please do not reply to this message.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateItemRequestCancelledEmailBody(string ownerName, string requesterName, string itemName)
+    {
+        var displayName = string.IsNullOrWhiteSpace(ownerName) ? "there" : ownerName;
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Request Cancelled</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background-color: #6c757d;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .info {{
+            background-color: #e2e3e5;
+            color: #383d41;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #d6d8db;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 14px;
+            color: #6c757d;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>Request Cancelled</h1>
+    </div>
+    <div class='content'>
+        <h2>Hi {displayName},</h2>
+        <div class='info'>
+            <p>{requesterName} has cancelled their request to borrow your item <strong>{itemName}</strong>.</p>
+        </div>
+        
+        <p>Your item is now available for other requests. No further action is needed from you.</p>
+        
+        <p>Thank you for being part of the sharing community!</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The LendingLoop Team</p>
             <p><em>This is an automated email. Please do not reply to this message.</em></p>
         </div>
     </div>

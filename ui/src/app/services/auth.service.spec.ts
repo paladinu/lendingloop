@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
@@ -9,13 +10,18 @@ describe('AuthService', () => {
   let mockRouter: jest.Mocked<Router>;
 
   beforeEach(() => {
+    // Clear localStorage and suppress console errors before each test
+    localStorage.clear();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
     mockRouter = {
       navigate: jest.fn(),
     } as any;
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         AuthService,
         { provide: Router, useValue: mockRouter }
       ]
@@ -27,6 +33,8 @@ describe('AuthService', () => {
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
+    jest.restoreAllMocks();
   });
 
   it('should be created', () => {

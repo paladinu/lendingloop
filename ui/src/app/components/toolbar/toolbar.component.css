@@ -32,12 +32,14 @@
     align-items: center;
     gap: 8px;
     margin-right: 8px;
+    position: relative;
 }
 
 .user-menu-button {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-left: 8px;
 }
 
 .user-name {
@@ -81,7 +83,57 @@
     }
     
     .toolbar-logo {
-        height: 64px;
-        width: 64px;
+        height: 48px;
+        width: 48px;
+    }
+    
+    .nav-button span {
+        display: none;
+    }
+    
+    .nav-button {
+        min-width: 48px;
+        padding: 0 8px;
+        margin-right: 4px;
+    }
+    
+    .nav-button .badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        margin-left: 0;
+    }
+    
+    .user-menu-button {
+        margin-left: 4px;
+        min-width: 48px;
+        padding: 0 8px;
+    }
+    
+    .user-menu-button span:not(.user-name) {
+        display: none;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .app-toolbar {
+        padding: 0 8px;
+    }
+    
+    .toolbar-brand {
+        gap: 8px;
+    }
+    
+    .toolbar-logo {
+        height: 40px;
+        width: 40px;
+    }
+    
+    .nav-button,
+    .user-menu-button {
+        min-width: 40px;
+        padding: 0 4px;
+        margin-right: 2px;
     }
 }
