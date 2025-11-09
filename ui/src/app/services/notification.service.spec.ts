@@ -5,6 +5,14 @@ import { NotificationService } from './notification.service';
 import { AuthService } from './auth.service';
 import { Notification, NotificationType } from '../models/notification.interface';
 
+// Mock environment
+jest.mock('../../environments/environment', () => ({
+  environment: {
+    production: false,
+    apiUrl: 'http://localhost:8080'
+  }
+}));
+
 describe('NotificationService', () => {
     let service: NotificationService;
     let httpMock: HttpTestingController;
@@ -291,18 +299,23 @@ describe('NotificationService', () => {
             req.flush({}, { status: 401, statusText: 'Unauthorized' });
         });
 
-        it('should handle 403 error', () => {
+        it('should handle 403 error', (done) => {
             //arrange
             const notificationId = 'notif123';
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
             //act
             service.markAsRead(notificationId).subscribe({
-                next: () => fail('should have failed'),
+                next: () => {
+                    consoleErrorSpy.mockRestore();
+                    fail('should have failed');
+                    done();
+                },
                 error: (error) => {
                     //assert
                     expect(error.message).toContain('permission');
                     consoleErrorSpy.mockRestore();
+                    done();
                 }
             });
 

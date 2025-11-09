@@ -434,3 +434,11 @@ FodyWeavers.xsd
 
 # Uploaded files
 **/uploads/
+
+# SSL Certificates for local development
+certs/
+*.pfx
+*.pem
+*.cer
+*.crt
+*.key

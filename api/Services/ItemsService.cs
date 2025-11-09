@@ -6,25 +6,49 @@ namespace Api.Services;
 public class ItemsService : IItemsService
 {
     private readonly IMongoCollection<SharedItem> _itemsCollection;
+    private readonly IConfiguration _configuration;
 
     public ItemsService(IMongoDatabase database, IConfiguration configuration)
     {
         var collectionName = configuration["MongoDB:CollectionName"] ?? "items";
         _itemsCollection = database.GetCollection<SharedItem>(collectionName);
+        _configuration = configuration;
         
         // Ensure indexes are created when service is instantiated
         _ = Task.Run(EnsureIndexesAsync);
     }
 
+    private void NormalizeImageUrl(SharedItem item)
+    {
+        if (!string.IsNullOrEmpty(item.ImageUrl) && item.ImageUrl.StartsWith("/"))
+        {
+            // Convert relative URL to absolute URL
+            var baseUrl = _configuration["FileStorage:BaseUrl"] ?? "https://local-api.lendingloop.com";
+            item.ImageUrl = $"{baseUrl}{item.ImageUrl}";
+        }
+    }
+
+    private void NormalizeImageUrls(List<SharedItem> items)
+    {
+        foreach (var item in items)
+        {
+            NormalizeImageUrl(item);
+        }
+    }
+
     public async Task<List<SharedItem>> GetAllItemsAsync()
     {
-        return await _itemsCollection.Find(_ => true).ToListAsync();
+        var items = await _itemsCollection.Find(_ => true).ToListAsync();
+        NormalizeImageUrls(items);
+        return items;
     }
 
     public async Task<List<SharedItem>> GetItemsByUserIdAsync(string userId)
     {
         var filter = Builders<SharedItem>.Filter.Eq(item => item.UserId, userId);
-        return await _itemsCollection.Find(filter).ToListAsync();
+        var items = await _itemsCollection.Find(filter).ToListAsync();
+        NormalizeImageUrls(items);
+        return items;
     }
 
     public async Task<SharedItem> CreateItemAsync(SharedItem item)
@@ -37,7 +61,12 @@ public class ItemsService : IItemsService
 
     public async Task<SharedItem?> GetItemByIdAsync(string itemId)
     {
-        return await _itemsCollection.Find(item => item.Id == itemId).FirstOrDefaultAsync();
+        var item = await _itemsCollection.Find(item => item.Id == itemId).FirstOrDefaultAsync();
+        if (item != null)
+        {
+            NormalizeImageUrl(item);
+        }
+        return item;
     }
 
     public async Task<List<SharedItem>> GetItemsByLoopIdAsync(string loopId)
@@ -48,7 +77,9 @@ public class ItemsService : IItemsService
         );
 
         var sort = Builders<SharedItem>.Sort.Descending(item => item.CreatedAt);
-        return await _itemsCollection.Find(filter).Sort(sort).ToListAsync();
+        var items = await _itemsCollection.Find(filter).Sort(sort).ToListAsync();
+        NormalizeImageUrls(items);
+        return items;
     }
 
     public async Task<SharedItem?> UpdateItemVisibilityAsync(string itemId, string userId, List<string> loopIds, bool visibleToAllLoops, bool visibleToFutureLoops)
@@ -82,7 +113,12 @@ public class ItemsService : IItemsService
             ReturnDocument = ReturnDocument.After
         };
 
-        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        var item = await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        if (item != null)
+        {
+            NormalizeImageUrl(item);
+        }
+        return item;
     }
 
     public async Task<SharedItem?> UpdateItemImageAsync(string id, string imageUrl, string userId)
@@ -98,7 +134,12 @@ public class ItemsService : IItemsService
             ReturnDocument = ReturnDocument.After
         };
 
-        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        var item = await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        if (item != null)
+        {
+            NormalizeImageUrl(item);
+        }
+        return item;
     }
 
     public async Task<SharedItem?> UpdateItemAvailabilityAsync(string itemId, bool isAvailable)
@@ -113,7 +154,12 @@ public class ItemsService : IItemsService
             ReturnDocument = ReturnDocument.After
         };
 
-        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        var item = await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        if (item != null)
+        {
+            NormalizeImageUrl(item);
+        }
+        return item;
     }
 
     public async Task<SharedItem?> UpdateItemAsync(
@@ -145,7 +191,12 @@ public class ItemsService : IItemsService
             ReturnDocument = ReturnDocument.After
         };
 
-        return await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        var item = await _itemsCollection.FindOneAndUpdateAsync(filter, update, options);
+        if (item != null)
+        {
+            NormalizeImageUrl(item);
+        }
+        return item;
     }
 
     public async Task RemoveLoopFromAllItemsAsync(string loopId)

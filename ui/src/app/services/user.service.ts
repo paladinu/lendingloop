@@ -4,12 +4,13 @@ import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { UserProfile } from '../models/auth.interface';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class UserService {
-    private readonly API_URL = 'http://localhost:8080/api/auth';
+    private readonly API_URL = `${environment.apiUrl}/api/auth`;
 
     constructor(
         private http: HttpClient,

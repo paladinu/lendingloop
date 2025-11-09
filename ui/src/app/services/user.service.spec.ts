@@ -5,6 +5,14 @@ import { UserService } from './user.service';
 import { AuthService } from './auth.service';
 import { UserProfile } from '../models/auth.interface';
 
+// Mock environment
+jest.mock('../../environments/environment', () => ({
+  environment: {
+    production: false,
+    apiUrl: 'http://localhost:8080'
+  }
+}));
+
 describe('UserService', () => {
   let service: UserService;
   let httpMock: HttpTestingController;

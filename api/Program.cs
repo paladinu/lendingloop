@@ -25,7 +25,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularDev", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:4201")
+        policy.WithOrigins("https://local-www.lendingloop.com", "https://local-www.lendingloop.com:4200","http://localhost:4200", "http://localhost:4201")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials(); // Allow credentials for authentication
@@ -156,6 +156,22 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
 }
 
 var app = builder.Build();
+
+// Configure Kestrel for HTTPS with custom domain
+if (app.Environment.IsDevelopment())
+{
+    var certPath = builder.Configuration["Kestrel:Endpoints:Https:Certificate:Path"];
+    var certPassword = builder.Configuration["Kestrel:Endpoints:Https:Certificate:Password"];
+    
+    if (!string.IsNullOrEmpty(certPath) && File.Exists(certPath))
+    {
+        app.Logger.LogInformation($"Using SSL certificate from: {certPath}");
+    }
+    else if (!string.IsNullOrEmpty(certPath))
+    {
+        app.Logger.LogWarning($"SSL certificate not found at: {certPath}. HTTPS may not work correctly.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

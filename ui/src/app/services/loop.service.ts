@@ -6,12 +6,13 @@ import { LoopInvitation } from '../models/loop-invitation.interface';
 import { LoopMember } from '../models/loop-member.interface';
 import { SharedItem } from '../models/shared-item.interface';
 import { LoopJoinRequest } from '../models/loop-join-request.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoopService {
-  private apiUrl = '/api/loops';
+  private apiUrl = `${environment.apiUrl}/api/loops`;
 
   constructor(private http: HttpClient) { }
 

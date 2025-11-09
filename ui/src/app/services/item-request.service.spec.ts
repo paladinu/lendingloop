@@ -5,6 +5,14 @@ import { ItemRequestService } from './item-request.service';
 import { AuthService } from './auth.service';
 import { ItemRequest, RequestStatus } from '../models/item-request.interface';
 
+// Mock environment
+jest.mock('../../environments/environment', () => ({
+  environment: {
+    production: false,
+    apiUrl: 'http://localhost:8080'
+  }
+}));
+
 describe('ItemRequestService', () => {
     let service: ItemRequestService;
     let httpMock: HttpTestingController;

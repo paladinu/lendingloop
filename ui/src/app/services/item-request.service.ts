@@ -4,12 +4,13 @@ import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { ItemRequest } from '../models/item-request.interface';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ItemRequestService {
-    private apiUrl = 'http://localhost:8080/api/itemrequests';
+    private apiUrl = `${environment.apiUrl}/api/itemrequests`;
 
     constructor(
         private http: HttpClient,

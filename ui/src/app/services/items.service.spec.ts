@@ -5,6 +5,14 @@ import { ItemsService } from './items.service';
 import { AuthService } from './auth.service';
 import { SharedItem } from '../models/shared-item.interface';
 
+// Mock environment
+jest.mock('../../environments/environment', () => ({
+  environment: {
+    production: false,
+    apiUrl: 'http://localhost:8080'
+  }
+}));
+
 describe('ItemsService', () => {
   let service: ItemsService;
   let httpMock: HttpTestingController;

@@ -40,8 +40,72 @@ Examples:
 ## Important Notes
 
 - **NEVER use `cd` commands** - Always use the `path` parameter in tool calls
-- The Angular dev server proxies API requests to the .NET backend (see `/ui/proxy.conf.json`)
 - Both applications need to be running for full functionality
+
+## Custom Domain Configuration
+
+### Local Development URLs
+The application uses custom local domains for a production-like development environment:
+- **Frontend (Angular UI)**: https://local-www.lendingloop.com
+- **Backend (.NET API)**: https://local-api.lendingloop.com
+
+### HOSTS File Configuration
+Before running the application, you MUST configure your system's HOSTS file to map these domains to localhost:
+
+**Windows**: `C:\Windows\System32\drivers\etc\hosts`
+**Mac/Linux**: `/etc/hosts`
+
+Add these entries:
+```
+127.0.0.1 local-www.lendingloop.com
+127.0.0.1 local-api.lendingloop.com
+```
+
+**Quick Setup**: Run the provided PowerShell script as Administrator:
+```powershell
+.\configure-hosts.ps1
+```
+
+### SSL Certificate Requirements
+Both the Angular UI and .NET API use HTTPS with self-signed certificates for local development.
+
+**Certificate Generation**: Use the provided PowerShell script:
+```powershell
+.\generate-certs.ps1
+```
+
+This creates certificates in the `/certs` directory. You'll need to:
+1. Accept browser security warnings when accessing https://local-www.lendingloop.com
+2. Accept browser security warnings when accessing https://local-api.lendingloop.com
+
+**Note**: Certificate files are in `.gitignore` and should never be committed to version control.
+
+### Environment Configuration for API URLs
+
+The Angular application uses environment files to configure the API URL:
+
+- **Development**: `ui/src/environments/environment.development.ts`
+  - Uses `https://local-api.lendingloop.com` for API calls
+  
+- **Production**: `ui/src/environments/environment.ts`
+  - Configure with production API URL when deploying
+
+**Important**: All Angular services should use `environment.apiUrl` instead of hardcoded URLs:
+
+```typescript
+import { environment } from '../../environments/environment';
+
+// Correct approach
+this.http.get(`${environment.apiUrl}/api/items`);
+
+// Avoid hardcoding
+// this.http.get('https://local-api.lendingloop.com/api/items');
+```
+
+### CORS Configuration
+The .NET API is configured with CORS to allow requests from `https://local-www.lendingloop.com`. This is necessary because the frontend and backend run on different domains.
+
+The Angular UI makes direct HTTP requests to the API domain - there is no proxy configuration.
 
 
 ## Testing Guidelines

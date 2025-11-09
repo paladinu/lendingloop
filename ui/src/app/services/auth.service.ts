@@ -10,12 +10,13 @@ import {
     VerifyEmailRequest,
     VerificationResponse
 } from '../models/auth.interface';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
-    private readonly API_URL = 'http://localhost:8080/api/auth';
+    private readonly API_URL = `${environment.apiUrl}/api/auth`;
     private readonly TOKEN_KEY = 'auth_token';
     private readonly USER_KEY = 'current_user';
     private readonly INTENDED_ROUTE_KEY = 'intended_route';

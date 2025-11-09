@@ -4,6 +4,14 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
+// Mock environment
+jest.mock('../../environments/environment', () => ({
+  environment: {
+    production: false,
+    apiUrl: 'http://localhost:8080'
+  }
+}));
+
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;

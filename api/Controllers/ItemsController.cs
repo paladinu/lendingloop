@@ -149,7 +149,7 @@ public class ItemsController : ControllerBase
                 await file.CopyToAsync(stream);
             }
 
-            // Update item with image URL - only allow users to update their own items
+            // Update item with image URL (store as relative path) - only allow users to update their own items
             var imageUrl = $"/{uploadPath}/{uniqueFileName}";
             var updatedItem = await _itemsService.UpdateItemImageAsync(id, imageUrl, userId);
 

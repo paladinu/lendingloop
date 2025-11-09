@@ -4,12 +4,13 @@ import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { SharedItem } from '../models/shared-item.interface';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class ItemsService {
-    private apiUrl = 'http://localhost:8080/api/items';
+    private apiUrl = `${environment.apiUrl}/api/items`;
 
     constructor(
         private http: HttpClient,

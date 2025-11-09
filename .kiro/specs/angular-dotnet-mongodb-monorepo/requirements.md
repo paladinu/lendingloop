@@ -7,7 +7,10 @@ This document specifies the technical requirements for the monorepo structure, d
 ## Glossary
 
 - **Monorepo**: A single Git repository containing multiple related projects (UI and API)
-- **Proxy Configuration**: Angular development server configuration that forwards API requests to the backend
+- **Angular UI**: The Angular frontend application running on local-www.lendingloop.com
+- **API**: The C# .NET 8 Web API backend running on local-api.lendingloop.com
+- **CORS (Cross-Origin Resource Sharing)**: A security mechanism that allows the Angular UI to make requests to the API running on a different host
+- **SharedItem**: A data model representing an item that users can share within the LendingLoop platform
 
 ## Requirements
 
@@ -25,25 +28,27 @@ This document specifies the technical requirements for the monorepo structure, d
 
 ### Requirement 2
 
-**User Story:** As a developer, I want the Angular UI configured to run on port 4200 with API proxy support, so that I can develop the frontend without CORS issues.
+**User Story:** As a developer, I want the Angular UI configured to run on local-www.lendingloop.com, so that I can develop the frontend with a production-like environment.
 
 #### Acceptance Criteria
 
-1. THE Angular UI SHALL be configured to run on host port 4200 using the ng serve command.
-2. THE Angular UI SHALL contain a proxy.conf.json file that forwards requests from /api/* to http://localhost:8080.
+1. THE Angular UI SHALL be configured to run on local-www.lendingloop.com using the ng serve command.
+2. THE Angular UI SHALL use a self-signed certificate to run on HTTPS.
 3. THE Angular UI SHALL use the latest stable version of Angular framework.
-4. WHEN a developer runs "ng serve" from the ui directory, THE Angular UI SHALL start the development server successfully.
+4. THE Angular UI SHALL make direct HTTP requests to https://local-api.lendingloop.com without using a proxy configuration.
+5. WHEN a developer runs "ng serve" from the ui directory, THE Angular UI SHALL start the development server successfully.
 
 ### Requirement 3
 
-**User Story:** As a developer, I want the .NET API configured to run on port 8080 with CORS enabled, so that the Angular UI can communicate with the backend.
+**User Story:** As a developer, I want the .NET API configured to run on local-api.lendingloop.com with CORS enabled, so that the Angular UI can communicate with the backend.
 
 #### Acceptance Criteria
 
 1. THE API SHALL be built using C# .NET 8 Web API framework.
-2. THE API SHALL be configured to run on host port 8080 using the dotnet run command.
-3. THE API SHALL enable CORS to allow requests from http://localhost:4200.
-4. WHEN a developer runs "dotnet run" from the api directory, THE API SHALL start the web server on port 8080.
+2. THE API SHALL be configured to run on host local-api.lendingloop.com using the dotnet run command.
+3. THE API SHALL enable CORS to allow requests from https://local-www.lendingloop.com.
+4. WHEN a developer runs "dotnet run" from the api directory, THE API SHALL start the web server on local-api.lendingloop.com.
+5. THE API SHALL use a self-signed certificate to run on HTTPS.
 
 ### Requirement 4
 
@@ -62,8 +67,11 @@ This document specifies the technical requirements for the monorepo structure, d
 
 #### Acceptance Criteria
 
-1. THE API SHALL define a SharedItem class with properties including Id (string representing MongoDB ObjectId), Name (string), OwnerId (string), and IsAvailable (boolean).
-2. THE API SHALL configure MongoDB serialization attributes for the SharedItem class to enable proper database storage and retrieval.
+1. THE API SHALL define a SharedItem class with an Id property of type string representing a MongoDB ObjectId.
+2. THE API SHALL define a SharedItem class with a Name property of type string.
+3. THE API SHALL define a SharedItem class with an OwnerId property of type string.
+4. THE API SHALL define a SharedItem class with an IsAvailable property of type boolean.
+5. THE API SHALL configure MongoDB serialization attributes for the SharedItem class to enable proper database storage and retrieval.
 
 ### Requirement 6
 
@@ -98,7 +106,8 @@ This document specifies the technical requirements for the monorepo structure, d
 2. THE README.md SHALL provide instructions to start the API using "dotnet run" from the ./api directory.
 3. THE README.md SHALL provide instructions to start the UI using "ng serve" from the ./ui directory.
 4. THE README.md SHALL document the technology stack including Angular, .NET 8, and MongoDB.
-5. THE README.md SHALL specify that the UI runs on http://localhost:4200 and the API runs on http://localhost:8080.
+5. THE README.md SHALL specify that the UI runs on https://local-www.lendingloop.com and the API runs on https://local-api.lendingloop.com.
+6. THE README.md SHALL specify that the two hostnames local-www.lendingloop.com and local-api.lendingloop.com need to be configured via HOSTS file or other name resolution and provide a sample powershell script to add them.
 
 ### Requirement 9
 

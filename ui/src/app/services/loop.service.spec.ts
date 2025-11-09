@@ -5,11 +5,12 @@ import { Loop } from '../models/loop.interface';
 import { LoopInvitation } from '../models/loop-invitation.interface';
 import { LoopMember } from '../models/loop-member.interface';
 import { SharedItem } from '../models/shared-item.interface';
+import { environment } from '../../environments/environment';
 
 describe('LoopService', () => {
   let service: LoopService;
   let httpMock: HttpTestingController;
-  const API_URL = '/api/loops';
+  const API_URL = `${environment.apiUrl}/api/loops`;
 
   const mockLoop: Loop = {
     id: 'loop1',
