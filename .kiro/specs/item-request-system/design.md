@@ -42,6 +42,7 @@ public class ItemRequest
     public string RequesterId { get; set; }
     public string OwnerId { get; set; }
     public RequestStatus Status { get; set; }
+    public string? Message { get; set; }
     public DateTime RequestedAt { get; set; }
     public DateTime? RespondedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
@@ -62,7 +63,7 @@ public enum RequestStatus
 ```csharp
 public interface IItemRequestService
 {
-    Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId);
+    Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null);
     Task<List<ItemRequest>> GetRequestsByRequesterAsync(string requesterId);
     Task<List<ItemRequest>> GetPendingRequestsByOwnerAsync(string ownerId);
     Task<List<ItemRequest>> GetRequestsByItemIdAsync(string itemId);
@@ -82,6 +83,7 @@ Key responsibilities:
 - Coordinate with ItemsService to update item availability
 - Manage request status transitions
 - Enforce authorization rules
+- Validate and sanitize request messages (max 500 characters)
 
 #### 4. ItemRequestController (`api/Controllers/ItemRequestController.cs`)
 
@@ -106,6 +108,7 @@ export interface ItemRequest {
     requesterId: string;
     ownerId: string;
     status: RequestStatus;
+    message?: string;
     requestedAt: Date;
     respondedAt?: Date;
     completedAt?: Date;
@@ -127,7 +130,7 @@ export enum RequestStatus {
 #### 2. ItemRequestService (`ui/src/app/services/item-request.service.ts`)
 
 Methods:
-- `createRequest(itemId: string): Observable<ItemRequest>`
+- `createRequest(itemId: string, message?: string): Observable<ItemRequest>`
 - `getMyRequests(): Observable<ItemRequest[]>`
 - `getPendingRequests(): Observable<ItemRequest[]>`
 - `getRequestsForItem(itemId: string): Observable<ItemRequest[]>`
@@ -140,17 +143,20 @@ Methods:
 
 **ItemRequestButtonComponent**: Displays request button on item cards with status indicators
 - Shows "Request Item" button for available items
+- Opens dialog/modal to collect optional message when clicked
 - Shows "Pending Request" badge if user has pending request
 - Shows "Currently Borrowed" badge if user has approved request
 - Disables button when request exists
 
 **ItemRequestListComponent**: Displays list of requests for owners
 - Shows pending requests with approve/reject actions
+- Displays requester's message if provided
 - Shows approved requests with complete action
 - Shows historical requests (rejected, cancelled, completed)
 
 **MyRequestsComponent**: Displays requester's requests
 - Shows all requests created by user
+- Displays the message included with each request
 - Allows cancellation of pending requests
 - Shows status of all requests
 
@@ -165,6 +171,7 @@ Methods:
   "requesterId": "string (ObjectId reference)",
   "ownerId": "string (ObjectId reference)",
   "status": "string (enum: Pending, Approved, Rejected, Cancelled, Completed)",
+  "message": "string (nullable, max 500 characters)",
   "requestedAt": "ISODate",
   "respondedAt": "ISODate (nullable)",
   "completedAt": "ISODate (nullable)"
@@ -312,6 +319,8 @@ Test categories:
 - Use MongoDB parameterized queries to prevent injection
 - Validate ObjectId formats
 - Sanitize user input in error messages
+- Sanitize request messages to prevent XSS attacks (encode HTML entities)
+- Enforce 500 character limit on request messages
 
 ## Performance Considerations
 
@@ -335,9 +344,9 @@ Test categories:
 ## Future Enhancements
 
 1. **Notifications**: Email/push notifications when requests are created, approved, or rejected
-2. **Request Messages**: Allow users to add messages with requests
-3. **Request History**: Track all state changes with timestamps
-4. **Request Expiration**: Auto-cancel requests after X days
-5. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
-6. **Borrowing Duration**: Add expected return date to requests
-7. **Ratings**: Allow users to rate borrowing experiences
+2. **Request History**: Track all state changes with timestamps
+3. **Request Expiration**: Auto-cancel requests after X days
+4. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
+5. **Borrowing Duration**: Add expected return date to requests
+6. **Ratings**: Allow users to rate borrowing experiences
+7. **Message Threading**: Allow back-and-forth messaging between requester and owner

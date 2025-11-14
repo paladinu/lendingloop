@@ -1174,4 +1174,187 @@ public class ItemRequestServiceTests
             It.IsAny<string>(), It.IsAny<NotificationType>(), It.IsAny<string>(), 
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithValidMessage_StoresMessage()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var message = "I need this for the weekend project";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, message);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(message, result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(
+            It.Is<ItemRequest>(r => r.Message == message), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithNullMessage_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, null);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Null(result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithEmptyMessage_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, "");
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Null(result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithWhitespaceMessage_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, "   ");
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Null(result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithMessageOver500Characters_ThrowsArgumentException()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var message = new string('a', 501); // 501 characters
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+
+        //act & assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.CreateRequestAsync(itemId, requesterId, message));
+        Assert.Equal("message", exception.ParamName);
+        Assert.Contains("500 characters", exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithMessageExactly500Characters_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var message = new string('a', 500); // Exactly 500 characters
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, message);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(message, result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithHtmlInMessage_SanitizesMessage()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var message = "<script>alert('xss')</script>I need this item";
+        var expectedSanitized = "&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;I need this item";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, message);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(expectedSanitized, result.Message);
+        Assert.DoesNotContain("<script>", result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(
+            It.Is<ItemRequest>(r => r.Message == expectedSanitized), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithSpecialCharactersInMessage_SanitizesMessage()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var message = "I need this & that <item> for \"testing\"";
+        var expectedSanitized = "I need this &amp; that &lt;item&gt; for &quot;testing&quot;";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, message);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(expectedSanitized, result.Message);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(
+            It.Is<ItemRequest>(r => r.Message == expectedSanitized), null, default), Times.Once);
+    }
 }

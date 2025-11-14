@@ -71,6 +71,19 @@
                             <span class="info-value">{{ request.requestedAt | date:'short' }}</span>
                         </div>
                     </div>
+                    <div class="message-section" *ngIf="request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">Your message</span>
+                        </div>
+                        <div class="message-content">{{ request.message }}</div>
+                    </div>
+                    <div class="message-section no-message" *ngIf="!request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">No message</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-actions">
                     <button
@@ -115,6 +128,19 @@
                             <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
                         </div>
                     </div>
+                    <div class="message-section" *ngIf="request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">Your message</span>
+                        </div>
+                        <div class="message-content">{{ request.message }}</div>
+                    </div>
+                    <div class="message-section no-message" *ngIf="!request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">No message</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -147,6 +173,19 @@
                         <div class="info-text">
                             <span class="info-label">Completed</span>
                             <span class="info-value">{{ request.completedAt | date:'short' }}</span>
+                        </div>
+                    </div>
+                    <div class="message-section" *ngIf="request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">Your message</span>
+                        </div>
+                        <div class="message-content">{{ request.message }}</div>
+                    </div>
+                    <div class="message-section no-message" *ngIf="!request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">No message</span>
                         </div>
                     </div>
                 </div>
@@ -183,6 +222,19 @@
                             <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
                         </div>
                     </div>
+                    <div class="message-section" *ngIf="request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">Your message</span>
+                        </div>
+                        <div class="message-content">{{ request.message }}</div>
+                    </div>
+                    <div class="message-section no-message" *ngIf="!request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">No message</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -215,6 +267,19 @@
                         <div class="info-text">
                             <span class="info-label">Cancelled</span>
                             <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
+                        </div>
+                    </div>
+                    <div class="message-section" *ngIf="request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">Your message</span>
+                        </div>
+                        <div class="message-content">{{ request.message }}</div>
+                    </div>
+                    <div class="message-section no-message" *ngIf="!request.message">
+                        <div class="message-header">
+                            <span class="message-icon">💬</span>
+                            <span class="message-label">No message</span>
                         </div>
                     </div>
                 </div>

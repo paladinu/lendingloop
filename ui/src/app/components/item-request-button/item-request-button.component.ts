@@ -1,9 +1,12 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
 import { ItemRequestService } from '../../services/item-request.service';
 import { ItemRequest, RequestStatus } from '../../models/item-request.interface';
 import { AuthService } from '../../services/auth.service';
+import { ItemsService } from '../../services/items.service';
 import { Subscription } from 'rxjs';
+import { ItemRequestDialogComponent, ItemRequestDialogResult } from '../item-request-dialog/item-request-dialog.component';
 
 @Component({
     selector: 'app-item-request-button',
@@ -28,7 +31,9 @@ export class ItemRequestButtonComponent implements OnInit, OnDestroy {
 
     constructor(
         private itemRequestService: ItemRequestService,
-        private authService: AuthService
+        private authService: AuthService,
+        private itemsService: ItemsService,
+        private dialog: MatDialog
     ) { }
 
     ngOnInit(): void {
@@ -68,10 +73,38 @@ export class ItemRequestButtonComponent implements OnInit, OnDestroy {
             return;
         }
 
+        // Load item details to get the item name for the dialog
+        this.itemsService.getItemById(this.itemId).subscribe({
+            next: (item) => {
+                this.openRequestDialog(item.name);
+            },
+            error: () => {
+                // If we can't load the item, open dialog with generic title
+                this.openRequestDialog('this item');
+            }
+        });
+    }
+
+    private openRequestDialog(itemName: string): void {
+        const dialogRef = this.dialog.open(ItemRequestDialogComponent, {
+            width: '500px',
+            data: { itemName }
+        });
+
+        dialogRef.afterClosed().subscribe((result: ItemRequestDialogResult | undefined) => {
+            if (result !== undefined) {
+                // User clicked submit
+                this.createRequest(result.message);
+            }
+            // If result is undefined, user cancelled - do nothing
+        });
+    }
+
+    private createRequest(message: string): void {
         this.isLoading = true;
         this.errorMessage = '';
 
-        this.itemRequestService.createRequest(this.itemId).subscribe({
+        this.itemRequestService.createRequest(this.itemId, message).subscribe({
             next: (request) => {
                 this.existingRequest = request;
                 this.requestCreated.emit(request);

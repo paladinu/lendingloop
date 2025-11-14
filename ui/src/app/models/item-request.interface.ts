@@ -4,6 +4,7 @@ export interface ItemRequest {
     requesterId: string;
     ownerId: string;
     status: RequestStatus;
+    message?: string;
     requestedAt: Date;
     respondedAt?: Date;
     completedAt?: Date;

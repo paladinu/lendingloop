@@ -1,4 +1,5 @@
 using Api.Controllers;
+using Api.DTOs;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Http;
@@ -48,7 +49,7 @@ public class ItemRequestControllerTests
             Status = RequestStatus.Pending
         };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null))
             .ReturnsAsync(expectedRequest);
 
         //act
@@ -67,7 +68,7 @@ public class ItemRequestControllerTests
         //arrange
         var dto = new CreateItemRequestDto { ItemId = "nonexistent" };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("nonexistent", _testUserId))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("nonexistent", _testUserId, null))
             .ThrowsAsync(new ArgumentException("Item not found"));
 
         //act
@@ -83,7 +84,7 @@ public class ItemRequestControllerTests
         //arrange
         var dto = new CreateItemRequestDto { ItemId = "item123" };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null))
             .ThrowsAsync(new InvalidOperationException("Cannot request your own item"));
 
         //act
@@ -368,5 +369,130 @@ public class ItemRequestControllerTests
 
         //assert
         Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task CreateRequest_WithValidMessage_ReturnsCreatedResult()
+    {
+        //arrange
+        var message = "I need this for a weekend project";
+        var dto = new CreateItemRequestDto { ItemId = "item123", Message = message };
+        var expectedRequest = new ItemRequest
+        {
+            Id = "request123",
+            ItemId = "item123",
+            RequesterId = _testUserId,
+            OwnerId = "owner123",
+            Status = RequestStatus.Pending,
+            Message = message
+        };
+
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, message))
+            .ReturnsAsync(expectedRequest);
+
+        //act
+        var result = await _controller.CreateRequest(dto);
+
+        //assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedRequest = Assert.IsType<ItemRequest>(createdResult.Value);
+        Assert.Equal(expectedRequest.Message, returnedRequest.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequest_WithMessageExceeding500Characters_ReturnsBadRequest()
+    {
+        //arrange
+        var longMessage = new string('a', 501);
+        var dto = new CreateItemRequestDto { ItemId = "item123", Message = longMessage };
+
+        //act
+        var result = await _controller.CreateRequest(dto);
+
+        //assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Message cannot exceed 500 characters", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task CreateRequest_WithMessageExactly500Characters_ReturnsCreatedResult()
+    {
+        //arrange
+        var message = new string('a', 500);
+        var dto = new CreateItemRequestDto { ItemId = "item123", Message = message };
+        var expectedRequest = new ItemRequest
+        {
+            Id = "request123",
+            ItemId = "item123",
+            RequesterId = _testUserId,
+            OwnerId = "owner123",
+            Status = RequestStatus.Pending,
+            Message = message
+        };
+
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, message))
+            .ReturnsAsync(expectedRequest);
+
+        //act
+        var result = await _controller.CreateRequest(dto);
+
+        //assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedRequest = Assert.IsType<ItemRequest>(createdResult.Value);
+        Assert.Equal(500, returnedRequest.Message?.Length);
+    }
+
+    [Fact]
+    public async Task CreateRequest_WithNullMessage_ReturnsCreatedResult()
+    {
+        //arrange
+        var dto = new CreateItemRequestDto { ItemId = "item123", Message = null };
+        var expectedRequest = new ItemRequest
+        {
+            Id = "request123",
+            ItemId = "item123",
+            RequesterId = _testUserId,
+            OwnerId = "owner123",
+            Status = RequestStatus.Pending,
+            Message = null
+        };
+
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null))
+            .ReturnsAsync(expectedRequest);
+
+        //act
+        var result = await _controller.CreateRequest(dto);
+
+        //assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedRequest = Assert.IsType<ItemRequest>(createdResult.Value);
+        Assert.Null(returnedRequest.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequest_WithEmptyMessage_ReturnsCreatedResult()
+    {
+        //arrange
+        var dto = new CreateItemRequestDto { ItemId = "item123", Message = "" };
+        var expectedRequest = new ItemRequest
+        {
+            Id = "request123",
+            ItemId = "item123",
+            RequesterId = _testUserId,
+            OwnerId = "owner123",
+            Status = RequestStatus.Pending,
+            Message = ""
+        };
+
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, ""))
+            .ReturnsAsync(expectedRequest);
+
+        //act
+        var result = await _controller.CreateRequest(dto);
+
+        //assert
+        var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        var returnedRequest = Assert.IsType<ItemRequest>(createdResult.Value);
+        Assert.Equal("", returnedRequest.Message);
     }
 }

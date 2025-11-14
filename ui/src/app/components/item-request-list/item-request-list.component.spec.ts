@@ -256,4 +256,56 @@ describe('ItemRequestListComponent', () => {
         //assert
         expect(itemRequestService.approveRequest).not.toHaveBeenCalled();
     });
+
+    it('should display message when request has a message', () => {
+        //arrange
+        const mockRequests: ItemRequest[] = [
+            {
+                id: 'req1',
+                itemId: 'item1',
+                requesterId: 'user1',
+                ownerId: 'owner1',
+                status: RequestStatus.Pending,
+                message: 'I need this for a project',
+                requestedAt: new Date()
+            }
+        ];
+
+        (itemRequestService.getPendingRequests as jest.Mock).mockReturnValue(of(mockRequests));
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const compiled = fixture.nativeElement;
+        const messageSection = compiled.querySelector('.message-section');
+        expect(messageSection).toBeTruthy();
+        expect(messageSection.textContent).toContain('I need this for a project');
+    });
+
+    it('should not display message section when request has no message', () => {
+        //arrange
+        const mockRequests: ItemRequest[] = [
+            {
+                id: 'req1',
+                itemId: 'item1',
+                requesterId: 'user1',
+                ownerId: 'owner1',
+                status: RequestStatus.Pending,
+                requestedAt: new Date()
+            }
+        ];
+
+        (itemRequestService.getPendingRequests as jest.Mock).mockReturnValue(of(mockRequests));
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const compiled = fixture.nativeElement;
+        const messageSection = compiled.querySelector('.message-section');
+        expect(messageSection).toBeFalsy();
+    });
 });

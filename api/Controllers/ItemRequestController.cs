@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,12 @@ public class ItemRequestController : ControllerBase
                 return BadRequest("Item ID is required");
             }
 
-            var request = await _itemRequestService.CreateRequestAsync(dto.ItemId, userId);
+            if (!string.IsNullOrEmpty(dto.Message) && dto.Message.Length > 500)
+            {
+                return BadRequest("Message cannot exceed 500 characters");
+            }
+
+            var request = await _itemRequestService.CreateRequestAsync(dto.ItemId, userId, dto.Message);
             return CreatedAtAction(nameof(GetRequestById), new { id = request.Id }, request);
         }
         catch (ArgumentException ex)
@@ -255,9 +261,4 @@ public class ItemRequestController : ControllerBase
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
     }
-}
-
-public class CreateItemRequestDto
-{
-    public string ItemId { get; set; } = string.Empty;
 }

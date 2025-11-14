@@ -259,3 +259,161 @@
   - Display badge on navigation showing number of pending requests for owners
   - Update badge count after request actions
   - _Requirements: 2.1_
+
+- [x] 13. Add message field to ItemRequest model
+
+
+
+
+
+
+
+  - Update `api/Models/ItemRequest.cs` to include optional Message property (string, nullable)
+  - Add BSON attribute for MongoDB serialization
+  - _Requirements: 9.2_
+
+- [x] 14. Update ItemRequestService to support messages
+
+
+
+
+
+
+
+- [x] 14.1 Update CreateRequestAsync to accept message parameter
+
+
+
+  - Modify `IItemRequestService.CreateRequestAsync` signature to include optional message parameter
+  - Implement message validation (max 500 characters) in `ItemRequestService.CreateRequestAsync`
+  - Sanitize message content to prevent XSS attacks (encode HTML entities)
+  - Store message with ItemRequest in database
+  - _Requirements: 9.1, 9.2, 9.5_
+
+
+- [x] 14.2 Write unit tests for message validation
+
+
+
+
+  - Add tests to `Api.Tests/ItemRequestServiceTests.cs` for message validation
+  - Test message length validation (reject messages over 500 characters)
+  - Test message sanitization (verify HTML entities are encoded)
+  - Test null/empty messages are accepted
+  - _Requirements: 9.1, 9.5_
+
+- [x] 15. Update ItemRequestController to accept messages
+
+
+
+
+
+
+
+  - Modify POST `/api/itemrequests` endpoint to accept optional message in request body
+  - Create request DTO with itemId and optional message fields
+  - Pass message to ItemRequestService.CreateRequestAsync
+  - Return 400 Bad Request if message exceeds 500 characters
+  - _Requirements: 9.1, 9.2_
+
+- [x] 16. Update frontend ItemRequest interface
+
+
+
+
+
+
+  - Add optional message property to `ui/src/app/models/item-request.interface.ts`
+  - _Requirements: 9.2_
+
+- [x] 17. Update ItemRequestService in Angular
+
+
+
+
+
+- [x] 17.1 Modify createRequest method to accept message
+
+
+
+
+  - Update `ui/src/app/services/item-request.service.ts` createRequest method signature
+  - Include message in HTTP POST request body
+  - _Requirements: 9.1, 9.2_
+
+- [x] 17.2 Update ItemRequestService unit tests
+
+
+
+
+
+  - Update `ui/src/app/services/item-request.service.spec.ts` to test message parameter
+  - Verify message is included in HTTP request body
+  - _Requirements: 9.1, 9.2_
+
+- [x] 18. Add message input to ItemRequestButton component
+
+
+
+
+
+- [x] 18.1 Create request dialog/modal component
+
+
+
+
+  - Create `ui/src/app/components/item-request-dialog/item-request-dialog.component.ts`
+  - Add textarea for message input with 500 character limit
+  - Add character counter showing remaining characters
+  - Add submit and cancel buttons
+  - Display item name in dialog title
+  - _Requirements: 9.1, 9.3_
+
+- [x] 18.2 Update ItemRequestButton to open dialog
+
+
+
+
+  - Modify `ui/src/app/components/item-request-button/item-request-button.component.ts`
+  - Open dialog when "Request Item" button is clicked
+  - Pass message from dialog to createRequest method
+  - Handle dialog cancellation (don't create request)
+  - _Requirements: 9.1, 9.3_
+
+- [x] 18.3 Write unit tests for request dialog
+
+
+
+
+
+  - Create `ui/src/app/components/item-request-dialog/item-request-dialog.component.spec.ts`
+  - Test character limit enforcement
+  - Test submit and cancel actions
+  - _Requirements: 9.1_
+
+- [x] 19. Display messages in ItemRequestList component
+
+
+
+
+
+
+
+  - Update `ui/src/app/components/item-request-list/item-request-list.component.html`
+  - Display requester's message below request details if message exists
+  - Show "No message provided" or hide section if no message
+  - Style message display to be visually distinct
+  - _Requirements: 9.3_
+
+- [x] 20. Display messages in MyRequests component
+
+
+
+
+
+
+
+  - Update `ui/src/app/components/my-requests/my-requests.component.html`
+  - Display the message included with each request
+  - Show "No message" if no message was provided
+  - _Requirements: 9.4_

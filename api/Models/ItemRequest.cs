@@ -25,6 +25,9 @@ public class ItemRequest
     [BsonRepresentation(BsonType.String)]
     public RequestStatus Status { get; set; } = RequestStatus.Pending;
     
+    [BsonElement("message")]
+    public string? Message { get; set; }
+    
     [BsonElement("requestedAt")]
     public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
     

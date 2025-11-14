@@ -54,7 +54,7 @@ describe('ItemRequestService', () => {
     });
 
     describe('createRequest', () => {
-        it('should create a request successfully', () => {
+        it('should create a request successfully without message', () => {
             //arrange
             const itemId = 'item123';
             const mockRequest: ItemRequest = {
@@ -75,6 +75,32 @@ describe('ItemRequestService', () => {
             const req = httpMock.expectOne(apiUrl);
             expect(req.request.method).toBe('POST');
             expect(req.request.body).toEqual({ itemId });
+            req.flush(mockRequest);
+        });
+
+        it('should create a request successfully with message', () => {
+            //arrange
+            const itemId = 'item123';
+            const message = 'I need this for the weekend';
+            const mockRequest: ItemRequest = {
+                id: 'request123',
+                itemId: itemId,
+                requesterId: 'user123',
+                ownerId: 'owner123',
+                status: RequestStatus.Pending,
+                message: message,
+                requestedAt: new Date()
+            };
+
+            //act
+            service.createRequest(itemId, message).subscribe(request => {
+                //assert
+                expect(request).toEqual(mockRequest);
+            });
+
+            const req = httpMock.expectOne(apiUrl);
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toEqual({ itemId, message });
             req.flush(mockRequest);
         });
 

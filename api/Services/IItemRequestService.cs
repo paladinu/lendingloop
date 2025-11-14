@@ -4,7 +4,7 @@ namespace Api.Services;
 
 public interface IItemRequestService
 {
-    Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId);
+    Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null);
     Task<List<ItemRequest>> GetRequestsByRequesterAsync(string requesterId);
     Task<List<ItemRequest>> GetPendingRequestsByOwnerAsync(string ownerId);
     Task<List<ItemRequest>> GetRequestsByItemIdAsync(string itemId);

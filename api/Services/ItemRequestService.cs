@@ -33,7 +33,7 @@ public class ItemRequestService : IItemRequestService
         _ = Task.Run(EnsureIndexesAsync);
     }
 
-    public async Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId)
+    public async Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null)
     {
         // Get the item to validate it exists and get owner info
         var item = await _itemsService.GetItemByIdAsync(itemId);
@@ -48,6 +48,19 @@ public class ItemRequestService : IItemRequestService
             throw new InvalidOperationException("Cannot request your own item");
         }
 
+        // Validate and sanitize message if provided
+        string? sanitizedMessage = null;
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            if (message.Length > 500)
+            {
+                throw new ArgumentException("Message cannot exceed 500 characters", nameof(message));
+            }
+            
+            // Sanitize message to prevent XSS attacks by encoding HTML entities
+            sanitizedMessage = System.Net.WebUtility.HtmlEncode(message);
+        }
+
         // Create the request
         var request = new ItemRequest
         {
@@ -55,6 +68,7 @@ public class ItemRequestService : IItemRequestService
             RequesterId = requesterId,
             OwnerId = item.UserId,
             Status = RequestStatus.Pending,
+            Message = sanitizedMessage,
             RequestedAt = DateTime.UtcNow
         };
 

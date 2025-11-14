@@ -18,8 +18,12 @@ export class ItemRequestService {
         private router: Router
     ) { }
 
-    createRequest(itemId: string): Observable<ItemRequest> {
-        return this.http.post<ItemRequest>(this.apiUrl, { itemId })
+    createRequest(itemId: string, message?: string): Observable<ItemRequest> {
+        const body: any = { itemId };
+        if (message !== undefined && message !== null) {
+            body.message = message;
+        }
+        return this.http.post<ItemRequest>(this.apiUrl, body)
             .pipe(
                 catchError(error => this.handleError(error))
             );

@@ -104,3 +104,15 @@ This document specifies the technical requirements for implementing the item req
 1. WHEN a Requester views a SharedItem, THE Item Request System SHALL indicate whether the Requester has a Pending Item Request for that SharedItem
 2. WHEN a Requester views a SharedItem, THE Item Request System SHALL indicate whether the Requester has an Approved Item Request for that SharedItem
 3. WHEN a Requester views a SharedItem with a Pending or Approved Item Request, THE UI SHALL disable the request button
+
+### Requirement 9: Request Messages
+
+**User Story:** As a Requester, I want to include a message when requesting an item, so that I can provide context about why I need it and when I need it.
+
+#### Acceptance Criteria
+
+1. WHEN a Requester creates an Item Request, THE Item Request System SHALL allow the Requester to include an optional message with a maximum length of 500 characters
+2. WHEN a Requester creates an Item Request with a message, THE Item Request System SHALL store the message with the Item Request
+3. WHEN an Owner views an Item Request, THE Item Request System SHALL display the Requester's message if one was provided
+4. WHEN a Requester views their Item Requests, THE Item Request System SHALL display the message they included with each request
+5. THE Item Request System SHALL sanitize message content to prevent XSS attacks
