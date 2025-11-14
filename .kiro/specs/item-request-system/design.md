@@ -344,9 +344,8 @@ Test categories:
 ## Future Enhancements
 
 1. **Notifications**: Email/push notifications when requests are created, approved, or rejected
-2. **Request History**: Track all state changes with timestamps
-3. **Request Expiration**: Auto-cancel requests after X days
-4. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
-5. **Borrowing Duration**: Add expected return date to requests
-6. **Ratings**: Allow users to rate borrowing experiences
-7. **Message Threading**: Allow back-and-forth messaging between requester and owner
+2. **Request Expiration**: Auto-cancel requests after X days
+3. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
+4. **Borrowing Duration**: Add expected return date to requests
+5. **Ratings**: Allow users to rate borrowing experiences
+6. **Message Threading**: Allow back-and-forth messaging between requester and owner

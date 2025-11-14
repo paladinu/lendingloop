@@ -116,3 +116,15 @@ This document specifies the technical requirements for implementing the item req
 3. WHEN an Owner views an Item Request, THE Item Request System SHALL display the Requester's message if one was provided
 4. WHEN a Requester views their Item Requests, THE Item Request System SHALL display the message they included with each request
 5. THE Item Request System SHALL sanitize message content to prevent XSS attacks
+
+### Requirement 10: Request History
+
+**User Story:** As a system administrator, I want to track all state changes with timestamps, so that I can audit the request lifecycle and troubleshoot issues.
+
+#### Acceptance Criteria
+
+1. WHEN an Item Request is created, THE Item Request System SHALL record the requestedAt timestamp
+2. WHEN an Item Request status changes to Approved or Rejected, THE Item Request System SHALL record the respondedAt timestamp
+3. WHEN an Item Request status changes to Completed, THE Item Request System SHALL record the completedAt timestamp
+4. WHEN an Item Request status changes to Cancelled, THE Item Request System SHALL record the cancellation timestamp in the respondedAt field
+5. THE Item Request System SHALL preserve all timestamps throughout the Item Request lifecycle
