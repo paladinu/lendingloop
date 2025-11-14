@@ -67,6 +67,13 @@
                             <span class="info-value">{{ request.requestedAt | date:'short' }}</span>
                         </div>
                     </div>
+                    <div class="expected-return-info" *ngIf="request.expectedReturnDate">
+                        <span class="info-icon">🗓️</span>
+                        <div class="info-text">
+                            <span class="info-label">Expected return</span>
+                            <span class="info-value">{{ request.expectedReturnDate | date:'mediumDate' }}</span>
+                        </div>
+                    </div>
                     <div class="message-section" *ngIf="request.message">
                         <div class="message-header">
                             <span class="message-icon">💬</span>
@@ -116,6 +123,13 @@
                         <div class="info-text">
                             <span class="info-label">Approved</span>
                             <span class="info-value">{{ request.respondedAt | date:'short' }}</span>
+                        </div>
+                    </div>
+                    <div class="expected-return-info" *ngIf="request.expectedReturnDate">
+                        <span class="info-icon">🗓️</span>
+                        <div class="info-text">
+                            <span class="info-label">Expected return</span>
+                            <span class="info-value">{{ request.expectedReturnDate | date:'mediumDate' }}</span>
                         </div>
                     </div>
                     <div class="message-section" *ngIf="request.message">

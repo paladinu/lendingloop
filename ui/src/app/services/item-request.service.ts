@@ -18,10 +18,13 @@ export class ItemRequestService {
         private router: Router
     ) { }
 
-    createRequest(itemId: string, message?: string): Observable<ItemRequest> {
+    createRequest(itemId: string, message?: string, expectedReturnDate?: Date): Observable<ItemRequest> {
         const body: any = { itemId };
         if (message !== undefined && message !== null) {
             body.message = message;
+        }
+        if (expectedReturnDate !== undefined && expectedReturnDate !== null) {
+            body.expectedReturnDate = expectedReturnDate.toISOString();
         }
         return this.http.post<ItemRequest>(this.apiUrl, body)
             .pipe(

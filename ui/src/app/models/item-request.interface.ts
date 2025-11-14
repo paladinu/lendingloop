@@ -5,6 +5,7 @@ export interface ItemRequest {
     ownerId: string;
     status: RequestStatus;
     message?: string;
+    expectedReturnDate?: Date;
     requestedAt: Date;
     respondedAt?: Date;
     completedAt?: Date;

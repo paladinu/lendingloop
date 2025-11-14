@@ -28,6 +28,9 @@ public class ItemRequest
     [BsonElement("message")]
     public string? Message { get; set; }
     
+    [BsonElement("expectedReturnDate")]
+    public DateTime? ExpectedReturnDate { get; set; }
+    
     [BsonElement("requestedAt")]
     public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
     

@@ -43,6 +43,7 @@ public class ItemRequest
     public string OwnerId { get; set; }
     public RequestStatus Status { get; set; }
     public string? Message { get; set; }
+    public DateTime? ExpectedReturnDate { get; set; }
     public DateTime RequestedAt { get; set; }
     public DateTime? RespondedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
@@ -63,7 +64,7 @@ public enum RequestStatus
 ```csharp
 public interface IItemRequestService
 {
-    Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null);
+    Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null, DateTime? expectedReturnDate = null);
     Task<List<ItemRequest>> GetRequestsByRequesterAsync(string requesterId);
     Task<List<ItemRequest>> GetPendingRequestsByOwnerAsync(string ownerId);
     Task<List<ItemRequest>> GetRequestsByItemIdAsync(string itemId);
@@ -84,6 +85,7 @@ Key responsibilities:
 - Manage request status transitions
 - Enforce authorization rules
 - Validate and sanitize request messages (max 500 characters)
+- Validate expected return dates (must be in the future)
 
 #### 4. ItemRequestController (`api/Controllers/ItemRequestController.cs`)
 
@@ -109,6 +111,7 @@ export interface ItemRequest {
     ownerId: string;
     status: RequestStatus;
     message?: string;
+    expectedReturnDate?: Date;
     requestedAt: Date;
     respondedAt?: Date;
     completedAt?: Date;
@@ -130,7 +133,7 @@ export enum RequestStatus {
 #### 2. ItemRequestService (`ui/src/app/services/item-request.service.ts`)
 
 Methods:
-- `createRequest(itemId: string, message?: string): Observable<ItemRequest>`
+- `createRequest(itemId: string, message?: string, expectedReturnDate?: Date): Observable<ItemRequest>`
 - `getMyRequests(): Observable<ItemRequest[]>`
 - `getPendingRequests(): Observable<ItemRequest[]>`
 - `getRequestsForItem(itemId: string): Observable<ItemRequest[]>`
@@ -143,20 +146,20 @@ Methods:
 
 **ItemRequestButtonComponent**: Displays request button on item cards with status indicators
 - Shows "Request Item" button for available items
-- Opens dialog/modal to collect optional message when clicked
+- Opens dialog/modal to collect optional message and expected return date when clicked
 - Shows "Pending Request" badge if user has pending request
 - Shows "Currently Borrowed" badge if user has approved request
 - Disables button when request exists
 
 **ItemRequestListComponent**: Displays list of requests for owners
 - Shows pending requests with approve/reject actions
-- Displays requester's message if provided
+- Displays requester's message and expected return date if provided
 - Shows approved requests with complete action
 - Shows historical requests (rejected, cancelled, completed)
 
 **MyRequestsComponent**: Displays requester's requests
 - Shows all requests created by user
-- Displays the message included with each request
+- Displays the message and expected return date included with each request
 - Allows cancellation of pending requests
 - Shows status of all requests
 
@@ -172,6 +175,7 @@ Methods:
   "ownerId": "string (ObjectId reference)",
   "status": "string (enum: Pending, Approved, Rejected, Cancelled, Completed)",
   "message": "string (nullable, max 500 characters)",
+  "expectedReturnDate": "ISODate (nullable)",
   "requestedAt": "ISODate",
   "respondedAt": "ISODate (nullable)",
   "completedAt": "ISODate (nullable)"
@@ -224,6 +228,9 @@ No schema changes required. The `isAvailable` field is updated through ItemsServ
 5. **Resource Not Found**
    - Request ID doesn't exist → 404 Not Found
    - Item ID doesn't exist → 404 Not Found
+
+6. **Invalid Expected Return Date**
+   - Expected return date is in the past → 400 Bad Request
 
 ### Frontend Error Handling
 
@@ -321,6 +328,7 @@ Test categories:
 - Sanitize user input in error messages
 - Sanitize request messages to prevent XSS attacks (encode HTML entities)
 - Enforce 500 character limit on request messages
+- Validate expected return dates are in the future (not in the past)
 
 ## Performance Considerations
 
@@ -346,6 +354,7 @@ Test categories:
 1. **Notifications**: Email/push notifications when requests are created, approved, or rejected
 2. **Request Expiration**: Auto-cancel requests after X days
 3. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
-4. **Borrowing Duration**: Add expected return date to requests
-5. **Ratings**: Allow users to rate borrowing experiences
-6. **Message Threading**: Allow back-and-forth messaging between requester and owner
+4. **Return Date Reminders**: Send notifications as expected return date approaches
+5. **Overdue Tracking**: Flag requests that exceed expected return date
+6. **Ratings**: Allow users to rate borrowing experiences
+7. **Message Threading**: Allow back-and-forth messaging between requester and owner

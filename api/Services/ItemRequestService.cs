@@ -33,7 +33,7 @@ public class ItemRequestService : IItemRequestService
         _ = Task.Run(EnsureIndexesAsync);
     }
 
-    public async Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null)
+    public async Task<ItemRequest> CreateRequestAsync(string itemId, string requesterId, string? message = null, DateTime? expectedReturnDate = null)
     {
         // Get the item to validate it exists and get owner info
         var item = await _itemsService.GetItemByIdAsync(itemId);
@@ -61,6 +61,15 @@ public class ItemRequestService : IItemRequestService
             sanitizedMessage = System.Net.WebUtility.HtmlEncode(message);
         }
 
+        // Validate expected return date if provided
+        if (expectedReturnDate.HasValue)
+        {
+            if (expectedReturnDate.Value.Date < DateTime.UtcNow.Date)
+            {
+                throw new ArgumentException("Expected return date cannot be in the past", nameof(expectedReturnDate));
+            }
+        }
+
         // Create the request
         var request = new ItemRequest
         {
@@ -69,6 +78,7 @@ public class ItemRequestService : IItemRequestService
             OwnerId = item.UserId,
             Status = RequestStatus.Pending,
             Message = sanitizedMessage,
+            ExpectedReturnDate = expectedReturnDate,
             RequestedAt = DateTime.UtcNow
         };
 

@@ -104,6 +104,67 @@ describe('ItemRequestService', () => {
             req.flush(mockRequest);
         });
 
+        it('should create a request successfully with expectedReturnDate', () => {
+            //arrange
+            const itemId = 'item123';
+            const expectedReturnDate = new Date('2026-12-31');
+            const mockRequest: ItemRequest = {
+                id: 'request123',
+                itemId: itemId,
+                requesterId: 'user123',
+                ownerId: 'owner123',
+                status: RequestStatus.Pending,
+                expectedReturnDate: expectedReturnDate,
+                requestedAt: new Date()
+            };
+
+            //act
+            service.createRequest(itemId, undefined, expectedReturnDate).subscribe(request => {
+                //assert
+                expect(request).toEqual(mockRequest);
+            });
+
+            const req = httpMock.expectOne(apiUrl);
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toEqual({ 
+                itemId, 
+                expectedReturnDate: expectedReturnDate.toISOString() 
+            });
+            req.flush(mockRequest);
+        });
+
+        it('should create a request with both message and expectedReturnDate', () => {
+            //arrange
+            const itemId = 'item123';
+            const message = 'I need this for the weekend';
+            const expectedReturnDate = new Date('2026-12-31');
+            const mockRequest: ItemRequest = {
+                id: 'request123',
+                itemId: itemId,
+                requesterId: 'user123',
+                ownerId: 'owner123',
+                status: RequestStatus.Pending,
+                message: message,
+                expectedReturnDate: expectedReturnDate,
+                requestedAt: new Date()
+            };
+
+            //act
+            service.createRequest(itemId, message, expectedReturnDate).subscribe(request => {
+                //assert
+                expect(request).toEqual(mockRequest);
+            });
+
+            const req = httpMock.expectOne(apiUrl);
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toEqual({ 
+                itemId, 
+                message,
+                expectedReturnDate: expectedReturnDate.toISOString() 
+            });
+            req.flush(mockRequest);
+        });
+
         it('should handle error when creating request', () => {
             //arrange
             const itemId = 'item123';

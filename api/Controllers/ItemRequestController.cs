@@ -40,7 +40,12 @@ public class ItemRequestController : ControllerBase
                 return BadRequest("Message cannot exceed 500 characters");
             }
 
-            var request = await _itemRequestService.CreateRequestAsync(dto.ItemId, userId, dto.Message);
+            if (dto.ExpectedReturnDate.HasValue && dto.ExpectedReturnDate.Value.Date < DateTime.UtcNow.Date)
+            {
+                return BadRequest("Expected return date cannot be in the past");
+            }
+
+            var request = await _itemRequestService.CreateRequestAsync(dto.ItemId, userId, dto.Message, dto.ExpectedReturnDate);
             return CreatedAtAction(nameof(GetRequestById), new { id = request.Id }, request);
         }
         catch (ArgumentException ex)

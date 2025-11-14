@@ -49,7 +49,7 @@ public class ItemRequestControllerTests
             Status = RequestStatus.Pending
         };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null, null))
             .ReturnsAsync(expectedRequest);
 
         //act
@@ -68,7 +68,7 @@ public class ItemRequestControllerTests
         //arrange
         var dto = new CreateItemRequestDto { ItemId = "nonexistent" };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("nonexistent", _testUserId, null))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("nonexistent", _testUserId, null, null))
             .ThrowsAsync(new ArgumentException("Item not found"));
 
         //act
@@ -84,7 +84,7 @@ public class ItemRequestControllerTests
         //arrange
         var dto = new CreateItemRequestDto { ItemId = "item123" };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null, null))
             .ThrowsAsync(new InvalidOperationException("Cannot request your own item"));
 
         //act
@@ -387,7 +387,7 @@ public class ItemRequestControllerTests
             Message = message
         };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, message))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, message, null))
             .ReturnsAsync(expectedRequest);
 
         //act
@@ -430,7 +430,7 @@ public class ItemRequestControllerTests
             Message = message
         };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, message))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, message, null))
             .ReturnsAsync(expectedRequest);
 
         //act
@@ -457,7 +457,7 @@ public class ItemRequestControllerTests
             Message = null
         };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, null, null))
             .ReturnsAsync(expectedRequest);
 
         //act
@@ -484,7 +484,7 @@ public class ItemRequestControllerTests
             Message = ""
         };
 
-        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, ""))
+        _mockItemRequestService.Setup(s => s.CreateRequestAsync("item123", _testUserId, "", null))
             .ReturnsAsync(expectedRequest);
 
         //act

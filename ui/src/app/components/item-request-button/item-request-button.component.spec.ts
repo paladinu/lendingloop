@@ -217,7 +217,7 @@ describe('ItemRequestButtonComponent', () => {
             setTimeout(() => {
                 expect(itemsService.getItemById).toHaveBeenCalledWith('item123');
                 expect(dialog.open).toHaveBeenCalled();
-                expect(itemRequestService.createRequest).toHaveBeenCalledWith('item123', 'Test message');
+                expect(itemRequestService.createRequest).toHaveBeenCalledWith('item123', 'Test message', undefined);
                 expect(component.existingRequest).toEqual(mockRequest);
                 expect(component.requestCreated.emit).toHaveBeenCalledWith(mockRequest);
                 done();

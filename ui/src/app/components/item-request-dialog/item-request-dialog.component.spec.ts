@@ -102,7 +102,10 @@ describe('ItemRequestDialogComponent', () => {
         component.onSubmit();
 
         //assert
-        expect(dialogRef.close).toHaveBeenCalledWith({ message: 'I need this for a project' });
+        expect(dialogRef.close).toHaveBeenCalledWith({ 
+            message: 'I need this for a project',
+            expectedReturnDate: undefined
+        });
     });
 
     it('should not submit when message is too long', () => {
@@ -124,6 +127,65 @@ describe('ItemRequestDialogComponent', () => {
         component.onSubmit();
 
         //assert
-        expect(dialogRef.close).toHaveBeenCalledWith({ message: '' });
+        expect(dialogRef.close).toHaveBeenCalledWith({ message: '', expectedReturnDate: undefined });
+    });
+
+    it('should initialize with minDate set to tomorrow', () => {
+        //arrange
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        //act
+        const minDate = component.minDate;
+
+        //assert
+        expect(minDate.getDate()).toBe(tomorrow.getDate());
+    });
+
+    it('should submit with expectedReturnDate when provided', () => {
+        //arrange
+        const futureDate = new Date('2026-12-31');
+        component.message = 'Test message';
+        component.expectedReturnDate = futureDate;
+
+        //act
+        component.onSubmit();
+
+        //assert
+        expect(dialogRef.close).toHaveBeenCalledWith({ 
+            message: 'Test message',
+            expectedReturnDate: futureDate
+        });
+    });
+
+    it('should submit without expectedReturnDate when not provided', () => {
+        //arrange
+        component.message = 'Test message';
+        component.expectedReturnDate = undefined;
+
+        //act
+        component.onSubmit();
+
+        //assert
+        expect(dialogRef.close).toHaveBeenCalledWith({ 
+            message: 'Test message',
+            expectedReturnDate: undefined
+        });
+    });
+
+    it('should submit with both message and expectedReturnDate', () => {
+        //arrange
+        const futureDate = new Date('2026-12-31');
+        component.message = 'I need this for a week';
+        component.expectedReturnDate = futureDate;
+
+        //act
+        component.onSubmit();
+
+        //assert
+        expect(dialogRef.close).toHaveBeenCalledWith({ 
+            message: 'I need this for a week',
+            expectedReturnDate: futureDate
+        });
     });
 });

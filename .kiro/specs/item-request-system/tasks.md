@@ -417,3 +417,129 @@
   - Display the message included with each request
   - Show "No message" if no message was provided
   - _Requirements: 9.4_
+
+- [x] 21. Add expected return date field to ItemRequest model
+
+
+
+  - Update `api/Models/ItemRequest.cs` to include optional ExpectedReturnDate property (DateTime?, nullable)
+  - Add BSON attribute for MongoDB serialization
+  - _Requirements: 11.2_
+
+- [x] 22. Update ItemRequestService to support expected return date
+
+
+- [x] 22.1 Update CreateRequestAsync to accept expectedReturnDate parameter
+
+
+
+  - Modify `IItemRequestService.CreateRequestAsync` signature to include optional expectedReturnDate parameter
+  - Implement validation in `ItemRequestService.CreateRequestAsync` to reject past dates
+  - Store expectedReturnDate with ItemRequest in database
+  - _Requirements: 11.1, 11.2, 11.3_
+
+- [x] 22.2 Write unit tests for expected return date validation
+
+
+
+  - Add tests to `Api.Tests/ItemRequestServiceTests.cs` for expectedReturnDate validation
+  - Test past date rejection (should return validation error)
+  - Test future date acceptance
+  - Test null/empty expectedReturnDate is accepted
+  - _Requirements: 11.1, 11.3_
+
+
+- [x] 23. Update ItemRequestController to accept expected return date
+
+
+  - Modify POST `/api/itemrequests` endpoint to accept optional expectedReturnDate in request body
+  - Update request DTO to include expectedReturnDate field
+  - Pass expectedReturnDate to ItemRequestService.CreateRequestAsync
+  - Return 400 Bad Request if expectedReturnDate is in the past
+  - _Requirements: 11.1, 11.2, 11.3_
+
+
+- [x] 24. Update frontend ItemRequest interface
+
+
+  - Add optional expectedReturnDate property to `ui/src/app/models/item-request.interface.ts`
+  - _Requirements: 11.2_
+
+- [x] 25. Update ItemRequestService in Angular
+
+
+
+- [x] 25.1 Modify createRequest method to accept expectedReturnDate
+
+
+  - Update `ui/src/app/services/item-request.service.ts` createRequest method signature
+  - Include expectedReturnDate in HTTP POST request body
+  - _Requirements: 11.1, 11.2_
+
+
+
+- [ ] 25.2 Update ItemRequestService unit tests
+
+  - Update `ui/src/app/services/item-request.service.spec.ts` to test expectedReturnDate parameter
+  - Verify expectedReturnDate is included in HTTP request body
+  - _Requirements: 11.1, 11.2_
+
+
+- [ ] 26. Add expected return date input to ItemRequestDialog component
+
+- [x] 26.1 Add date picker to request dialog
+
+
+  - Update `ui/src/app/components/item-request-dialog/item-request-dialog.component.ts`
+  - Add date picker input for expected return date
+  - Set minimum date to tomorrow (prevent past dates)
+  - Make field optional
+  - _Requirements: 11.1, 11.4_
+
+- [x] 26.2 Update dialog template
+
+
+
+  - Update `ui/src/app/components/item-request-dialog/item-request-dialog.component.html`
+  - Add date picker field below message textarea
+  - Add label "Expected Return Date (Optional)"
+  - Style date picker consistently with message input
+  - _Requirements: 11.1, 11.4_
+
+
+
+- [ ] 26.3 Update ItemRequestButton to pass expectedReturnDate
+
+  - Modify `ui/src/app/components/item-request-button/item-request-button.component.ts`
+  - Pass expectedReturnDate from dialog to createRequest method
+  - _Requirements: 11.1_
+
+
+
+- [ ] 26.4 Write unit tests for date picker
+
+  - Update `ui/src/app/components/item-request-dialog/item-request-dialog.component.spec.ts`
+  - Test date picker validation (minimum date enforcement)
+  - Test submit with and without expectedReturnDate
+  - _Requirements: 11.1_
+
+
+- [x] 27. Display expected return date in ItemRequestList component
+
+
+  - Update `ui/src/app/components/item-request-list/item-request-list.component.html`
+  - Display expected return date below message if provided
+  - Format date in user-friendly format (e.g., "Expected return: Jan 15, 2026")
+  - Show "No return date specified" or hide section if not provided
+  - _Requirements: 11.4_
+
+
+- [x] 28. Display expected return date in MyRequests component
+
+
+
+  - Update `ui/src/app/components/my-requests/my-requests.component.html`
+  - Display expected return date for each request
+  - Format date consistently with ItemRequestList
+  - Show "No return date" if not provided
+  - _Requirements: 11.5_

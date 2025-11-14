@@ -88,23 +88,26 @@ export class ItemRequestButtonComponent implements OnInit, OnDestroy {
     private openRequestDialog(itemName: string): void {
         const dialogRef = this.dialog.open(ItemRequestDialogComponent, {
             width: '500px',
-            data: { itemName }
+            data: { itemName },
+            disableClose: false,
+            hasBackdrop: true,
+            closeOnNavigation: true
         });
 
         dialogRef.afterClosed().subscribe((result: ItemRequestDialogResult | undefined) => {
             if (result !== undefined) {
                 // User clicked submit
-                this.createRequest(result.message);
+                this.createRequest(result.message, result.expectedReturnDate);
             }
             // If result is undefined, user cancelled - do nothing
         });
     }
 
-    private createRequest(message: string): void {
+    private createRequest(message: string, expectedReturnDate?: Date): void {
         this.isLoading = true;
         this.errorMessage = '';
 
-        this.itemRequestService.createRequest(this.itemId, message).subscribe({
+        this.itemRequestService.createRequest(this.itemId, message, expectedReturnDate).subscribe({
             next: (request) => {
                 this.existingRequest = request;
                 this.requestCreated.emit(request);

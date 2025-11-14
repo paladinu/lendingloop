@@ -9,8 +9,10 @@ This document specifies the technical requirements for implementing the item req
 - **Item Request System**: The software system that manages the creation, approval, rejection, and cancellation of item borrow requests
 - **Requester**: A user who submits a request to borrow an item from another user
 - **Owner**: A user who owns a shared item and has the authority to approve or reject borrow requests
+- **SharedItem**: An item that an Owner has made available for borrowing within their loops
 - **Item Request**: A formal request from a Requester to borrow a specific SharedItem from an Owner
 - **Request Status**: The current state of an Item Request (Pending, Approved, Rejected, Cancelled, Completed)
+- **UI**: The user interface component of the Item Request System that displays information to users
 
 ## Requirements
 
@@ -128,3 +130,15 @@ This document specifies the technical requirements for implementing the item req
 3. WHEN an Item Request status changes to Completed, THE Item Request System SHALL record the completedAt timestamp
 4. WHEN an Item Request status changes to Cancelled, THE Item Request System SHALL record the cancellation timestamp in the respondedAt field
 5. THE Item Request System SHALL preserve all timestamps throughout the Item Request lifecycle
+
+### Requirement 11: Borrowing Duration
+
+**User Story:** As a Requester, I want to specify an expected return date when requesting an item, so that the Owner knows how long I need to borrow it.
+
+#### Acceptance Criteria
+
+1. WHEN a Requester creates an Item Request, THE Item Request System SHALL allow the Requester to include an optional expected return date
+2. WHEN a Requester creates an Item Request with an expected return date, THE Item Request System SHALL store the expected return date with the Item Request
+3. IF a Requester provides an expected return date that is in the past, THEN THE Item Request System SHALL reject the request with a validation error
+4. WHEN an Owner views an Item Request, THE Item Request System SHALL display the expected return date if one was provided
+5. WHEN a Requester views their Item Requests, THE Item Request System SHALL display the expected return date they specified with each request

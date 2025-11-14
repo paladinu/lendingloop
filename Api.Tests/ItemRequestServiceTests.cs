@@ -1357,4 +1357,92 @@ public class ItemRequestServiceTests
         _mockRequestsCollection.Verify(c => c.InsertOneAsync(
             It.Is<ItemRequest>(r => r.Message == expectedSanitized), null, default), Times.Once);
     }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithPastExpectedReturnDate_ThrowsArgumentException()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var pastDate = DateTime.UtcNow.AddDays(-1);
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+
+        //act & assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => 
+            _service.CreateRequestAsync(itemId, requesterId, null, pastDate));
+        Assert.Equal("expectedReturnDate", exception.ParamName);
+        Assert.Contains("cannot be in the past", exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithFutureExpectedReturnDate_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var futureDate = DateTime.UtcNow.AddDays(7);
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, null, futureDate);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.ExpectedReturnDate);
+        Assert.Equal(futureDate, result.ExpectedReturnDate.Value);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithNullExpectedReturnDate_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, null, null);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Null(result.ExpectedReturnDate);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_WithTodayAsExpectedReturnDate_AcceptsRequest()
+    {
+        //arrange
+        var itemId = "item123";
+        var requesterId = "requester123";
+        var ownerId = "owner123";
+        var today = DateTime.UtcNow.Date;
+        var item = new SharedItem { Id = itemId, UserId = ownerId, Name = "Test Item" };
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockRequestsCollection.Setup(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default))
+            .Returns(Task.CompletedTask);
+
+        //act
+        var result = await _service.CreateRequestAsync(itemId, requesterId, null, today);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.ExpectedReturnDate);
+        _mockRequestsCollection.Verify(c => c.InsertOneAsync(It.IsAny<ItemRequest>(), null, default), Times.Once);
+    }
 }
