@@ -12,6 +12,7 @@ public interface IEmailService
     Task<bool> SendItemRequestRejectedEmailAsync(string requesterEmail, string requesterName, string ownerName, string itemName);
     Task<bool> SendItemRequestCompletedEmailAsync(string requesterEmail, string requesterName, string ownerName, string itemName);
     Task<bool> SendItemRequestCancelledEmailAsync(string ownerEmail, string ownerName, string requesterName, string itemName);
+    Task<bool> SendBadgeAwardEmailAsync(string recipientEmail, string recipientName, string badgeType, int currentScore);
     Task<bool> TestEmailConfigurationAsync();
     EmailHealthStatus GetEmailHealthStatus();
 }

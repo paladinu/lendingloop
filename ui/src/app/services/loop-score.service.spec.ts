@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { LoopScoreService } from './loop-score.service';
-import { ScoreHistoryEntry } from '../models/auth.interface';
+import { ScoreHistoryEntry, BadgeAward } from '../models/auth.interface';
 import { environment } from '../../environments/environment';
 
 describe('LoopScoreService', () => {
@@ -99,5 +99,42 @@ describe('LoopScoreService', () => {
         expect(rules.borrowCompleted).toBe(1);
         expect(rules.onTimeReturn).toBe(1);
         expect(rules.lendApproved).toBe(4);
+    });
+
+    it('getUserBadges() should fetch user badges from API', () => {
+        //arrange
+        const userId = 'user123';
+        const mockBadges: BadgeAward[] = [
+            {
+                badgeType: 'Bronze',
+                awardedAt: new Date().toISOString()
+            },
+            {
+                badgeType: 'Silver',
+                awardedAt: new Date().toISOString()
+            }
+        ];
+
+        //act
+        service.getUserBadges(userId).subscribe(badges => {
+            //assert
+            expect(badges).toEqual(mockBadges);
+            expect(badges.length).toBe(2);
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/users/${userId}/badges`);
+        expect(req.request.method).toBe('GET');
+        req.flush(mockBadges);
+    });
+
+    it('getBadgeMilestones() should return badge milestone values', () => {
+        //act
+        const milestones = service.getBadgeMilestones();
+
+        //assert
+        expect(milestones).toBeDefined();
+        expect(milestones.bronze).toBe(10);
+        expect(milestones.silver).toBe(50);
+        expect(milestones.gold).toBe(100);
     });
 });

@@ -18,10 +18,14 @@ describe('NotificationService', () => {
     let httpMock: HttpTestingController;
     let authService: any;
     let router: any;
+    let consoleErrorSpy: jest.SpyInstance;
 
     const apiUrl = 'http://localhost:8080/api/notifications';
 
     beforeEach(() => {
+        // Suppress console.error during tests
+        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
         const authServiceSpy = {
             logout: jest.fn()
         };
@@ -46,6 +50,7 @@ describe('NotificationService', () => {
 
     afterEach(() => {
         httpMock.verify();
+        consoleErrorSpy.mockRestore();
     });
 
     it('should be created', () => {
@@ -127,7 +132,6 @@ describe('NotificationService', () => {
         it('should handle error when fetching notifications', () => {
             //arrange
             const errorMessage = 'Failed to fetch notifications';
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
             //act
             service.getNotifications().subscribe({
@@ -135,7 +139,6 @@ describe('NotificationService', () => {
                 error: (error) => {
                     //assert
                     expect(error.message).toContain('An unexpected error occurred');
-                    consoleErrorSpy.mockRestore();
                 }
             });
 
@@ -207,7 +210,6 @@ describe('NotificationService', () => {
         it('should handle error when marking as read', () => {
             //arrange
             const notificationId = 'notif123';
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
             //act
             service.markAsRead(notificationId).subscribe({
@@ -215,7 +217,6 @@ describe('NotificationService', () => {
                 error: (error) => {
                     //assert
                     expect(error.message).toContain('An unexpected error occurred');
-                    consoleErrorSpy.mockRestore();
                 }
             });
 
@@ -261,7 +262,6 @@ describe('NotificationService', () => {
         it('should handle error when deleting notification', () => {
             //arrange
             const notificationId = 'notif123';
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
             //act
             service.deleteNotification(notificationId).subscribe({
@@ -269,7 +269,6 @@ describe('NotificationService', () => {
                 error: (error) => {
                     //assert
                     expect(error.message).toContain('An unexpected error occurred');
-                    consoleErrorSpy.mockRestore();
                 }
             });
 
@@ -280,9 +279,6 @@ describe('NotificationService', () => {
 
     describe('error handling', () => {
         it('should handle 401 error and redirect to login', () => {
-            //arrange
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
             //act
             service.getNotifications().subscribe({
                 next: () => fail('should have failed'),
@@ -291,7 +287,6 @@ describe('NotificationService', () => {
                     expect(error.message).toContain('Authentication required');
                     expect(authService.logout).toHaveBeenCalled();
                     expect(router.navigate).toHaveBeenCalledWith(['/login']);
-                    consoleErrorSpy.mockRestore();
                 }
             });
 
@@ -302,19 +297,16 @@ describe('NotificationService', () => {
         it('should handle 403 error', (done) => {
             //arrange
             const notificationId = 'notif123';
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
             //act
             service.markAsRead(notificationId).subscribe({
                 next: () => {
-                    consoleErrorSpy.mockRestore();
                     fail('should have failed');
                     done();
                 },
                 error: (error) => {
                     //assert
                     expect(error.message).toContain('permission');
-                    consoleErrorSpy.mockRestore();
                     done();
                 }
             });

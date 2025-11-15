@@ -11,6 +11,7 @@ The LoopScore feature implements a gamification system that awards points to use
 - **Audit Trail**: All score changes are tracked with timestamps and reasons for transparency
 - **Non-negative Scores**: Scores cannot go below zero to maintain positive reinforcement
 - **Consistent Display**: Scores appear uniformly next to user names across all UI components
+- **Milestone Recognition**: Badges are automatically awarded when users reach score milestones to celebrate achievements
 
 ## Architecture
 
@@ -74,6 +75,26 @@ public class User
     
     [BsonElement("scoreHistory")]
     public List<ScoreHistoryEntry> ScoreHistory { get; set; } = new();
+    
+    [BsonElement("badges")]
+    public List<BadgeAward> Badges { get; set; } = new();
+}
+
+public class BadgeAward
+{
+    [BsonElement("badgeType")]
+    [BsonRepresentation(BsonType.String)]
+    public BadgeType BadgeType { get; set; }
+    
+    [BsonElement("awardedAt")]
+    public DateTime AwardedAt { get; set; }
+}
+
+public enum BadgeType
+{
+    Bronze,   // 10 points
+    Silver,   // 50 points
+    Gold      // 100 points
 }
 
 public class ScoreHistoryEntry
@@ -116,6 +137,7 @@ public interface ILoopScoreService
     Task ReverseLendPointsAsync(string userId, string itemRequestId, string itemName);
     Task<int> GetUserScoreAsync(string userId);
     Task<List<ScoreHistoryEntry>> GetScoreHistoryAsync(string userId, int limit = 50);
+    Task<List<BadgeAward>> GetUserBadgesAsync(string userId);
 }
 ```
 
@@ -125,6 +147,9 @@ The service will:
 - Calculate points based on action type
 - Update User.LoopScore field
 - Add entries to User.ScoreHistory
+- Check for badge milestones after each score update
+- Award badges automatically when thresholds are reached (10, 50, 100 points)
+- Prevent duplicate badge awards
 - Enforce minimum score of zero
 - Use atomic MongoDB operations to prevent race conditions
 
@@ -140,6 +165,7 @@ Integrate LoopScoreService calls at key points:
 Add new endpoints:
 - `GET /api/users/{userId}/score` - Get current score
 - `GET /api/users/{userId}/score-history` - Get score history with pagination
+- `GET /api/users/{userId}/badges` - Get user's earned badges
 
 ### Frontend Components
 
@@ -149,6 +175,7 @@ Add new endpoints:
 export interface UserProfile {
     // Existing fields...
     loopScore: number;
+    badges: BadgeAward[];
 }
 
 export interface ScoreHistoryEntry {
@@ -157,6 +184,11 @@ export interface ScoreHistoryEntry {
     actionType: 'BorrowCompleted' | 'OnTimeReturn' | 'LendApproved' | 'LendCancelled';
     itemRequestId: string;
     itemName: string;
+}
+
+export interface BadgeAward {
+    badgeType: 'Bronze' | 'Silver' | 'Gold';
+    awardedAt: string;
 }
 ```
 
@@ -167,13 +199,21 @@ export interface ScoreHistoryEntry {
 export class LoopScoreService {
     getUserScore(userId: string): Observable<number>;
     getScoreHistory(userId: string, limit?: number): Observable<ScoreHistoryEntry[]>;
+    getUserBadges(userId: string): Observable<BadgeAward[]>;
     getScoreExplanation(): ScoreRules;
+    getBadgeMilestones(): BadgeMilestones;
 }
 
 export interface ScoreRules {
     borrowCompleted: number;
     onTimeReturn: number;
     lendApproved: number;
+}
+
+export interface BadgeMilestones {
+    bronze: number;
+    silver: number;
+    gold: number;
 }
 ```
 
@@ -216,14 +256,39 @@ export class ScoreHistoryComponent implements OnInit {
 }
 ```
 
-#### 5. Updated Components
+#### 5. BadgeDisplayComponent
+
+A reusable component that displays earned badges:
+
+```typescript
+@Component({
+    selector: 'app-badge-display',
+    template: `
+        <div class="badges-container">
+            <span *ngFor="let badge of badges" 
+                  class="badge-icon" 
+                  [class.bronze]="badge.badgeType === 'Bronze'"
+                  [class.silver]="badge.badgeType === 'Silver'"
+                  [class.gold]="badge.badgeType === 'Gold'"
+                  [attr.aria-label]="badge.badgeType + ' badge earned on ' + (badge.awardedAt | date)">
+                🏆
+            </span>
+        </div>
+    `
+})
+export class BadgeDisplayComponent {
+    @Input() badges: BadgeAward[] = [];
+}
+```
+
+#### 6. Updated Components
 
 The following existing components will be updated to display scores:
 - **ItemCardComponent**: Show owner's score
 - **ItemDetailComponent**: Show owner's score
 - **LoopMembersComponent**: Show each member's score
 - **ItemRequestListComponent**: Show requester's and owner's scores
-- **UserProfileComponent**: Show user's own score prominently
+- **UserProfileComponent**: Show user's own score prominently and display earned badges
 - **ToolbarComponent**: Show current user's score
 
 ## Data Models
@@ -245,6 +310,12 @@ The following existing components will be updated to display scores:
             actionType: string,
             itemRequestId: ObjectId,
             itemName: string
+        }
+    ],
+    badges: [  // NEW: Array of earned badges
+        {
+            badgeType: string,  // "Bronze", "Silver", or "Gold"
+            awardedAt: ISODate
         }
     ]
 }
@@ -286,6 +357,11 @@ Test cases:
 - `ReverseLendPointsAsync_DecreasesScoreByFour_ButNotBelowZero`
 - `GetUserScoreAsync_ReturnsCurrentScore`
 - `GetScoreHistoryAsync_ReturnsRecentEntries_InDescendingOrder`
+- `AwardPoints_AwardsBronzeBadge_WhenScoreReaches10`
+- `AwardPoints_AwardsSilverBadge_WhenScoreReaches50`
+- `AwardPoints_AwardsGoldBadge_WhenScoreReaches100`
+- `AwardPoints_DoesNotAwardDuplicateBadges_WhenScoreExceedsMilestone`
+- `GetUserBadgesAsync_ReturnsAllEarnedBadges`
 
 #### Updated ItemRequestServiceTests.cs
 
@@ -302,6 +378,8 @@ Test cases:
 - `GetUserScore_ReturnsScore_WhenUserExists`
 - `GetUserScore_Returns404_WhenUserNotFound`
 - `GetScoreHistory_ReturnsHistory_WithPagination`
+- `GetUserBadges_ReturnsBadges_WhenUserExists`
+- `GetUserBadges_Returns404_WhenUserNotFound`
 
 ### Frontend Unit Tests
 
@@ -310,7 +388,9 @@ Test cases:
 Test cases:
 - `getUserScore() should fetch user score from API`
 - `getScoreHistory() should fetch score history with limit`
+- `getUserBadges() should fetch user badges from API`
 - `getScoreExplanation() should return score rules`
+- `getBadgeMilestones() should return badge milestone values`
 
 #### loop-score-display.component.spec.ts
 
@@ -326,6 +406,14 @@ Test cases:
 - `should format timestamps correctly`
 - `should display action types with appropriate labels`
 - `should show empty state when no history`
+
+#### badge-display.component.spec.ts
+
+Test cases:
+- `should display all earned badges`
+- `should apply correct CSS class for each badge type`
+- `should show empty state when no badges earned`
+- `should format badge awarded dates correctly`
 
 ### Integration Tests
 
@@ -395,22 +483,48 @@ Test the complete flow:
 
 ### Database Migration
 
-1. Add `loopScore` and `scoreHistory` fields to existing User documents
-2. Initialize all existing users with `loopScore: 0` and `scoreHistory: []`
-3. Optionally: Calculate historical scores from completed ItemRequests (one-time script)
+1. Add `loopScore`, `scoreHistory`, and `badges` fields to existing User documents
+2. Initialize all existing users with `loopScore: 0`, `scoreHistory: []`, and `badges: []`
+3. Optionally: Calculate historical scores from completed ItemRequests and award appropriate badges (one-time script)
 
 ### Rollout Plan
 
-1. **Phase 1**: Deploy backend changes with score calculation
+1. **Phase 1**: Deploy backend changes with score calculation and badge awards
 2. **Phase 2**: Deploy frontend score display components
-3. **Phase 3**: Add score history view to user profiles
-4. **Phase 4**: (Future) Add leaderboards and achievements
+3. **Phase 3**: Add score history and badge display to user profiles
+4. **Phase 4**: (Future) Add leaderboards and additional achievements
+
+## Badge Award Logic
+
+### Milestone Thresholds
+
+- **Bronze Badge**: Awarded when user reaches 10 points
+- **Silver Badge**: Awarded when user reaches 50 points
+- **Gold Badge**: Awarded when user reaches 100 points
+
+### Award Rules
+
+1. Badges are checked and awarded automatically after each score update
+2. Each badge can only be awarded once per user
+3. Badges are never removed, even if score decreases
+4. Badge awards are timestamped for display purposes
+5. Users can earn multiple badges as they progress through milestones
+
+### Implementation Details
+
+After each score update operation:
+1. Check current user score against badge thresholds
+2. Identify any new badges that should be awarded
+3. Filter out badges already earned by the user
+4. Add new badge awards to user's badges array with current timestamp
+5. Use atomic MongoDB operations to prevent duplicate awards
 
 ## Future Enhancements
 
 - **Leaderboards**: Display top scorers within each loop
-- **Achievements**: Award badges for milestones (10 points, 50 points, etc.)
+- **Additional Badges**: Platinum badge at 250 points, Diamond at 500 points
+- **Special Achievements**: Badges for specific accomplishments (first lend, 10 on-time returns, etc.)
 - **Streak Bonuses**: Extra points for consecutive on-time returns
 - **Decay System**: Reduce points over time to encourage ongoing participation
 - **Custom Point Values**: Allow loop admins to configure point values
-- **Score Tiers**: Bronze/Silver/Gold/Platinum levels based on score ranges
+- **Badge Showcase**: Allow users to feature their favorite badge on their profile

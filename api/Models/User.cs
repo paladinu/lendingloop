@@ -47,6 +47,26 @@ public class User
     
     [BsonElement("scoreHistory")]
     public List<ScoreHistoryEntry> ScoreHistory { get; set; } = new();
+    
+    [BsonElement("badges")]
+    public List<BadgeAward> Badges { get; set; } = new();
+}
+
+public class BadgeAward
+{
+    [BsonElement("badgeType")]
+    [BsonRepresentation(BsonType.String)]
+    public BadgeType BadgeType { get; set; }
+    
+    [BsonElement("awardedAt")]
+    public DateTime AwardedAt { get; set; }
+}
+
+public enum BadgeType
+{
+    Bronze,   // 10 points
+    Silver,   // 50 points
+    Gold      // 100 points
 }
 
 public class ScoreHistoryEntry

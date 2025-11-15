@@ -3,6 +3,7 @@ import { ProfileComponent } from './profile.component';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { ItemRequestService } from '../../services/item-request.service';
+import { LoopScoreService } from '../../services/loop-score.service';
 import { provideHttpClient } from '@angular/common/http';
 import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
@@ -21,7 +22,8 @@ describe('ProfileComponent', () => {
     lastName: 'User',
     streetAddress: '123 Test St',
     isEmailVerified: true,
-    loopScore: 10
+    loopScore: 10,
+    badges: []
   };
 
   beforeEach(async () => {
@@ -36,6 +38,12 @@ describe('ProfileComponent', () => {
 
     const mockItemRequestService = {
       getPendingRequests: jest.fn().mockReturnValue(of([]))
+    };
+
+    const mockLoopScoreService = {
+      getScoreHistory: jest.fn().mockReturnValue(of([])),
+      getUserScoreAsync: jest.fn().mockReturnValue(of(10)),
+      getScoreExplanation: jest.fn().mockReturnValue([])
     };
 
     const mockRouter = {
@@ -54,6 +62,7 @@ describe('ProfileComponent', () => {
         { provide: AuthService, useValue: mockAuthService },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: ItemRequestService, useValue: mockItemRequestService },
+        { provide: LoopScoreService, useValue: mockLoopScoreService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ],
@@ -71,7 +80,7 @@ describe('ProfileComponent', () => {
 
   it('should load current user on init', () => {
     expect(component.currentUser).toEqual(mockUser);
-    expect(mockAuthService.getCurrentUser).toHaveBeenCalled();
+    expect(mockAuthService.refreshCurrentUser).toHaveBeenCalled();
   });
 
   it('should display user name', () => {

@@ -67,4 +67,26 @@ public class UsersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while retrieving the score history" });
         }
     }
+
+    [HttpGet("{userId}/badges")]
+    public async Task<ActionResult<List<BadgeAward>>> GetUserBadges(string userId)
+    {
+        try
+        {
+            // Verify user exists
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            var badges = await _loopScoreService.GetUserBadgesAsync(userId);
+            return Ok(badges);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving badges for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving the user badges" });
+        }
+    }
 }

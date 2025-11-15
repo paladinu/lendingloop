@@ -2,12 +2,18 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ScoreHistoryEntry } from '../models/auth.interface';
+import { ScoreHistoryEntry, BadgeAward } from '../models/auth.interface';
 
 export interface ScoreRules {
     borrowCompleted: number;
     onTimeReturn: number;
     lendApproved: number;
+}
+
+export interface BadgeMilestones {
+    bronze: number;
+    silver: number;
+    gold: number;
 }
 
 @Injectable({
@@ -26,11 +32,23 @@ export class LoopScoreService {
         return this.http.get<ScoreHistoryEntry[]>(`${this.API_URL}/${userId}/score-history?limit=${limit}`);
     }
 
+    getUserBadges(userId: string): Observable<BadgeAward[]> {
+        return this.http.get<BadgeAward[]>(`${this.API_URL}/${userId}/badges`);
+    }
+
     getScoreExplanation(): ScoreRules {
         return {
             borrowCompleted: 1,
             onTimeReturn: 1,
             lendApproved: 4
+        };
+    }
+
+    getBadgeMilestones(): BadgeMilestones {
+        return {
+            bronze: 10,
+            silver: 50,
+            gold: 100
         };
     }
 }

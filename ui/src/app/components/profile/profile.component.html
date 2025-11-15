@@ -12,10 +12,16 @@
       </h1>
       <p class="user-email">{{ currentUser?.email }}</p>
       <p class="user-address" *ngIf="currentUser && currentUser.streetAddress">{{ currentUser.streetAddress }}</p>
+      
+      <div class="badges-section" *ngIf="currentUser">
+        <h3 class="section-heading">My Badges</h3>
+        <app-badge-display [badges]="currentUser.badges || []"></app-badge-display>
+      </div>
     </div>
   </div>
 
   <div class="profile-content">
+    <h2 class="section-heading">My LoopScore History</h2>
     <app-score-history></app-score-history>
   </div>
 </div>

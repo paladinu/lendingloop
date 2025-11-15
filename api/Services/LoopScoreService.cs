@@ -7,15 +7,18 @@ public class LoopScoreService : ILoopScoreService
 {
     private readonly IMongoCollection<User> _usersCollection;
     private readonly ILogger<LoopScoreService> _logger;
+    private readonly IEmailService _emailService;
 
     public LoopScoreService(
         IMongoDatabase database,
         IConfiguration configuration,
-        ILogger<LoopScoreService> logger)
+        ILogger<LoopScoreService> logger,
+        IEmailService emailService)
     {
         var collectionName = configuration["MongoDB:UsersCollectionName"] ?? "users";
         _usersCollection = database.GetCollection<User>(collectionName);
         _logger = logger;
+        _emailService = emailService;
     }
 
     public async Task AwardBorrowPointsAsync(string userId, string itemRequestId, string itemName)
@@ -60,6 +63,18 @@ public class LoopScoreService : ILoopScoreService
             .ToList();
     }
 
+    public async Task<List<BadgeAward>> GetUserBadgesAsync(string userId)
+    {
+        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        
+        if (user == null || user.Badges == null)
+        {
+            return new List<BadgeAward>();
+        }
+
+        return user.Badges.OrderBy(b => b.AwardedAt).ToList();
+    }
+
     private async Task AwardPointsAsync(string userId, string itemRequestId, string itemName, int points, ScoreActionType actionType)
     {
         try
@@ -76,34 +91,136 @@ public class LoopScoreService : ILoopScoreService
             var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
             
             // Use atomic operations to prevent race conditions
-            // $inc increments the score, $push adds to history array, $max ensures score never goes below 0
+            // $inc increments the score, $push adds to history array
             var update = Builders<User>.Update
                 .Inc(u => u.LoopScore, points)
-                .Push(u => u.ScoreHistory, historyEntry);
+                .Push(u => u.ScoreHistory, historyEntry)
+                .SetOnInsert(u => u.Badges, new List<BadgeAward>()); // Ensure badges field exists
 
-            var result = await _usersCollection.UpdateOneAsync(filter, update);
+            // Use FindOneAndUpdate to get the updated document atomically
+            var options = new FindOneAndUpdateOptions<User>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
 
-            if (result.ModifiedCount == 0)
+            var userAfterUpdate = await _usersCollection.FindOneAndUpdateAsync(filter, update, options);
+
+            if (userAfterUpdate == null)
             {
                 _logger.LogWarning("Failed to award {Points} points to user {UserId}. User may not exist.", points, userId);
                 return;
             }
 
-            // Ensure score never goes below 0 with a separate operation
-            var ensureMinimumFilter = Builders<User>.Filter.And(
-                Builders<User>.Filter.Eq(u => u.Id, userId),
-                Builders<User>.Filter.Lt(u => u.LoopScore, 0)
-            );
-            
-            var ensureMinimumUpdate = Builders<User>.Update.Set(u => u.LoopScore, 0);
-            await _usersCollection.UpdateOneAsync(ensureMinimumFilter, ensureMinimumUpdate);
+            // Ensure score never goes below 0 with a separate operation if needed
+            if (userAfterUpdate.LoopScore < 0)
+            {
+                var ensureMinimumFilter = Builders<User>.Filter.Eq(u => u.Id, userId);
+                var ensureMinimumUpdate = Builders<User>.Update.Set(u => u.LoopScore, 0);
+                userAfterUpdate = await _usersCollection.FindOneAndUpdateAsync(
+                    ensureMinimumFilter, 
+                    ensureMinimumUpdate, 
+                    new FindOneAndUpdateOptions<User> { ReturnDocument = ReturnDocument.After });
+            }
 
-            _logger.LogInformation("Awarded {Points} points to user {UserId} for {ActionType}", points, userId, actionType);
+            _logger.LogInformation("Awarded {Points} points to user {UserId} for {ActionType}. New score: {NewScore}", 
+                points, userId, actionType, userAfterUpdate.LoopScore);
+
+            // Check and award badges with the updated user object
+            await CheckAndAwardBadgesAsync(userAfterUpdate);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error awarding {Points} points to user {UserId} for {ActionType}", points, userId, actionType);
             throw;
+        }
+    }
+
+    private async Task CheckAndAwardBadgesAsync(User user)
+    {
+        try
+        {
+            if (user == null)
+            {
+                _logger.LogWarning("User is null when checking for badge awards");
+                return;
+            }
+
+            var currentScore = user.LoopScore;
+            var existingBadges = user.Badges?.Select(b => b.BadgeType).ToHashSet() ?? new HashSet<BadgeType>();
+            var newBadges = new List<BadgeAward>();
+
+            _logger.LogInformation("Checking badges for user {UserId} with score {Score}. Existing badges: {ExistingBadges}", 
+                user.Id, currentScore, string.Join(", ", existingBadges));
+
+            // Check for Bronze badge (10 points)
+            if (currentScore >= 10 && !existingBadges.Contains(BadgeType.Bronze))
+            {
+                _logger.LogInformation("User {UserId} qualifies for Bronze badge", user.Id);
+                newBadges.Add(new BadgeAward
+                {
+                    BadgeType = BadgeType.Bronze,
+                    AwardedAt = DateTime.UtcNow
+                });
+            }
+
+            // Check for Silver badge (50 points)
+            if (currentScore >= 50 && !existingBadges.Contains(BadgeType.Silver))
+            {
+                _logger.LogInformation("User {UserId} qualifies for Silver badge", user.Id);
+                newBadges.Add(new BadgeAward
+                {
+                    BadgeType = BadgeType.Silver,
+                    AwardedAt = DateTime.UtcNow
+                });
+            }
+
+            // Check for Gold badge (100 points)
+            if (currentScore >= 100 && !existingBadges.Contains(BadgeType.Gold))
+            {
+                _logger.LogInformation("User {UserId} qualifies for Gold badge", user.Id);
+                newBadges.Add(new BadgeAward
+                {
+                    BadgeType = BadgeType.Gold,
+                    AwardedAt = DateTime.UtcNow
+                });
+            }
+
+            _logger.LogInformation("User {UserId} will receive {Count} new badges", user.Id, newBadges.Count);
+
+            // Award new badges if any
+            if (newBadges.Any())
+            {
+                var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+                var update = Builders<User>.Update.PushEach(u => u.Badges, newBadges);
+                
+                await _usersCollection.UpdateOneAsync(filter, update);
+
+                // Send email notification for each new badge
+                foreach (var badge in newBadges)
+                {
+                    _logger.LogInformation("Awarded {BadgeType} badge to user {UserId}", badge.BadgeType, user.Id);
+                    
+                    try
+                    {
+                        await _emailService.SendBadgeAwardEmailAsync(
+                            user.Email,
+                            $"{user.FirstName} {user.LastName}".Trim(),
+                            badge.BadgeType.ToString(),
+                            currentScore
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send badge award email to user {UserId} for {BadgeType} badge", user.Id, badge.BadgeType);
+                        // Don't throw - badge was awarded successfully, email is secondary
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking and awarding badges for user {UserId}", user?.Id);
+            // Don't throw - this is a secondary operation
         }
     }
 }

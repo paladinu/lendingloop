@@ -123,7 +123,8 @@ The Angular UI makes direct HTTP requests to the API domain - there is no proxy 
 
 - Create test files following the pattern: `{ServiceName}Tests.cs`
 - Use xUnit as the testing framework
-- Mock dependencies using Moq
+- **ALWAYS mock dependencies using Moq** - Never use real implementations in unit tests
+- Mock all external dependencies: databases, HTTP clients, email services, file systems, etc.
 - Test all public methods and edge cases
 - Aim for high code coverage on business logic
 - Testing project folder structure should match that of the project under test
@@ -151,23 +152,45 @@ public class ItemsServiceTests
 - This project is configured for Jest, not Jasmine
 - Use Jest syntax: `jest.fn()`, `jest.spyOn()`, etc.
 - **DO NOT use Jasmine syntax**: No `jasmine.createSpy()`, `jasmine.createSpyObj()`, etc.
-- Mock HTTP calls and dependencies using Jest mocking utilities
+- **ALWAYS mock dependencies - especially HttpClient**
+  - Mock HttpClient using `jest.fn()` or `jest.spyOn()`
+  - Mock all Angular services injected into components
+  - Mock Router, ActivatedRoute, and other Angular core services
+  - Never make real HTTP calls in unit tests
 - Test component logic, not implementation details
 - Focus on user interactions and state changes
 - **REQUIRED**: Run `npm test` from `/ui` after implementation to verify all tests pass
 
-Example test structure (Jest syntax):
+Example test structure (Jest syntax with mocked HttpClient):
 ```typescript
 describe('ItemsService', () => {
+  let service: ItemsService;
+  let mockHttpClient: any;
+
+  beforeEach(() => {
+    //arrange - mock HttpClient
+    mockHttpClient = {
+      get: jest.fn(),
+      post: jest.fn(),
+      put: jest.fn(),
+      delete: jest.fn()
+    };
+    
+    service = new ItemsService(mockHttpClient);
+  });
+
   it('should fetch items successfully', () => {
     //arrange
-    const mockHttp = { get: jest.fn() };
+    const mockItems = [{ id: '1', name: 'Item 1' }];
+    mockHttpClient.get.mockReturnValue(of(mockItems));
     
     //act
-    // test code here
+    service.getItems().subscribe(items => {
+      //assert
+      expect(items).toEqual(mockItems);
+    });
     
-    //assert
-    expect(mockHttp.get).toHaveBeenCalled();
+    expect(mockHttpClient.get).toHaveBeenCalledWith(`${environment.apiUrl}/api/items`);
   });
 });
 ```
@@ -211,10 +234,14 @@ When tests fail, show only:
   - Use `//arrange` for test setup and initialization
   - Use `//act` for executing the method under test
   - Use `//assert` for verifying the results
+- **ALWAYS mock dependencies - unit tests should NEVER make real external calls**
+  - Mock HttpClient in Angular tests (never make real HTTP requests)
+  - Mock database contexts in .NET tests (never hit real databases)
+  - Mock email services, file systems, and third-party APIs
+  - Use dependency injection to make mocking easier
 - Write tests for new features as part of the implementation
 - Keep tests focused and isolated
 - Use descriptive test names that explain what is being tested
-- Mock external dependencies (database, HTTP calls, etc.)
 - Test both success and failure scenarios
 - Avoid testing framework internals or private methods
 - All new services MUST have unit tests before being considered complete

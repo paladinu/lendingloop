@@ -87,3 +87,16 @@ The LoopScore feature introduces a gamification system to encourage active parti
 3. THE LoopScore System SHALL display the most recent score changes first in the history list
 4. THE LoopScore System SHALL include the associated Item Request details for each score change entry
 5. WHERE a User has no score history, THE LoopScore System SHALL display a message indicating no activity has been recorded
+
+### Requirement 7
+
+**User Story:** As a platform user, I want to earn badges for reaching score milestones, so that I feel recognized for my long-term participation in the community
+
+#### Acceptance Criteria
+
+1. WHEN a User's LoopScore reaches 10 points, THE LoopScore System SHALL award a Bronze badge to the User
+2. WHEN a User's LoopScore reaches 50 points, THE LoopScore System SHALL award a Silver badge to the User
+3. WHEN a User's LoopScore reaches 100 points, THE LoopScore System SHALL award a Gold badge to the User
+4. THE LoopScore System SHALL display earned badges on the User's profile page
+5. THE LoopScore System SHALL store badge awards with the timestamp when each badge was earned
+6. THE LoopScore System SHALL email the user letting them know about their achievement.

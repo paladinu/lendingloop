@@ -30,7 +30,15 @@ export interface UserProfile {
     streetAddress: string;
     isEmailVerified: boolean;
     loopScore: number;
+    badges: BadgeAward[];
 }
+
+export interface BadgeAward {
+    badgeType: BadgeType;
+    awardedAt: string;
+}
+
+export type BadgeType = 'Bronze' | 'Silver' | 'Gold';
 
 export interface VerifyEmailRequest {
     token: string;

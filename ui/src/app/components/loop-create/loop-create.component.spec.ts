@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { LoopCreateComponent } from './loop-create.component';
 import { LoopService } from '../../services/loop.service';
+import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { ItemRequestService } from '../../services/item-request.service';
 import { Loop } from '../../models/loop.interface';
@@ -28,6 +29,12 @@ describe('LoopCreateComponent', () => {
       navigate: jest.fn(),
     } as any;
 
+    const mockAuthService = {
+      getCurrentUser: jest.fn().mockReturnValue(of(null)),
+      refreshCurrentUser: jest.fn().mockReturnValue(of(null)),
+      logout: jest.fn()
+    };
+
     const activatedRouteMock = {
       snapshot: { params: {} },
       params: of({})
@@ -38,6 +45,7 @@ describe('LoopCreateComponent', () => {
       providers: [
         provideHttpClient(),
         { provide: LoopService, useValue: mockLoopService },
+        { provide: AuthService, useValue: mockAuthService },
         { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
         { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
         { provide: Router, useValue: mockRouter },

@@ -157,6 +157,7 @@ describe('ScoreHistoryComponent', () => {
 
     it('should handle error when loading history fails', (done) => {
         //arrange
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockAuthService.getCurrentUser.mockReturnValue(of(mockUser));
         mockLoopScoreService.getScoreHistory.mockReturnValue(throwError(() => new Error('API Error')));
 
@@ -167,6 +168,8 @@ describe('ScoreHistoryComponent', () => {
         setTimeout(() => {
             expect(component.error).toBe('Failed to load score history');
             expect(component.loading).toBe(false);
+            expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading score history:', expect.any(Error));
+            consoleErrorSpy.mockRestore();
             done();
         }, 100);
     });

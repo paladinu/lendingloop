@@ -1,3 +1,5 @@
+using Api.Models;
+
 namespace Api.DTOs;
 
 public class UserProfile
@@ -9,4 +11,5 @@ public class UserProfile
     public string StreetAddress { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
     public int LoopScore { get; set; } = 0;
+    public List<BadgeAward> Badges { get; set; } = new();
 }

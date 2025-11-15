@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NotificationBellComponent } from './notification-bell.component';
 import { NotificationService } from '../../services/notification.service';
 import { of, throwError, NEVER } from 'rxjs';
@@ -10,10 +10,14 @@ describe('NotificationBellComponent', () => {
   let fixture: ComponentFixture<NotificationBellComponent>;
   let mockNotificationService: any;
   let intervalSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     // Mock interval to prevent real polling
     intervalSpy = jest.spyOn(rxjs, 'interval').mockReturnValue(NEVER);
+
+    // Suppress console.error during tests
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     mockNotificationService = {
       getUnreadCount: jest.fn().mockReturnValue(of(0))
@@ -44,6 +48,7 @@ describe('NotificationBellComponent', () => {
     }
     jest.clearAllMocks();
     intervalSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 
   it('should create', () => {
@@ -85,7 +90,6 @@ describe('NotificationBellComponent', () => {
 
     it('should handle error when loading unread count', fakeAsync(() => {
       //arrange
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const error = new Error('API error');
       mockNotificationService.getUnreadCount.mockReturnValue(throwError(() => error));
 
@@ -96,9 +100,6 @@ describe('NotificationBellComponent', () => {
       //assert
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading unread count:', error);
       expect(component.unreadCount).toBe(0);
-      
-      // Cleanup
-      consoleErrorSpy.mockRestore();
     }));
   });
 
@@ -190,7 +191,6 @@ describe('NotificationBellComponent', () => {
 
     it('should handle errors when loading unread count', fakeAsync(() => {
       //arrange
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const error = new Error('API error');
       mockNotificationService.getUnreadCount.mockReturnValue(throwError(() => error));
 
@@ -201,9 +201,6 @@ describe('NotificationBellComponent', () => {
       //assert
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading unread count:', error);
       expect(component.unreadCount).toBe(0);
-      
-      // Cleanup
-      consoleErrorSpy.mockRestore();
     }));
 
     it('should stop polling on component destroy', fakeAsync(() => {

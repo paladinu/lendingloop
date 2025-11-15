@@ -153,4 +153,52 @@ public class UsersControllerTests
         //assert
         _mockLoopScoreService.Verify(s => s.GetScoreHistoryAsync(userId, 50), Times.Once);
     }
+
+    [Fact]
+    public async Task GetUserBadges_ReturnsBadges_WhenUserExists()
+    {
+        //arrange
+        var userId = "user123";
+
+        var user = new User
+        {
+            Id = userId,
+            Email = "test@example.com"
+        };
+
+        var badges = new List<BadgeAward>
+        {
+            new BadgeAward { BadgeType = BadgeType.Bronze, AwardedAt = DateTime.UtcNow.AddDays(-10) },
+            new BadgeAward { BadgeType = BadgeType.Silver, AwardedAt = DateTime.UtcNow.AddDays(-5) }
+        };
+
+        _mockUserService.Setup(s => s.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        _mockLoopScoreService.Setup(s => s.GetUserBadgesAsync(userId)).ReturnsAsync(badges);
+
+        //act
+        var result = await _controller.GetUserBadges(userId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedBadges = Assert.IsType<List<BadgeAward>>(okResult.Value);
+        Assert.Equal(2, returnedBadges.Count);
+        Assert.Equal(BadgeType.Bronze, returnedBadges[0].BadgeType);
+        Assert.Equal(BadgeType.Silver, returnedBadges[1].BadgeType);
+    }
+
+    [Fact]
+    public async Task GetUserBadges_Returns404_WhenUserNotFound()
+    {
+        //arrange
+        var userId = "nonexistent";
+
+        _mockUserService.Setup(s => s.GetUserByIdAsync(userId)).ReturnsAsync((User?)null);
+
+        //act
+        var result = await _controller.GetUserBadges(userId);
+
+        //assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.NotNull(notFoundResult.Value);
+    }
 }

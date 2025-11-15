@@ -18,6 +18,7 @@ describe('ItemRequestService', () => {
     let httpMock: HttpTestingController;
     let authService: any;
     let router: any;
+    let consoleErrorSpy: jest.SpyInstance;
 
     const apiUrl = 'http://localhost:8080/api/itemrequests';
 
@@ -28,6 +29,9 @@ describe('ItemRequestService', () => {
         const routerSpy = {
             navigate: jest.fn()
         };
+
+        // Suppress console.error during tests
+        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
@@ -46,6 +50,7 @@ describe('ItemRequestService', () => {
 
     afterEach(() => {
         httpMock.verify();
+        consoleErrorSpy.mockRestore();
     });
 
     it('should be created', () => {

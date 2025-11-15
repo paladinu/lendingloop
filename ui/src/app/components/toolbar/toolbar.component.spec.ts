@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ToolbarComponent } from './toolbar.component';
 import { AuthService } from '../../services/auth.service';
 import { ItemRequestService } from '../../services/item-request.service';
+import { NotificationService } from '../../services/notification.service';
 import { Router, ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
+import { of, NEVER } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('ToolbarComponent', () => {
@@ -12,16 +12,28 @@ describe('ToolbarComponent', () => {
   let fixture: ComponentFixture<ToolbarComponent>;
   let mockAuthService: any;
   let mockItemRequestService: any;
+  let mockNotificationService: any;
   let mockRouter: any;
   let mockActivatedRoute: any;
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(async () => {
+    // Suppress console.error during tests
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
     mockAuthService = {
       getCurrentUser: jest.fn().mockReturnValue(of(null)),
-      logout: jest.fn()
+      currentUser$: NEVER,
+      logout: jest.fn(),
+      refreshCurrentUser: jest.fn().mockReturnValue(of(null))
     };
     mockItemRequestService = {
       getPendingRequests: jest.fn().mockReturnValue(of([]))
+    };
+    mockNotificationService = {
+      getUnreadCount: jest.fn().mockReturnValue(of(0)),
+      getNotifications: jest.fn().mockReturnValue(of([])),
+      markAsRead: jest.fn().mockReturnValue(of({}))
     };
     mockRouter = {
       navigate: jest.fn()
@@ -31,10 +43,11 @@ describe('ToolbarComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [ToolbarComponent, HttpClientTestingModule],
+      imports: [ToolbarComponent],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: ItemRequestService, useValue: mockItemRequestService },
+        { provide: NotificationService, useValue: mockNotificationService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute }
       ],
@@ -43,6 +56,15 @@ describe('ToolbarComponent', () => {
 
     fixture = TestBed.createComponent(ToolbarComponent);
     component = fixture.componentInstance;
+    // Don't call detectChanges to prevent ngOnInit from running
+  });
+
+  afterEach(() => {
+    if (fixture) {
+      fixture.destroy();
+    }
+    jest.clearAllMocks();
+    consoleErrorSpy.mockRestore();
   });
 
   it('should create', () => {

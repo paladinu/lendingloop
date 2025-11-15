@@ -10,4 +10,5 @@ public interface ILoopScoreService
     Task ReverseLendPointsAsync(string userId, string itemRequestId, string itemName);
     Task<int> GetUserScoreAsync(string userId);
     Task<List<ScoreHistoryEntry>> GetScoreHistoryAsync(string userId, int limit = 50);
+    Task<List<BadgeAward>> GetUserBadgesAsync(string userId);
 }

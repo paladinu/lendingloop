@@ -434,6 +434,34 @@ public class EmailService : IEmailService
         }
     }
 
+    public async Task<bool> SendBadgeAwardEmailAsync(string recipientEmail, string recipientName, string badgeType, int currentScore)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(recipientEmail))
+            {
+                _logger.LogError("Cannot send badge award email: recipient email is null or empty");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(badgeType))
+            {
+                _logger.LogError("Cannot send badge award email: badge type is null or empty");
+                return false;
+            }
+
+            var subject = $"Congratulations! You've earned a {badgeType} Badge!";
+            var body = GenerateBadgeAwardEmailBody(recipientName, badgeType, currentScore);
+
+            return await SendEmailWithRetryAsync(recipientEmail, subject, body, "badge award");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send badge award email to {Email}", recipientEmail);
+            return false;
+        }
+    }
+
     public async Task<bool> TestEmailConfigurationAsync()
     {
         try
@@ -1178,6 +1206,101 @@ public class EmailService : IEmailService
         <div class='footer'>
             <p>Best regards,<br>The Shared Items App Team</p>
             <p><em>This is an automated test email.</em></p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    private string GenerateBadgeAwardEmailBody(string recipientName, string badgeType, int currentScore)
+    {
+        var displayName = string.IsNullOrWhiteSpace(recipientName) ? "there" : recipientName;
+        var badgeEmoji = badgeType switch
+        {
+            "Bronze" => "🥉",
+            "Silver" => "🥈",
+            "Gold" => "🥇",
+            _ => "🏆"
+        };
+        
+        return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Badge Earned!</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }}
+        .badge-icon {{
+            font-size: 72px;
+            margin: 20px 0;
+        }}
+        .content {{
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }}
+        .achievement {{
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #FFD700;
+        }}
+        .score {{
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFA500;
+            text-align: center;
+            margin: 20px 0;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>🎉 Congratulations! 🎉</h1>
+        <div class='badge-icon'>{badgeEmoji}</div>
+        <h2>You've earned a {badgeType} Badge!</h2>
+    </div>
+    <div class='content'>
+        <p>Hi {displayName},</p>
+        
+        <div class='achievement'>
+            <p><strong>Amazing achievement!</strong> You've reached a new milestone in your LendingLoop journey.</p>
+            <p>Your dedication to sharing and community building has earned you the <strong>{badgeType} Badge</strong>!</p>
+        </div>
+        
+        <div class='score'>
+            Your Current LoopScore: ⭐ {currentScore}
+        </div>
+        
+        <p>Keep up the great work! Continue lending and borrowing items to earn even more badges and build a stronger community.</p>
+        
+        <div class='footer'>
+            <p>Best regards,<br>The LendingLoop Team</p>
+            <p><em>This is an automated notification from LendingLoop.</em></p>
         </div>
     </div>
 </body>

@@ -1,0 +1,22 @@
+<div class="badges-container">
+    <div *ngIf="badges && badges.length > 0" class="badges-list">
+        <div *ngFor="let badge of badges" class="badge-item">
+            <span class="badge-icon" 
+                  [class.bronze]="badge.badgeType === 'Bronze'"
+                  [class.silver]="badge.badgeType === 'Silver'"
+                  [class.gold]="badge.badgeType === 'Gold'"
+                  [attr.aria-label]="getBadgeDescription(badge.badgeType)"
+                  [title]="getBadgeDescription(badge.badgeType)">
+                🏆
+            </span>
+            <div class="badge-details">
+                <div class="badge-title">{{ badge.badgeType }} Badge</div>
+                <div class="badge-description">{{ getBadgeRequirement(badge.badgeType) }}</div>
+                <div class="badge-date">Earned {{ badge.awardedAt | date: 'mediumDate' }}</div>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="!badges || badges.length === 0" class="empty-state">
+        <p class="empty-message">No badges earned yet. Keep participating to earn badges!</p>
+    </div>
+</div>
