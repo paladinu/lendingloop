@@ -1,29 +1,58 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BadgeAward, BadgeType } from '../../models/auth.interface';
+import { BadgeAward, BadgeType, BadgeMetadata } from '../../models/auth.interface';
+import { LoopScoreService } from '../../services/loop-score.service';
+import { FilterByCategoryPipe } from '../../pipes/filter-by-category.pipe';
+
+export interface DisplayBadge {
+    metadata: BadgeMetadata;
+    earned: boolean;
+    awardedAt?: string;
+}
 
 @Component({
     selector: 'app-badge-display',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FilterByCategoryPipe],
     templateUrl: './badge-display.component.html',
     styleUrls: ['./badge-display.component.css']
 })
 export class BadgeDisplayComponent implements OnInit {
-    @Input() badges: BadgeAward[] = [];
+    @Input() earnedBadges: BadgeAward[] = [];
+    @Input() showAllBadges: boolean = true;
     
+    allBadgeMetadata: BadgeMetadata[] = [];
+    displayBadges: DisplayBadge[] = [];
     milestoneBadges: BadgeAward[] = [];
     achievementBadges: BadgeAward[] = [];
 
+    constructor(private loopScoreService: LoopScoreService) {}
+
     ngOnInit(): void {
-        this.categorizeBadges();
+        if (this.showAllBadges) {
+            this.allBadgeMetadata = this.loopScoreService.getAllBadgeMetadata();
+            this.prepareDisplayBadges();
+        } else {
+            this.categorizeBadges();
+        }
+    }
+
+    prepareDisplayBadges(): void {
+        this.displayBadges = this.allBadgeMetadata.map(metadata => {
+            const earnedBadge = this.earnedBadges.find(b => b.badgeType === metadata.badgeType);
+            return {
+                metadata: metadata,
+                earned: !!earnedBadge,
+                awardedAt: earnedBadge?.awardedAt
+            };
+        });
     }
 
     categorizeBadges(): void {
-        this.milestoneBadges = this.badges.filter(b => 
+        this.milestoneBadges = this.earnedBadges.filter(b => 
             ['Bronze', 'Silver', 'Gold'].includes(b.badgeType)
         );
-        this.achievementBadges = this.badges.filter(b => 
+        this.achievementBadges = this.earnedBadges.filter(b => 
             ['FirstLend', 'ReliableBorrower', 'GenerousLender', 'PerfectRecord', 'CommunityBuilder'].includes(b.badgeType)
         );
     }

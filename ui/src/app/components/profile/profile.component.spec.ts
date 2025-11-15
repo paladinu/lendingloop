@@ -43,7 +43,17 @@ describe('ProfileComponent', () => {
     const mockLoopScoreService = {
       getScoreHistory: jest.fn().mockReturnValue(of([])),
       getUserScoreAsync: jest.fn().mockReturnValue(of(10)),
-      getScoreExplanation: jest.fn().mockReturnValue([])
+      getScoreExplanation: jest.fn().mockReturnValue([]),
+      getAllBadgeMetadata: jest.fn().mockReturnValue([
+        { badgeType: 'Bronze', name: 'Bronze Badge', description: 'Awarded for reaching 10 points', category: 'milestone', requirement: 'Reach 10 points', icon: '🏆' },
+        { badgeType: 'Silver', name: 'Silver Badge', description: 'Awarded for reaching 50 points', category: 'milestone', requirement: 'Reach 50 points', icon: '🏆' },
+        { badgeType: 'Gold', name: 'Gold Badge', description: 'Awarded for reaching 100 points', category: 'milestone', requirement: 'Reach 100 points', icon: '🏆' },
+        { badgeType: 'FirstLend', name: 'First Lend', description: 'Complete your first lending transaction', category: 'achievement', requirement: 'Lend an item for the first time', icon: '🎁' },
+        { badgeType: 'ReliableBorrower', name: 'Reliable Borrower', description: 'Return items on time consistently', category: 'achievement', requirement: 'Complete 10 on-time returns', icon: '⭐' },
+        { badgeType: 'GenerousLender', name: 'Generous Lender', description: 'Share your items frequently', category: 'achievement', requirement: 'Complete 50 lending transactions', icon: '🤝' },
+        { badgeType: 'PerfectRecord', name: 'Perfect Record', description: 'Maintain a perfect return streak', category: 'achievement', requirement: 'Complete 25 consecutive on-time returns', icon: '💯' },
+        { badgeType: 'CommunityBuilder', name: 'Community Builder', description: 'Grow the LendingLoop community', category: 'achievement', requirement: 'Invite 10 users who become active', icon: '🌟' }
+      ])
     };
 
     const mockRouter = {
@@ -93,5 +103,35 @@ describe('ProfileComponent', () => {
     const compiled = fixture.nativeElement;
     const userEmail = compiled.querySelector('.user-email');
     expect(userEmail.textContent).toBe('test@example.com');
+  });
+
+  it('should pass earnedBadges to badge-display component', () => {
+    //arrange
+    const mockUserWithBadges: UserProfile = {
+      ...mockUser,
+      badges: [
+        { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+      ]
+    };
+    mockAuthService.getCurrentUser.mockReturnValue(of(mockUserWithBadges));
+    mockAuthService.refreshCurrentUser.mockReturnValue(of(mockUserWithBadges));
+
+    //act
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    //assert
+    const badgeDisplay = fixture.nativeElement.querySelector('app-badge-display');
+    expect(badgeDisplay).toBeTruthy();
+  });
+
+  it('should set showAllBadges to true for badge-display component', () => {
+    //arrange & act
+    fixture.detectChanges();
+
+    //assert
+    const badgeDisplay = fixture.nativeElement.querySelector('app-badge-display');
+    expect(badgeDisplay).toBeTruthy();
+    expect(badgeDisplay.getAttribute('ng-reflect-show-all-badges')).toBe('true');
   });
 });

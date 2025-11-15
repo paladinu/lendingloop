@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ScoreHistoryEntry, BadgeAward } from '../models/auth.interface';
+import { ScoreHistoryEntry, BadgeAward, BadgeMetadata } from '../models/auth.interface';
 
 export interface ScoreRules {
     borrowCompleted: number;
@@ -50,5 +50,76 @@ export class LoopScoreService {
             silver: 50,
             gold: 100
         };
+    }
+
+    getAllBadgeMetadata(): BadgeMetadata[] {
+        return [
+            // Milestone badges
+            {
+                badgeType: 'Bronze',
+                name: 'Bronze Badge',
+                description: 'Awarded for reaching 10 points',
+                category: 'milestone',
+                requirement: 'Reach 10 points',
+                icon: '🏆'
+            },
+            {
+                badgeType: 'Silver',
+                name: 'Silver Badge',
+                description: 'Awarded for reaching 50 points',
+                category: 'milestone',
+                requirement: 'Reach 50 points',
+                icon: '🏆'
+            },
+            {
+                badgeType: 'Gold',
+                name: 'Gold Badge',
+                description: 'Awarded for reaching 100 points',
+                category: 'milestone',
+                requirement: 'Reach 100 points',
+                icon: '🏆'
+            },
+            // Achievement badges
+            {
+                badgeType: 'FirstLend',
+                name: 'First Lend',
+                description: 'Complete your first lending transaction',
+                category: 'achievement',
+                requirement: 'Lend an item for the first time',
+                icon: '🎁'
+            },
+            {
+                badgeType: 'ReliableBorrower',
+                name: 'Reliable Borrower',
+                description: 'Return items on time consistently',
+                category: 'achievement',
+                requirement: 'Complete 10 on-time returns',
+                icon: '⭐'
+            },
+            {
+                badgeType: 'GenerousLender',
+                name: 'Generous Lender',
+                description: 'Share your items frequently',
+                category: 'achievement',
+                requirement: 'Complete 50 lending transactions',
+                icon: '🤝'
+            },
+            {
+                badgeType: 'PerfectRecord',
+                name: 'Perfect Record',
+                description: 'Maintain a perfect return streak',
+                category: 'achievement',
+                requirement: 'Complete 25 consecutive on-time returns',
+                icon: '💯'
+            },
+            {
+                badgeType: 'CommunityBuilder',
+                name: 'Community Builder',
+                description: 'Grow the LendingLoop community',
+                category: 'achievement',
+                requirement: 'Invite 10 users who become active',
+                icon: '🌟'
+            }
+        ];
     }
 }

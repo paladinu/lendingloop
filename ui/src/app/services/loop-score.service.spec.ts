@@ -137,4 +137,54 @@ describe('LoopScoreService', () => {
         expect(milestones.silver).toBe(50);
         expect(milestones.gold).toBe(100);
     });
+
+    it('getAllBadgeMetadata() should return metadata for all 8 badge types', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        expect(metadata).toBeDefined();
+        expect(metadata.length).toBe(8);
+    });
+
+    it('getAllBadgeMetadata() should include all required properties for each badge', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        metadata.forEach(badge => {
+            expect(badge.badgeType).toBeDefined();
+            expect(badge.name).toBeDefined();
+            expect(badge.description).toBeDefined();
+            expect(badge.category).toBeDefined();
+            expect(badge.requirement).toBeDefined();
+            expect(badge.icon).toBeDefined();
+        });
+    });
+
+    it('getAllBadgeMetadata() should categorize milestone badges correctly', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        const milestoneBadges = metadata.filter(b => b.category === 'milestone');
+        expect(milestoneBadges.length).toBe(3);
+        expect(milestoneBadges.map(b => b.badgeType)).toContain('Bronze');
+        expect(milestoneBadges.map(b => b.badgeType)).toContain('Silver');
+        expect(milestoneBadges.map(b => b.badgeType)).toContain('Gold');
+    });
+
+    it('getAllBadgeMetadata() should categorize achievement badges correctly', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        const achievementBadges = metadata.filter(b => b.category === 'achievement');
+        expect(achievementBadges.length).toBe(5);
+        expect(achievementBadges.map(b => b.badgeType)).toContain('FirstLend');
+        expect(achievementBadges.map(b => b.badgeType)).toContain('ReliableBorrower');
+        expect(achievementBadges.map(b => b.badgeType)).toContain('GenerousLender');
+        expect(achievementBadges.map(b => b.badgeType)).toContain('PerfectRecord');
+        expect(achievementBadges.map(b => b.badgeType)).toContain('CommunityBuilder');
+    });
 });

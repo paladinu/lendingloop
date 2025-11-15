@@ -18,6 +18,9 @@ The LoopScore feature introduces a gamification system to encourage active parti
 - **Active Invited User**: An invited User who has completed at least one Item Request as either borrower or lender
 - **User Profile**: The data model containing user information including their LoopScore
 - **UI Component**: Any visual element in the Angular frontend that displays user information
+- **Badge**: A visual achievement award displayed on a User's profile to recognize milestones or accomplishments
+- **Milestone Badge**: A badge awarded when a User reaches specific LoopScore point thresholds (Bronze, Silver, Gold)
+- **Achievement Badge**: A badge awarded when a User completes specific accomplishments (First Lend, Reliable Borrower, Generous Lender, Perfect Record, Community Builder)
 
 ## Requirements
 
@@ -154,3 +157,15 @@ The LoopScore feature introduces a gamification system to encourage active parti
 4. THE LoopScore System SHALL display the "Community Builder" badge on the User's profile page alongside other achievement badges
 5. THE LoopScore System SHALL store the "Community Builder" badge award with the timestamp when earned
 6. THE LoopScore System SHALL send an email notification to the User when the "Community Builder" badge is awarded
+
+### Requirement 12
+
+**User Story:** As a platform user, I want to see all available achievement badges including those I haven't earned yet, so that I understand what goals I can work toward
+
+#### Acceptance Criteria
+
+1. THE LoopScore System SHALL display all available achievement badges on the User's profile page
+2. WHERE a User has not earned a specific badge, THE LoopScore System SHALL display the badge in a greyed-out or disabled visual state
+3. THE LoopScore System SHALL display earned badges in full color with the awarded timestamp
+4. THE LoopScore System SHALL show descriptive text for each badge explaining how to earn it
+5. THE LoopScore System SHALL visually distinguish between earned and unearned badges through styling

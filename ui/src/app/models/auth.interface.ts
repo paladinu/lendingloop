@@ -40,6 +40,15 @@ export interface BadgeAward {
 
 export type BadgeType = 'Bronze' | 'Silver' | 'Gold' | 'FirstLend' | 'ReliableBorrower' | 'GenerousLender' | 'PerfectRecord' | 'CommunityBuilder';
 
+export interface BadgeMetadata {
+    badgeType: BadgeType;
+    name: string;
+    description: string;
+    category: 'milestone' | 'achievement';
+    requirement: string;
+    icon: string;
+}
+
 export interface VerifyEmailRequest {
     token: string;
 }

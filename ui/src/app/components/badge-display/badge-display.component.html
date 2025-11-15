@@ -1,5 +1,45 @@
 <div class="badges-container">
-    <div *ngIf="badges && badges.length > 0">
+    <!-- Show all badges (earned and unearned) when showAllBadges is true -->
+    <div *ngIf="showAllBadges && displayBadges.length > 0">
+        <!-- Milestone Badges Section -->
+        <div class="badge-section milestone-badges">
+            <h4 class="section-title">Milestone Badges</h4>
+            <div class="badge-grid">
+                <div *ngFor="let badge of displayBadges | filterByCategory:'milestone'" 
+                     class="badge-item"
+                     [class.earned]="badge.earned"
+                     [class.unearned]="!badge.earned"
+                     [attr.aria-label]="badge.earned ? badge.metadata.name + ' - Earned on ' + (badge.awardedAt | date) : badge.metadata.name + ' - ' + badge.metadata.requirement">
+                    <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                    <span class="badge-name">{{ badge.metadata.name }}</span>
+                    <span class="badge-description">{{ badge.metadata.description }}</span>
+                    <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                    <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Achievement Badges Section -->
+        <div class="badge-section achievement-badges">
+            <h4 class="section-title">Achievement Badges</h4>
+            <div class="badge-grid">
+                <div *ngFor="let badge of displayBadges | filterByCategory:'achievement'" 
+                     class="badge-item"
+                     [class.earned]="badge.earned"
+                     [class.unearned]="!badge.earned"
+                     [attr.aria-label]="badge.earned ? badge.metadata.name + ' - Earned on ' + (badge.awardedAt | date) : badge.metadata.name + ' - ' + badge.metadata.requirement">
+                    <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                    <span class="badge-name">{{ badge.metadata.name }}</span>
+                    <span class="badge-description">{{ badge.metadata.description }}</span>
+                    <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                    <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Show only earned badges when showAllBadges is false (legacy mode) -->
+    <div *ngIf="!showAllBadges && earnedBadges && earnedBadges.length > 0">
         <!-- Milestone Badges Section -->
         <div *ngIf="milestoneBadges.length > 0" class="badge-section milestone-badges">
             <h4 class="section-title">Milestone Badges</h4>
@@ -47,7 +87,7 @@
         </div>
     </div>
     
-    <div *ngIf="!badges || badges.length === 0" class="empty-state">
+    <div *ngIf="!showAllBadges && (!earnedBadges || earnedBadges.length === 0)" class="empty-state">
         <p class="empty-message">No badges earned yet. Keep participating to earn badges!</p>
     </div>
 </div>

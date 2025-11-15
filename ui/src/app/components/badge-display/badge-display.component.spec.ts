@@ -1,18 +1,39 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BadgeDisplayComponent } from './badge-display.component';
 import { BadgeAward } from '../../models/auth.interface';
+import { LoopScoreService } from '../../services/loop-score.service';
+import { provideHttpClient } from '@angular/common/http';
 
 describe('BadgeDisplayComponent', () => {
     let component: BadgeDisplayComponent;
     let fixture: ComponentFixture<BadgeDisplayComponent>;
+    let mockLoopScoreService: any;
 
     beforeEach(async () => {
+        mockLoopScoreService = {
+            getAllBadgeMetadata: jest.fn().mockReturnValue([
+                { badgeType: 'Bronze', name: 'Bronze Badge', description: 'Awarded for reaching 10 points', category: 'milestone', requirement: 'Reach 10 points', icon: '🏆' },
+                { badgeType: 'Silver', name: 'Silver Badge', description: 'Awarded for reaching 50 points', category: 'milestone', requirement: 'Reach 50 points', icon: '🏆' },
+                { badgeType: 'Gold', name: 'Gold Badge', description: 'Awarded for reaching 100 points', category: 'milestone', requirement: 'Reach 100 points', icon: '🏆' },
+                { badgeType: 'FirstLend', name: 'First Lend', description: 'Complete your first lending transaction', category: 'achievement', requirement: 'Lend an item for the first time', icon: '🎁' },
+                { badgeType: 'ReliableBorrower', name: 'Reliable Borrower', description: 'Return items on time consistently', category: 'achievement', requirement: 'Complete 10 on-time returns', icon: '⭐' },
+                { badgeType: 'GenerousLender', name: 'Generous Lender', description: 'Share your items frequently', category: 'achievement', requirement: 'Complete 50 lending transactions', icon: '🤝' },
+                { badgeType: 'PerfectRecord', name: 'Perfect Record', description: 'Maintain a perfect return streak', category: 'achievement', requirement: 'Complete 25 consecutive on-time returns', icon: '💯' },
+                { badgeType: 'CommunityBuilder', name: 'Community Builder', description: 'Grow the LendingLoop community', category: 'achievement', requirement: 'Invite 10 users who become active', icon: '🌟' }
+            ])
+        };
+
         await TestBed.configureTestingModule({
-            imports: [BadgeDisplayComponent]
+            imports: [BadgeDisplayComponent],
+            providers: [
+                provideHttpClient(),
+                { provide: LoopScoreService, useValue: mockLoopScoreService }
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(BadgeDisplayComponent);
         component = fixture.componentInstance;
+        component.showAllBadges = false; // Default to false to avoid calling getAllBadgeMetadata in most tests
         fixture.detectChanges();
     });
 
@@ -27,7 +48,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'Silver', awardedAt: new Date().toISOString() },
             { badgeType: 'Gold', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -45,7 +67,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'Silver', awardedAt: new Date().toISOString() },
             { badgeType: 'Gold', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -60,7 +83,8 @@ describe('BadgeDisplayComponent', () => {
 
     it('should show empty state when no badges', () => {
         //arrange
-        component.badges = [];
+        component.earnedBadges = [];
+        component.showAllBadges = false;
 
         //act
         fixture.detectChanges();
@@ -77,7 +101,8 @@ describe('BadgeDisplayComponent', () => {
         const mockBadges: BadgeAward[] = [
             { badgeType: 'Bronze', awardedAt: testDate.toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -143,7 +168,8 @@ describe('BadgeDisplayComponent', () => {
         const mockBadges: BadgeAward[] = [
             { badgeType: 'Bronze', awardedAt: testDate.toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -167,7 +193,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'Silver', awardedAt: new Date().toISOString() },
             { badgeType: 'ReliableBorrower', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -207,7 +234,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'FirstLend', awardedAt: new Date().toISOString() },
             { badgeType: 'ReliableBorrower', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -226,7 +254,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'Bronze', awardedAt: new Date().toISOString() },
             { badgeType: 'FirstLend', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -246,7 +275,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'Bronze', awardedAt: new Date().toISOString() },
             { badgeType: 'Silver', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -321,7 +351,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'PerfectRecord', awardedAt: new Date().toISOString() },
             { badgeType: 'CommunityBuilder', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -341,7 +372,8 @@ describe('BadgeDisplayComponent', () => {
             { badgeType: 'PerfectRecord', awardedAt: new Date().toISOString() },
             { badgeType: 'CommunityBuilder', awardedAt: new Date().toISOString() }
         ];
-        component.badges = mockBadges;
+        component.earnedBadges = mockBadges;
+        component.showAllBadges = false;
 
         //act
         component.ngOnInit();
@@ -401,5 +433,259 @@ describe('BadgeDisplayComponent', () => {
 
         //assert
         expect(requirement).toBe('Earned when 10 invited users become active');
+    });
+
+    // Tests for displaying all badges (earned and unearned) - Requirement 12
+    it('should call loopScoreService.getAllBadgeMetadata() in ngOnInit when showAllBadges is true', () => {
+        //arrange
+        component.showAllBadges = true;
+        const spy = jest.spyOn(component['loopScoreService'], 'getAllBadgeMetadata');
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(spy).toHaveBeenCalled();
+        expect(component.allBadgeMetadata.length).toBe(8);
+    });
+
+    it('should populate allBadgeMetadata with badge data', () => {
+        //arrange
+        component.showAllBadges = true;
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(component.allBadgeMetadata).toBeDefined();
+        expect(component.allBadgeMetadata.length).toBe(8);
+        expect(component.allBadgeMetadata[0].badgeType).toBe('Bronze');
+    });
+
+    it('should create DisplayBadge for each badge metadata in prepareDisplayBadges', () => {
+        //arrange
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+        component.allBadgeMetadata = component['loopScoreService'].getAllBadgeMetadata();
+
+        //act
+        component.prepareDisplayBadges();
+
+        //assert
+        expect(component.displayBadges.length).toBe(8);
+    });
+
+    it('should set earned flag to true when badge is in earnedBadges array', () => {
+        //arrange
+        const awardedDate = new Date().toISOString();
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: awardedDate }
+        ];
+        component.allBadgeMetadata = component['loopScoreService'].getAllBadgeMetadata();
+
+        //act
+        component.prepareDisplayBadges();
+
+        //assert
+        const bronzeBadge = component.displayBadges.find(b => b.metadata.badgeType === 'Bronze');
+        expect(bronzeBadge?.earned).toBe(true);
+        expect(bronzeBadge?.awardedAt).toBe(awardedDate);
+    });
+
+    it('should set earned flag to false when badge is not in earnedBadges array', () => {
+        //arrange
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+        component.allBadgeMetadata = component['loopScoreService'].getAllBadgeMetadata();
+
+        //act
+        component.prepareDisplayBadges();
+
+        //assert
+        const silverBadge = component.displayBadges.find(b => b.metadata.badgeType === 'Silver');
+        expect(silverBadge?.earned).toBe(false);
+        expect(silverBadge?.awardedAt).toBeUndefined();
+    });
+
+    it('should set awardedAt correctly for earned badges', () => {
+        //arrange
+        const awardedDate = new Date('2024-01-15T10:00:00Z').toISOString();
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: awardedDate },
+            { badgeType: 'FirstLend', awardedAt: awardedDate }
+        ];
+        component.allBadgeMetadata = component['loopScoreService'].getAllBadgeMetadata();
+
+        //act
+        component.prepareDisplayBadges();
+
+        //assert
+        const bronzeBadge = component.displayBadges.find(b => b.metadata.badgeType === 'Bronze');
+        const firstLendBadge = component.displayBadges.find(b => b.metadata.badgeType === 'FirstLend');
+        expect(bronzeBadge?.awardedAt).toBe(awardedDate);
+        expect(firstLendBadge?.awardedAt).toBe(awardedDate);
+    });
+
+    it('should set awardedAt to undefined for unearned badges', () => {
+        //arrange
+        component.earnedBadges = [];
+        component.allBadgeMetadata = component['loopScoreService'].getAllBadgeMetadata();
+
+        //act
+        component.prepareDisplayBadges();
+
+        //assert
+        component.displayBadges.forEach(badge => {
+            expect(badge.awardedAt).toBeUndefined();
+        });
+    });
+
+    it('should display all 8 badges when showAllBadges is true', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const badgeItems = fixture.nativeElement.querySelectorAll('.badge-item');
+        expect(badgeItems.length).toBe(8);
+    });
+
+    it('should apply earned CSS class to earned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const badgeItems = fixture.nativeElement.querySelectorAll('.badge-item');
+        const earnedBadges = Array.from(badgeItems).filter((item: any) => item.classList.contains('earned'));
+        expect(earnedBadges.length).toBe(1);
+    });
+
+    it('should apply unearned CSS class to unearned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const badgeItems = fixture.nativeElement.querySelectorAll('.badge-item');
+        const unearnedBadges = Array.from(badgeItems).filter((item: any) => item.classList.contains('unearned'));
+        expect(unearnedBadges.length).toBe(7);
+    });
+
+    it('should show requirement text for unearned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const requirements = fixture.nativeElement.querySelectorAll('.badge-requirement');
+        expect(requirements.length).toBe(8);
+    });
+
+    it('should show earned date for earned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const earnedDates = fixture.nativeElement.querySelectorAll('.badge-earned-date');
+        expect(earnedDates.length).toBe(1);
+    });
+
+    it('should not show requirement text for earned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const requirements = fixture.nativeElement.querySelectorAll('.badge-requirement');
+        expect(requirements.length).toBe(7); // 7 unearned badges
+    });
+
+    it('should not show earned date for unearned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const earnedDates = fixture.nativeElement.querySelectorAll('.badge-earned-date');
+        expect(earnedDates.length).toBe(0);
+    });
+
+    it('should include badge name and earned status in aria-label for earned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        const awardedDate = new Date('2024-01-15T10:00:00Z').toISOString();
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: awardedDate }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const badgeItems = fixture.nativeElement.querySelectorAll('.badge-item.earned');
+        expect(badgeItems.length).toBe(1);
+        const ariaLabel = badgeItems[0].getAttribute('aria-label');
+        expect(ariaLabel).toContain('Bronze Badge');
+        expect(ariaLabel).toContain('Earned on');
+    });
+
+    it('should include badge name and requirement in aria-label for unearned badges', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const badgeItems = fixture.nativeElement.querySelectorAll('.badge-item.unearned');
+        expect(badgeItems.length).toBe(8);
+        const ariaLabel = badgeItems[0].getAttribute('aria-label');
+        expect(ariaLabel).toContain('Bronze Badge');
+        expect(ariaLabel).toContain('Reach 10 points');
     });
 });

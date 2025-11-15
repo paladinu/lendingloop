@@ -1485,4 +1485,121 @@ public class LoopScoreServiceTests
             It.IsAny<CountOptions>(),
             default), Times.Once);
     }
+
+    [Fact]
+    public async Task AwardOnTimeReturnPointsAsync_DoesNotAwardPerfectRecordBadge_BeforeThreshold()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var userAfterUpdate = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 15,
+            ConsecutiveOnTimeReturns = 15, // Less than 25
+            ScoreHistory = new List<ScoreHistoryEntry>(),
+            Badges = new List<BadgeAward>()
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { userAfterUpdate });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<FindOneAndUpdateOptions<User>>(),
+                default))
+            .ReturnsAsync(userAfterUpdate);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        await _service.AwardOnTimeReturnPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockEmailService.Verify(e => e.SendBadgeAwardEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            "PerfectRecord",
+            It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AwardOnTimeReturnPointsAsync_PreventsDuplicatePerfectRecordBadge()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var userAfterUpdate = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 30,
+            ConsecutiveOnTimeReturns = 30, // More than 25
+            ScoreHistory = new List<ScoreHistoryEntry>(),
+            Badges = new List<BadgeAward>
+            {
+                new BadgeAward { BadgeType = BadgeType.PerfectRecord, AwardedAt = DateTime.UtcNow.AddDays(-1) }
+            }
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { userAfterUpdate });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false)
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false)
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<FindOneAndUpdateOptions<User>>(),
+                default))
+            .ReturnsAsync(userAfterUpdate);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        await _service.AwardOnTimeReturnPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockEmailService.Verify(e => e.SendBadgeAwardEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            "PerfectRecord",
+            It.IsAny<int>()), Times.Never);
+    }
 }

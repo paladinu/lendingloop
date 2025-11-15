@@ -719,6 +719,228 @@ The CommunityBuilder badge requires integration with the existing loop invitatio
 - Badge check should occur on first completed transaction (as either borrower or lender)
 - Count active invited users by querying users where `InvitedBy` matches the inviter's ID and they have at least one ScoreHistory entry
 
+## Design Gap Analysis: Requirement 12 (Display All Available Badges)
+
+### Current Design Limitation
+
+The existing BadgeDisplayComponent design only displays **earned badges**. However, Requirement 12 specifies that users should see **all available achievement badges** including those they haven't earned yet, so they understand what goals to work toward.
+
+### Required Design Changes
+
+#### 1. Badge Metadata Service Extension
+
+Add a new method to LoopScoreService to provide complete badge information:
+
+```typescript
+export interface BadgeMetadata {
+    badgeType: BadgeType;
+    name: string;
+    description: string;
+    category: 'milestone' | 'achievement';
+    requirement: string; // e.g., "Reach 10 points", "Complete 10 on-time returns"
+    icon: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class LoopScoreService {
+    // Existing methods...
+    
+    getAllBadgeMetadata(): BadgeMetadata[] {
+        return [
+            // Milestone badges
+            { badgeType: 'Bronze', name: 'Bronze Badge', description: 'Awarded for reaching 10 points', category: 'milestone', requirement: 'Reach 10 points', icon: '🏆' },
+            { badgeType: 'Silver', name: 'Silver Badge', description: 'Awarded for reaching 50 points', category: 'milestone', requirement: 'Reach 50 points', icon: '🏆' },
+            { badgeType: 'Gold', name: 'Gold Badge', description: 'Awarded for reaching 100 points', category: 'milestone', requirement: 'Reach 100 points', icon: '🏆' },
+            // Achievement badges
+            { badgeType: 'FirstLend', name: 'First Lend', description: 'Complete your first lending transaction', category: 'achievement', requirement: 'Lend an item for the first time', icon: '🎁' },
+            { badgeType: 'ReliableBorrower', name: 'Reliable Borrower', description: 'Return items on time consistently', category: 'achievement', requirement: 'Complete 10 on-time returns', icon: '⭐' },
+            { badgeType: 'GenerousLender', name: 'Generous Lender', description: 'Share your items frequently', category: 'achievement', requirement: 'Complete 50 lending transactions', icon: '🤝' },
+            { badgeType: 'PerfectRecord', name: 'Perfect Record', description: 'Maintain a perfect return streak', category: 'achievement', requirement: 'Complete 25 consecutive on-time returns', icon: '💯' },
+            { badgeType: 'CommunityBuilder', name: 'Community Builder', description: 'Grow the LendingLoop community', category: 'achievement', requirement: 'Invite 10 users who become active', icon: '🌟' }
+        ];
+    }
+}
+```
+
+#### 2. Enhanced BadgeDisplayComponent
+
+Update the component to display all badges with earned/unearned states:
+
+```typescript
+@Component({
+    selector: 'app-badge-display',
+    templateUrl: './badge-display.component.html',
+    styleUrls: ['./badge-display.component.css']
+})
+export class BadgeDisplayComponent implements OnInit {
+    @Input() earnedBadges: BadgeAward[] = [];
+    @Input() showAllBadges: boolean = true; // New input to control display mode
+    
+    allBadgeMetadata: BadgeMetadata[] = [];
+    displayBadges: DisplayBadge[] = [];
+    
+    constructor(private loopScoreService: LoopScoreService) {}
+    
+    ngOnInit(): void {
+        this.allBadgeMetadata = this.loopScoreService.getAllBadgeMetadata();
+        this.prepareDisplayBadges();
+    }
+    
+    prepareDisplayBadges(): void {
+        this.displayBadges = this.allBadgeMetadata.map(metadata => {
+            const earnedBadge = this.earnedBadges.find(b => b.badgeType === metadata.badgeType);
+            return {
+                metadata: metadata,
+                earned: !!earnedBadge,
+                awardedAt: earnedBadge?.awardedAt
+            };
+        });
+    }
+}
+
+interface DisplayBadge {
+    metadata: BadgeMetadata;
+    earned: boolean;
+    awardedAt?: string;
+}
+```
+
+#### 3. Updated Component Template
+
+```html
+<div class="badges-container">
+    <div class="milestone-badges">
+        <h4>Milestone Badges</h4>
+        <div class="badge-grid">
+            <div *ngFor="let badge of displayBadges | filterByCategory:'milestone'" 
+                 class="badge-item"
+                 [class.earned]="badge.earned"
+                 [class.unearned]="!badge.earned"
+                 [attr.aria-label]="getBadgeAriaLabel(badge)">
+                <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                <span class="badge-name">{{ badge.metadata.name }}</span>
+                <span class="badge-description">{{ badge.metadata.description }}</span>
+                <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="achievement-badges">
+        <h4>Achievement Badges</h4>
+        <div class="badge-grid">
+            <div *ngFor="let badge of displayBadges | filterByCategory:'achievement'" 
+                 class="badge-item"
+                 [class.earned]="badge.earned"
+                 [class.unearned]="!badge.earned"
+                 [attr.aria-label]="getBadgeAriaLabel(badge)">
+                <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                <span class="badge-name">{{ badge.metadata.name }}</span>
+                <span class="badge-description">{{ badge.metadata.description }}</span>
+                <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### 4. CSS Styling for Earned/Unearned States
+
+```css
+.badge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.badge-item.earned {
+    background-color: #fff;
+    border: 2px solid #FFD700;
+    opacity: 1;
+}
+
+.badge-item.earned .badge-icon {
+    font-size: 48px;
+    filter: none;
+}
+
+.badge-item.unearned {
+    background-color: #f5f5f5;
+    border: 2px solid #ddd;
+    opacity: 0.6;
+}
+
+.badge-item.unearned .badge-icon {
+    font-size: 48px;
+    filter: grayscale(100%);
+}
+
+.badge-name {
+    font-weight: bold;
+    margin-top: 8px;
+    color: #333;
+}
+
+.badge-description {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-top: 4px;
+}
+
+.badge-requirement {
+    font-size: 11px;
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    margin-top: 4px;
+}
+
+.badge-earned-date {
+    font-size: 11px;
+    color: #4CAF50;
+    margin-top: 4px;
+}
+
+.badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+```
+
+### Design Rationale
+
+**Why Show All Badges?**
+- **Goal Clarity**: Users can see what achievements are possible and work toward specific goals
+- **Motivation**: Seeing unearned badges creates aspirational targets that encourage engagement
+- **Transparency**: Users understand the complete badge system rather than discovering badges by accident
+- **Gamification Best Practice**: Most successful gamification systems show locked/unearned achievements
+
+**Why Use Greyed-Out Styling?**
+- **Visual Hierarchy**: Clearly distinguishes earned from unearned badges without hiding information
+- **Industry Standard**: Common pattern in gaming and achievement systems (Steam, Xbox, PlayStation)
+- **Accessibility**: Maintains visibility for screen readers while providing visual distinction
+
+**Why Include Descriptions and Requirements?**
+- **User Education**: Explains how to earn each badge without requiring external documentation
+- **Reduced Support**: Users don't need to ask how to earn badges
+- **Engagement**: Clear requirements encourage users to pursue specific badges
+
+### Implementation Impact
+
+This design change requires updates to:
+1. **LoopScoreService**: Add `getAllBadgeMetadata()` method
+2. **BadgeDisplayComponent**: Refactor to display all badges with earned/unearned states
+3. **Component Template**: Update to show badge metadata and requirements
+4. **Component CSS**: Add styling for unearned badges
+5. **Unit Tests**: Add tests for displaying unearned badges and badge metadata
+
 ## Future Enhancements
 
 - **Leaderboards**: Display top scorers within each loop
@@ -733,3 +955,4 @@ The CommunityBuilder badge requires integration with the existing loop invitatio
 - **Badge Showcase**: Allow users to feature their favorite badge on their profile
 - **Badge Notifications**: Push notifications when badges are earned
 - **Badge Rarity Display**: Show how many users have earned each badge
+- **Progress Tracking**: Show progress toward unearned badges (e.g., "7/10 on-time returns")

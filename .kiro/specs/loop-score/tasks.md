@@ -344,7 +344,9 @@
 
 
 
-- [ ] 22.2 Add GetCompletedLendingTransactionCountAsync method
+- [x] 22.2 Add GetCompletedLendingTransactionCountAsync method
+
+
 
   - Implement method to count ItemRequests with status "Completed" where user is the owner
   - This count is separate from lending approvals
@@ -379,7 +381,8 @@
 
 
 
-- [ ] 24.1 Add GetActiveInvitedUsersCountAsync method to LoopScoreService
+- [x] 24.1 Add GetActiveInvitedUsersCountAsync method to LoopScoreService
+
 
   - Implement method to count users where InvitedBy matches the given userId
   - Filter to only count users who have at least one ScoreHistory entry (indicating they completed a transaction)
@@ -398,7 +401,9 @@
   - _Requirements: 11.1, 11.3, 11.4, 11.5, 11.6_
 
 
-- [ ] 25. Update ItemRequestService to record completed lending transactions
+- [x] 25. Update ItemRequestService to record completed lending transactions
+
+
 
 
   - In CompleteRequestAsync, after awarding points, call RecordCompletedLendingTransactionAsync for the owner
@@ -418,7 +423,9 @@
   - _Requirements: 9.1, 9.2, 9.4, 9.5_
 
 
-- [ ] 27. Add unit tests for PerfectRecord badge functionality
+- [x] 27. Add unit tests for PerfectRecord badge functionality
+
+
 
 
   - Test AwardOnTimeReturnPointsAsync increments consecutiveOnTimeReturns on each on-time return
@@ -443,7 +450,9 @@
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
 
-- [ ] 29. Update ItemRequestServiceTests for new LoopScoreService calls
+
+
+- [x] 29. Update ItemRequestServiceTests for new LoopScoreService calls
 
 
   - Test CompleteRequestAsync calls RecordCompletedLendingTransactionAsync for owner
@@ -473,14 +482,18 @@
 
 
 
-- [ ] 31.2 Update getBadgeLabel helper method
+
+
+- [x] 31.2 Update getBadgeLabel helper method
 
   - Add label mappings for GenerousLender ("Generous Lender"), PerfectRecord ("Perfect Record"), and CommunityBuilder ("Community Builder")
+
+
   - _Requirements: 9.3, 10.3, 11.4_
 
 
 
-- [ ] 31.3 Update component CSS
+- [x] 31.3 Update component CSS
 
   - Add CSS classes for .generous-lender, .perfect-record, and .community-builder
   - Style new achievement badges consistently with existing achievement badges
@@ -517,5 +530,230 @@
   - Execute npm test from /ui directory
   - Verify all new BadgeDisplayComponent tests for new badges pass
   - Verify existing tests still pass
+
+
   - Fix any failing tests
   - _Requirements: 9.3, 10.3, 11.4_
+
+- [x] 35. Add badge metadata support to LoopScoreService
+
+
+
+
+- [x] 35.1 Create BadgeMetadata interface in Angular
+
+  - Create BadgeMetadata interface in auth.interface.ts with properties: badgeType, name, description, category, requirement, icon
+  - Export interface for use in components and services
+  - _Requirements: 12.1, 12.4_
+
+
+
+
+- [x] 35.2 Implement getAllBadgeMetadata method in LoopScoreService
+
+  - Add getAllBadgeMetadata() method that returns array of BadgeMetadata for all available badges
+  - Include metadata for all milestone badges (Bronze, Silver, Gold) with point requirements
+  - Include metadata for all achievement badges (FirstLend, ReliableBorrower, GenerousLender, PerfectRecord, CommunityBuilder) with descriptions
+  - Specify category ('milestone' or 'achievement') for each badge
+  - Provide clear requirement text explaining how to earn each badge
+  - _Requirements: 12.1, 12.4_
+
+
+
+
+- [x] 35.3 Add unit tests for getAllBadgeMetadata
+
+  - Test getAllBadgeMetadata returns metadata for all 8 badge types
+  - Test each badge has required properties (badgeType, name, description, category, requirement, icon)
+  - Test milestone badges have category 'milestone'
+  - Test achievement badges have category 'achievement'
+  - _Requirements: 12.1, 12.4_
+
+
+
+- [x] 36. Refactor BadgeDisplayComponent to show all badges
+
+
+- [x] 36.1 Update BadgeDisplayComponent inputs and properties
+
+  - Change @Input() badges to @Input() earnedBadges for clarity
+  - Add @Input() showAllBadges: boolean = true to control display mode
+
+
+  - Add allBadgeMetadata: BadgeMetadata[] property
+  - Add displayBadges: DisplayBadge[] property to hold combined earned/unearned badge data
+  - Create DisplayBadge interface with properties: metadata, earned, awardedAt
+  - _Requirements: 12.1, 12.2, 12.3_
+
+
+
+- [x] 36.2 Implement badge preparation logic
+
+  - Inject LoopScoreService into BadgeDisplayComponent constructor
+  - In ngOnInit, call loopScoreService.getAllBadgeMetadata() to get all badge metadata
+  - Implement prepareDisplayBadges() method that maps badge metadata to DisplayBadge objects
+  - For each badge metadata, check if user has earned it by matching badgeType in earnedBadges array
+  - Set earned flag and awardedAt timestamp for earned badges
+  - _Requirements: 12.1, 12.2, 12.3_
+
+
+- [x] 36.3 Create FilterByCategoryPipe for template
+
+  - Generate FilterByCategoryPipe to filter DisplayBadge array by category
+  - Implement transform method that filters badges by 'milestone' or 'achievement' category
+  - Register pipe in appropriate module
+  - _Requirements: 12.1_
+
+
+- [x] 36.4 Update component template to display all badges
+
+
+  - Update template to iterate over displayBadges instead of earnedBadges
+  - Use FilterByCategoryPipe to separate milestone and achievement badges
+  - Display badge icon, name, and description for all badges
+  - Show requirement text for unearned badges using *ngIf="!badge.earned"
+  - Show earned date for earned badges using *ngIf="badge.earned"
+  - Apply [class.earned] and [class.unearned] based on badge.earned flag
+  - Update aria-label to include earned status and requirement/date
+  - _Requirements: 12.1, 12.2, 12.3, 12.4_
+
+- [x] 37. Add CSS styling for earned and unearned badge states
+
+
+
+- [x] 37.1 Create base badge-item styles
+
+
+
+  - Style .badge-item with flexbox layout, padding, border-radius
+  - Add transition for smooth state changes
+  - _Requirements: 12.2, 12.5_
+
+
+- [x] 37.2 Style earned badges
+
+
+  - Create .badge-item.earned class with full opacity, colored border (#FFD700)
+  - Style earned badge icons at full size with no filters
+  - Use bright background color (#fff) for earned badges
+  - _Requirements: 12.2, 12.3, 12.5_
+
+
+- [x] 37.3 Style unearned badges
+
+
+  - Create .badge-item.unearned class with reduced opacity (0.6), grey border (#ddd)
+  - Apply grayscale filter to unearned badge icons
+  - Use muted background color (#f5f5f5) for unearned badges
+  - _Requirements: 12.2, 12.5_
+
+
+- [x] 37.4 Style badge text elements
+
+
+
+  - Style .badge-name with bold font and appropriate color
+  - Style .badge-description with smaller font size and grey color
+  - Style .badge-requirement with italic font and muted color for unearned badges
+  - Style .badge-earned-date with green color (#4CAF50) for earned badges
+  - _Requirements: 12.3, 12.4_
+
+
+- [x] 37.5 Create responsive badge grid layout
+
+
+
+  - Style .badge-grid with CSS Grid layout
+  - Use grid-template-columns with auto-fill and minmax for responsive design
+  - Add appropriate gap between badge items
+  - _Requirements: 12.1_
+
+- [x] 38. Add unit tests for displaying all badges
+
+
+
+- [x] 38.1 Test badge metadata retrieval
+
+
+
+  - Test component calls loopScoreService.getAllBadgeMetadata() in ngOnInit
+  - Test allBadgeMetadata is populated with badge data
+  - _Requirements: 12.1_
+
+
+- [x] 38.2 Test prepareDisplayBadges logic
+
+
+  - Test prepareDisplayBadges creates DisplayBadge for each badge metadata
+  - Test earned flag is true when badge is in earnedBadges array
+  - Test earned flag is false when badge is not in earnedBadges array
+  - Test awardedAt is set correctly for earned badges
+  - Test awardedAt is undefined for unearned badges
+  - _Requirements: 12.2, 12.3_
+
+
+- [x] 38.3 Test template rendering of all badges
+
+
+  - Test component displays all 8 badges (3 milestone + 5 achievement)
+  - Test earned badges have .earned CSS class
+  - Test unearned badges have .unearned CSS class
+  - Test requirement text is shown for unearned badges
+  - Test earned date is shown for earned badges
+  - Test requirement text is not shown for earned badges
+  - Test earned date is not shown for unearned badges
+  - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
+
+
+- [x] 38.4 Test FilterByCategoryPipe
+
+
+  - Test pipe filters badges by 'milestone' category correctly
+  - Test pipe filters badges by 'achievement' category correctly
+  - Test pipe returns empty array when no badges match category
+  - _Requirements: 12.1_
+
+
+- [x] 38.5 Test accessibility features
+
+
+  - Test aria-label includes badge name and earned status
+  - Test aria-label includes requirement for unearned badges
+  - Test aria-label includes earned date for earned badges
+  - _Requirements: 12.1, 12.3_
+
+- [x] 39. Update parent components to use refactored BadgeDisplayComponent
+
+
+
+
+- [x] 39.1 Update user profile component
+
+
+
+  - Change [badges] input to [earnedBadges] in profile template
+  - Ensure earnedBadges is passed from user profile data
+  - Verify showAllBadges defaults to true to display all badges
+  - _Requirements: 12.1_
+
+
+- [x] 39.2 Test profile component integration
+
+
+
+  - Test profile component passes earnedBadges to badge-display component
+  - Test badge-display component receives correct earned badges
+  - _Requirements: 12.1_
+
+- [x] 40. Run all frontend tests and verify Requirement 12 implementation
+
+
+
+
+  - Execute npm test from /ui directory
+  - Verify all new BadgeDisplayComponent tests for displaying all badges pass
+  - Verify FilterByCategoryPipe tests pass
+  - Verify LoopScoreService getAllBadgeMetadata tests pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
