@@ -21,21 +21,12 @@ export class AppComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Subscribe to authentication state changes
+    // Subscribe to authentication state changes for display purposes only
+    // Do NOT redirect from here - let the AuthGuard handle all redirects
     this.authService.currentUser$.subscribe({
       next: (user) => {
-        console.log('App component - user state changed:', user);
         this.currentUser = user;
         this.isAuthenticated = !!user && this.authService.isAuthenticated();
-        console.log('App component - isAuthenticated:', this.isAuthenticated);
-        console.log('App component - current route:', this.router.url);
-
-        // Only redirect to login if we're sure the user is not authenticated
-        // and we're not in the middle of a login process
-        if (!this.isAuthenticated && !this.isOnAuthRoute() && this.router.url !== '/') {
-          console.log('App component - redirecting to login');
-          this.router.navigate(['/login']);
-        }
       },
       error: (error) => {
         console.error('Error in authentication state:', error);
@@ -43,31 +34,6 @@ export class AppComponent implements OnInit {
         this.isAuthenticated = false;
       }
     });
-
-    // Initial authentication check - only run this once on app startup
-    setTimeout(() => {
-      this.checkInitialAuthState();
-    }, 100);
-  }
-
-  private checkInitialAuthState(): void {
-    console.log('App component - checking initial auth state');
-    console.log('App component - isAuthenticated:', this.authService.isAuthenticated());
-    console.log('App component - current route:', this.router.url);
-
-    // Only redirect if we're on the root route and not authenticated
-    if (!this.authService.isAuthenticated() && this.router.url === '/') {
-      console.log('App component - not authenticated and on root, redirecting to login');
-      this.router.navigate(['/login']);
-    }
-  }
-
-  private isOnAuthRoute(): boolean {
-    const currentUrl = this.router.url;
-    return currentUrl.includes('/auth/') ||
-      currentUrl === '/login' ||
-      currentUrl === '/register' ||
-      currentUrl === '/verify-email';
   }
 
   getUserDisplayName(): string {
