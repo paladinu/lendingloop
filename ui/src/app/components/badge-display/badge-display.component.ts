@@ -24,14 +24,17 @@ export class BadgeDisplayComponent implements OnInit {
             ['Bronze', 'Silver', 'Gold'].includes(b.badgeType)
         );
         this.achievementBadges = this.badges.filter(b => 
-            ['FirstLend', 'ReliableBorrower'].includes(b.badgeType)
+            ['FirstLend', 'ReliableBorrower', 'GenerousLender', 'PerfectRecord', 'CommunityBuilder'].includes(b.badgeType)
         );
     }
 
     getBadgeIcon(badgeType: BadgeType): string {
         const icons: Record<string, string> = {
             'FirstLend': '🎁',
-            'ReliableBorrower': '⭐'
+            'ReliableBorrower': '⭐',
+            'GenerousLender': '🤝',
+            'PerfectRecord': '💯',
+            'CommunityBuilder': '🌟'
         };
         return icons[badgeType] || '🏅';
     }
@@ -39,7 +42,10 @@ export class BadgeDisplayComponent implements OnInit {
     getBadgeLabel(badgeType: BadgeType): string {
         const labels: Record<string, string> = {
             'FirstLend': 'First Lend',
-            'ReliableBorrower': 'Reliable Borrower'
+            'ReliableBorrower': 'Reliable Borrower',
+            'GenerousLender': 'Generous Lender',
+            'PerfectRecord': 'Perfect Record',
+            'CommunityBuilder': 'Community Builder'
         };
         return labels[badgeType] || badgeType;
     }
@@ -56,6 +62,12 @@ export class BadgeDisplayComponent implements OnInit {
                 return 'First Lend - Completed your first lending transaction';
             case 'ReliableBorrower':
                 return 'Reliable Borrower - Completed 10 on-time returns';
+            case 'GenerousLender':
+                return 'Generous Lender - Completed 50 lending transactions';
+            case 'PerfectRecord':
+                return 'Perfect Record - 25 consecutive on-time returns';
+            case 'CommunityBuilder':
+                return 'Community Builder - 10 invited users became active';
             default:
                 return 'Badge';
         }
@@ -73,6 +85,12 @@ export class BadgeDisplayComponent implements OnInit {
                 return 'Earned by completing your first lend';
             case 'ReliableBorrower':
                 return 'Earned by completing 10 on-time returns';
+            case 'GenerousLender':
+                return 'Earned by completing 50 lending transactions';
+            case 'PerfectRecord':
+                return 'Earned by achieving 25 consecutive on-time returns';
+            case 'CommunityBuilder':
+                return 'Earned when 10 invited users become active';
             default:
                 return '';
         }

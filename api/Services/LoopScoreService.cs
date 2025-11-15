@@ -30,6 +30,28 @@ public class LoopScoreService : ILoopScoreService
     {
         await AwardPointsAsync(userId, itemRequestId, itemName, 1, ScoreActionType.OnTimeReturn);
         
+        // Increment consecutive on-time returns
+        var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+        var update = Builders<User>.Update.Inc(u => u.ConsecutiveOnTimeReturns, 1);
+        
+        var options = new FindOneAndUpdateOptions<User>
+        {
+            ReturnDocument = ReturnDocument.After
+        };
+        
+        var userAfterUpdate = await _usersCollection.FindOneAndUpdateAsync(filter, update, options);
+        
+        if (userAfterUpdate != null)
+        {
+            _logger.LogInformation("User {UserId} now has {Count} consecutive on-time returns", userId, userAfterUpdate.ConsecutiveOnTimeReturns);
+            
+            // Check if user has reached 25 consecutive on-time returns for PerfectRecord badge
+            if (userAfterUpdate.ConsecutiveOnTimeReturns >= 25)
+            {
+                await CheckAndAwardAchievementBadgeAsync(userId, BadgeType.PerfectRecord);
+            }
+        }
+        
         // Check if user has reached 10 on-time returns for ReliableBorrower badge
         var onTimeReturnCount = await GetOnTimeReturnCountAsync(userId);
         if (onTimeReturnCount >= 10)
@@ -302,5 +324,99 @@ public class LoopScoreService : ILoopScoreService
             _logger.LogError(ex, "Error awarding {BadgeType} achievement badge to user {UserId}", badgeType, userId);
             // Don't throw - this is a secondary operation
         }
+    }
+
+    public async Task<int> GetCompletedLendingTransactionCountAsync(string userId)
+    {
+        try
+        {
+            var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            
+            if (user == null)
+            {
+                _logger.LogWarning("User {UserId} not found when getting completed lending transaction count", userId);
+                return 0;
+            }
+
+            // Count LendApproved entries in score history (these represent completed lending transactions)
+            var completedLendingCount = user.ScoreHistory?
+                .Count(entry => entry.ActionType == ScoreActionType.LendApproved) ?? 0;
+
+            return completedLendingCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting completed lending transaction count for user {UserId}", userId);
+            return 0;
+        }
+    }
+
+    public async Task<int> GetActiveInvitedUsersCountAsync(string userId)
+    {
+        try
+        {
+            // Find all users invited by this user who have at least one score history entry
+            var filter = Builders<User>.Filter.And(
+                Builders<User>.Filter.Eq(u => u.InvitedBy, userId),
+                Builders<User>.Filter.SizeGt(u => u.ScoreHistory, 0)
+            );
+
+            var activeInvitedUsersCount = await _usersCollection.CountDocumentsAsync(filter);
+
+            return (int)activeInvitedUsersCount;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting active invited users count for user {UserId}", userId);
+            return 0;
+        }
+    }
+
+    public async Task RecordCompletedLendingTransactionAsync(string userId, string itemRequestId, string itemName)
+    {
+        try
+        {
+            _logger.LogInformation("Recording completed lending transaction for user {UserId}, request {RequestId}", userId, itemRequestId);
+
+            // Get current completed lending transaction count
+            var completedCount = await GetCompletedLendingTransactionCountAsync(userId);
+            
+            _logger.LogInformation("User {UserId} has completed {Count} lending transactions", userId, completedCount);
+
+            // Check if user qualifies for GenerousLender badge (50 completed lending transactions)
+            if (completedCount >= 50)
+            {
+                _logger.LogInformation("User {UserId} qualifies for GenerousLender badge with {Count} completed lending transactions", userId, completedCount);
+                await CheckAndAwardAchievementBadgeAsync(userId, BadgeType.GenerousLender);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recording completed lending transaction for user {UserId}", userId);
+            // Don't throw - this is a secondary operation
+        }
+    }
+
+    public async Task ResetConsecutiveOnTimeReturnsAsync(string userId)
+    {
+        try
+        {
+            _logger.LogInformation("Resetting consecutive on-time returns for user {UserId} due to late return", userId);
+
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<User>.Update.Set(u => u.ConsecutiveOnTimeReturns, 0);
+            
+            await _usersCollection.UpdateOneAsync(filter, update);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error resetting consecutive on-time returns for user {UserId}", userId);
+            // Don't throw - this is a secondary operation
+        }
+    }
+
+    public async Task AwardAchievementBadgeAsync(string userId, BadgeType badgeType)
+    {
+        await CheckAndAwardAchievementBadgeAsync(userId, badgeType);
     }
 }

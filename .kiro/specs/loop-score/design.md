@@ -78,6 +78,13 @@ public class User
     
     [BsonElement("badges")]
     public List<BadgeAward> Badges { get; set; } = new();
+    
+    [BsonElement("consecutiveOnTimeReturns")]
+    public int ConsecutiveOnTimeReturns { get; set; } = 0;
+    
+    [BsonElement("invitedBy")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? InvitedBy { get; set; }
 }
 
 public class BadgeAward
@@ -99,7 +106,10 @@ public enum BadgeType
     
     // Achievement badges
     FirstLend,           // First lending transaction
-    ReliableBorrower     // 10 on-time returns
+    ReliableBorrower,    // 10 on-time returns
+    GenerousLender,      // 50 completed lending transactions
+    PerfectRecord,       // 25 consecutive on-time returns
+    CommunityBuilder     // 10 active invited users
 }
 
 public class ScoreHistoryEntry
@@ -137,13 +147,16 @@ public enum ScoreActionType
 public interface ILoopScoreService
 {
     Task AwardBorrowPointsAsync(string userId, string itemRequestId, string itemName);
-    Task AwardOnTimeReturnPointsAsync(string userId, string itemRequestId, string itemName);
+    Task AwardOnTimeReturnPointsAsync(string userId, string itemRequestId, string itemName, bool isOnTime);
     Task AwardLendPointsAsync(string userId, string itemRequestId, string itemName);
     Task ReverseLendPointsAsync(string userId, string itemRequestId, string itemName);
+    Task RecordCompletedLendingTransactionAsync(string userId, string itemRequestId);
     Task<int> GetUserScoreAsync(string userId);
     Task<List<ScoreHistoryEntry>> GetScoreHistoryAsync(string userId, int limit = 50);
     Task<List<BadgeAward>> GetUserBadgesAsync(string userId);
     Task<int> GetOnTimeReturnCountAsync(string userId);
+    Task<int> GetCompletedLendingTransactionCountAsync(string userId);
+    Task<int> GetActiveInvitedUsersCountAsync(string userId);
 }
 ```
 
@@ -157,6 +170,14 @@ The service will:
 - Check for achievement badges after relevant actions:
   - **FirstLend**: Awarded on first lending transaction (when AwardLendPointsAsync is called for the first time)
   - **ReliableBorrower**: Awarded when user completes 10 on-time returns
+  - **GenerousLender**: Awarded when user completes 50 lending transactions (tracked via RecordCompletedLendingTransactionAsync)
+  - **PerfectRecord**: Awarded when user completes 25 consecutive on-time returns
+  - **CommunityBuilder**: Awarded when 10 users invited by the user become active (complete at least one transaction)
+- Track consecutive on-time returns:
+  - Increment User.ConsecutiveOnTimeReturns on each on-time return
+  - Reset User.ConsecutiveOnTimeReturns to zero on late returns
+  - Check for PerfectRecord badge when consecutive count reaches 25
+- Track completed lending transactions separately from lending approvals
 - Award badges automatically when thresholds are reached (10, 50, 100 points for milestones)
 - Prevent duplicate badge awards
 - Enforce minimum score of zero
@@ -167,7 +188,11 @@ The service will:
 
 Integrate LoopScoreService calls at key points:
 - **ApproveRequestAsync**: Award 4 points to lender
-- **CompleteRequestAsync**: Award 1 point to borrower, check for on-time return and award 1 additional point if applicable
+- **CompleteRequestAsync**: 
+  - Award 1 point to borrower
+  - Check for on-time return and award 1 additional point if applicable (pass isOnTime flag to AwardOnTimeReturnPointsAsync)
+  - Record completed lending transaction for the owner (call RecordCompletedLendingTransactionAsync)
+  - Check if borrower was invited by someone and if this is their first completed transaction, potentially triggering CommunityBuilder badge for inviter
 - **CancelRequestAsync** (for approved requests): Reverse 4 points from lender
 
 #### 5. UserController Extensions
@@ -197,7 +222,7 @@ export interface ScoreHistoryEntry {
 }
 
 export interface BadgeAward {
-    badgeType: 'Bronze' | 'Silver' | 'Gold' | 'FirstLend' | 'ReliableBorrower';
+    badgeType: 'Bronze' | 'Silver' | 'Gold' | 'FirstLend' | 'ReliableBorrower' | 'GenerousLender' | 'PerfectRecord' | 'CommunityBuilder';
     awardedAt: string;
 }
 ```
@@ -292,6 +317,9 @@ A reusable component that displays earned badges:
                       class="badge-icon achievement"
                       [class.first-lend]="badge.badgeType === 'FirstLend'"
                       [class.reliable-borrower]="badge.badgeType === 'ReliableBorrower'"
+                      [class.generous-lender]="badge.badgeType === 'GenerousLender'"
+                      [class.perfect-record]="badge.badgeType === 'PerfectRecord'"
+                      [class.community-builder]="badge.badgeType === 'CommunityBuilder'"
                       [attr.aria-label]="getBadgeLabel(badge.badgeType) + ' earned on ' + (badge.awardedAt | date)">
                     {{ getBadgeIcon(badge.badgeType) }}
                 </span>
@@ -314,14 +342,17 @@ export class BadgeDisplayComponent implements OnInit {
             ['Bronze', 'Silver', 'Gold'].includes(b.badgeType)
         );
         this.achievementBadges = this.badges.filter(b => 
-            ['FirstLend', 'ReliableBorrower'].includes(b.badgeType)
+            ['FirstLend', 'ReliableBorrower', 'GenerousLender', 'PerfectRecord', 'CommunityBuilder'].includes(b.badgeType)
         );
     }
     
     getBadgeIcon(badgeType: string): string {
         const icons: Record<string, string> = {
             'FirstLend': '🎁',
-            'ReliableBorrower': '⭐'
+            'ReliableBorrower': '⭐',
+            'GenerousLender': '🤝',
+            'PerfectRecord': '💯',
+            'CommunityBuilder': '🌟'
         };
         return icons[badgeType] || '🏅';
     }
@@ -329,7 +360,10 @@ export class BadgeDisplayComponent implements OnInit {
     getBadgeLabel(badgeType: string): string {
         const labels: Record<string, string> = {
             'FirstLend': 'First Lend',
-            'ReliableBorrower': 'Reliable Borrower'
+            'ReliableBorrower': 'Reliable Borrower',
+            'GenerousLender': 'Generous Lender',
+            'PerfectRecord': 'Perfect Record',
+            'CommunityBuilder': 'Community Builder'
         };
         return labels[badgeType] || badgeType;
     }
@@ -369,10 +403,12 @@ The following existing components will be updated to display scores:
     ],
     badges: [  // NEW: Array of earned badges
         {
-            badgeType: string,  // "Bronze", "Silver", "Gold", "FirstLend", "ReliableBorrower"
+            badgeType: string,  // "Bronze", "Silver", "Gold", "FirstLend", "ReliableBorrower", "GenerousLender", "PerfectRecord", "CommunityBuilder"
             awardedAt: ISODate
         }
-    ]
+    ],
+    consecutiveOnTimeReturns: int,  // NEW: Track consecutive on-time returns for PerfectRecord badge
+    invitedBy: ObjectId  // NEW: Track who invited this user for CommunityBuilder badge (nullable)
 }
 ```
 
@@ -408,6 +444,9 @@ Test cases:
 - `AwardBorrowPointsAsync_IncreasesScoreByOne_AndCreatesHistoryEntry`
 - `AwardOnTimeReturnPointsAsync_IncreasesScoreByOne_WhenReturnedOnTime`
 - `AwardOnTimeReturnPointsAsync_DoesNotAwardPoints_WhenReturnedLate`
+- `AwardOnTimeReturnPointsAsync_IncrementsConsecutiveOnTimeReturns_WhenOnTime`
+- `AwardOnTimeReturnPointsAsync_ResetsConsecutiveOnTimeReturns_WhenLate`
+- `AwardOnTimeReturnPointsAsync_AwardsPerfectRecordBadge_After25ConsecutiveOnTimeReturns`
 - `AwardLendPointsAsync_IncreaseScoreByFour_AndCreatesHistoryEntry`
 - `ReverseLendPointsAsync_DecreasesScoreByFour_ButNotBelowZero`
 - `GetUserScoreAsync_ReturnsCurrentScore`
@@ -420,6 +459,11 @@ Test cases:
 - `AwardLendPointsAsync_DoesNotAwardFirstLendBadge_OnSubsequentLends`
 - `AwardOnTimeReturnPointsAsync_AwardsReliableBorrowerBadge_After10OnTimeReturns`
 - `AwardOnTimeReturnPointsAsync_DoesNotAwardReliableBorrowerBadge_BeforeThreshold`
+- `RecordCompletedLendingTransactionAsync_AwardsGenerousLenderBadge_After50Transactions`
+- `RecordCompletedLendingTransactionAsync_DoesNotAwardGenerousLenderBadge_BeforeThreshold`
+- `GetCompletedLendingTransactionCountAsync_ReturnsCorrectCount`
+- `GetActiveInvitedUsersCountAsync_ReturnsCorrectCount`
+- `CompleteRequestAsync_AwardsCommunityBuilderBadge_WhenInviterHas10ActiveInvitees`
 - `GetUserBadgesAsync_ReturnsAllEarnedBadges_IncludingAchievements`
 - `GetOnTimeReturnCountAsync_ReturnsCorrectCount`
 
@@ -430,6 +474,8 @@ Test cases:
 - `CompleteRequestAsync_AwardsBorrowPoints_ToRequester`
 - `CompleteRequestAsync_AwardsOnTimeReturnPoints_WhenReturnedOnTime`
 - `CompleteRequestAsync_DoesNotAwardOnTimePoints_WhenReturnedLate`
+- `CompleteRequestAsync_RecordsCompletedLendingTransaction_ForOwner`
+- `CompleteRequestAsync_ChecksCommunityBuilderBadge_WhenBorrowerWasInvited`
 - `CancelRequestAsync_ReversesLendPoints_WhenRequestWasApproved`
 
 #### UserControllerTests.cs
@@ -484,9 +530,12 @@ Test cases:
 
 Test the complete flow:
 1. User A approves a borrow request → User A gains 4 points
-2. User B completes the request on time → User B gains 2 points (1 for borrow + 1 for on-time)
-3. User B completes the request late → User B gains 1 point (only borrow, no on-time bonus)
+2. User B completes the request on time → User B gains 2 points (1 for borrow + 1 for on-time), consecutive on-time returns increments
+3. User B completes the request late → User B gains 1 point (only borrow, no on-time bonus), consecutive on-time returns resets to 0
 4. User A cancels an approved request → User A loses 4 points (but not below 0)
+5. User A completes 50 lending transactions → User A earns GenerousLender badge
+6. User B completes 25 consecutive on-time returns → User B earns PerfectRecord badge
+7. User C invites 10 users who each complete at least one transaction → User C earns CommunityBuilder badge
 
 ## Implementation Notes
 
@@ -542,20 +591,44 @@ Test the complete flow:
 3. **Score Manipulation**: Only ItemRequestService can modify scores, not direct API calls
 4. **Audit Trail**: ScoreHistory provides tamper-evident record of all changes
 
+## Integration Requirements
+
+### Loop Invitation System Integration
+
+The CommunityBuilder badge requires integration with the existing loop invitation system:
+
+**Required Changes**:
+1. When a user accepts a loop invitation, set the `User.InvitedBy` field to the inviter's user ID
+2. The invitation system should track which user sent each invitation
+3. When a user completes their first transaction (as borrower or lender), trigger a check for the CommunityBuilder badge for their inviter
+
+**Existing System Analysis Needed**:
+- Review current loop invitation implementation (LoopInvitationService)
+- Determine how invitations are tracked and accepted
+- Identify where to set the `InvitedBy` field during user registration/invitation acceptance
+- Ensure invitation tracking persists through the user registration flow
+
+**Alternative Approach** (if invitation system doesn't track inviter):
+- Add an `inviterId` parameter to the invitation acceptance flow
+- Store invitation records with inviter information
+- Populate `User.InvitedBy` when user accepts invitation
+
 ## Migration Strategy
 
 ### Database Migration
 
-1. Add `loopScore`, `scoreHistory`, and `badges` fields to existing User documents
-2. Initialize all existing users with `loopScore: 0`, `scoreHistory: []`, and `badges: []`
+1. Add `loopScore`, `scoreHistory`, `badges`, `consecutiveOnTimeReturns`, and `invitedBy` fields to existing User documents
+2. Initialize all existing users with `loopScore: 0`, `scoreHistory: []`, `badges: []`, `consecutiveOnTimeReturns: 0`, and `invitedBy: null`
 3. Optionally: Calculate historical scores from completed ItemRequests and award appropriate badges (one-time script)
+4. **Important**: The `invitedBy` field requires integration with the existing loop invitation system to populate correctly for new users
 
 ### Rollout Plan
 
-1. **Phase 1**: Deploy backend changes with score calculation and badge awards
+1. **Phase 1**: Deploy backend changes with score calculation and badge awards (excluding CommunityBuilder badge)
 2. **Phase 2**: Deploy frontend score display components
 3. **Phase 3**: Add score history and badge display to user profiles
-4. **Phase 4**: (Future) Add leaderboards and additional achievements
+4. **Phase 4**: Integrate with loop invitation system and enable CommunityBuilder badge
+5. **Phase 5**: (Future) Add leaderboards and additional achievements
 
 ## Badge Award Logic
 
@@ -569,6 +642,9 @@ Test the complete flow:
 
 - **FirstLend Badge**: Awarded when user completes their first lending transaction (first time AwardLendPointsAsync is called)
 - **ReliableBorrower Badge**: Awarded when user completes 10 on-time returns (tracked via ScoreHistory entries with actionType "OnTimeReturn")
+- **GenerousLender Badge**: Awarded when user completes 50 lending transactions (tracked by counting ItemRequests that reach "Completed" status where user is the owner)
+- **PerfectRecord Badge**: Awarded when user completes 25 consecutive on-time returns without any late returns (tracked via User.ConsecutiveOnTimeReturns field)
+- **CommunityBuilder Badge**: Awarded when 10 users invited by the user each complete at least one transaction as borrower or lender (tracked via User.InvitedBy field)
 
 ### Award Rules
 
@@ -594,19 +670,66 @@ Test the complete flow:
 **For Achievement Badges**:
 1. **FirstLend**: Check if user already has FirstLend badge; if not, award it when AwardLendPointsAsync is called
 2. **ReliableBorrower**: Count ScoreHistory entries with actionType "OnTimeReturn"; if count reaches 10 and badge not yet awarded, award it
-3. Use atomic MongoDB operations to prevent duplicate awards
-4. Send email notification for each badge awarded
+3. **GenerousLender**: Count completed lending transactions (via RecordCompletedLendingTransactionAsync); if count reaches 50 and badge not yet awarded, award it
+4. **PerfectRecord**: Track User.ConsecutiveOnTimeReturns field; increment on on-time returns, reset on late returns; if count reaches 25 and badge not yet awarded, award it
+5. **CommunityBuilder**: When a user completes their first transaction, check if they were invited (User.InvitedBy is set); if so, count how many active invited users the inviter has; if count reaches 10 and badge not yet awarded, award it to the inviter
+6. Use atomic MongoDB operations to prevent duplicate awards
+7. Send email notification for each badge awarded
+
+## Design Rationale for New Achievement Badges
+
+### Generous Lender Badge (50 Lending Transactions)
+
+**Purpose**: Recognize users who consistently share their items with the community over time.
+
+**Design Decision**: Track completed lending transactions separately from lending approvals because:
+- Approvals can be cancelled before the item is actually lent
+- Completed transactions represent actual sharing behavior
+- This metric better reflects sustained generosity
+
+**Implementation**: Use a separate tracking method `RecordCompletedLendingTransactionAsync` called when ItemRequest reaches "Completed" status, counting transactions where the user is the owner.
+
+### Perfect Record Badge (25 Consecutive On-Time Returns)
+
+**Purpose**: Recognize borrowers who consistently return items on time, building trust in the community.
+
+**Design Decision**: Track consecutive on-time returns rather than total on-time returns because:
+- Consecutive tracking emphasizes sustained reliability
+- Resets on late returns to maintain high standards
+- Creates a more challenging and meaningful achievement
+- Encourages users to maintain their streak
+
+**Implementation**: Add `ConsecutiveOnTimeReturns` field to User model, increment on each on-time return, reset to zero on late returns. This approach is more efficient than counting ScoreHistory entries and provides real-time tracking.
+
+### Community Builder Badge (10 Active Invited Users)
+
+**Purpose**: Recognize users who grow the platform by inviting new members who become active participants.
+
+**Design Decision**: Require invited users to complete at least one transaction because:
+- Ensures invited users are genuinely engaged, not just registered
+- Rewards quality invitations over quantity
+- Aligns with platform goal of active participation
+- Prevents gaming the system with inactive accounts
+
+**Implementation**: Add `InvitedBy` field to User model to track invitation relationships. When a user completes their first transaction, check if they were invited and potentially award CommunityBuilder badge to the inviter. This requires integration with the existing loop invitation system.
+
+**Integration Considerations**:
+- The `InvitedBy` field should be set when a user accepts a loop invitation
+- Existing invitation system may need updates to track the inviter
+- Badge check should occur on first completed transaction (as either borrower or lender)
+- Count active invited users by querying users where `InvitedBy` matches the inviter's ID and they have at least one ScoreHistory entry
 
 ## Future Enhancements
 
 - **Leaderboards**: Display top scorers within each loop
 - **Additional Milestone Badges**: Platinum badge at 250 points, Diamond at 500 points
 - **More Achievement Badges**: 
-  - "Generous Lender" for 50 lending transactions
-  - "Perfect Record" for 25 consecutive on-time returns
-  - "Community Builder" for inviting 10 users who complete transactions
+  - "Super Lender" for 100 lending transactions
+  - "Legendary Borrower" for 50 consecutive on-time returns
+  - "Community Champion" for inviting 25 active users
 - **Streak Bonuses**: Extra points for consecutive on-time returns
 - **Decay System**: Reduce points over time to encourage ongoing participation
 - **Custom Point Values**: Allow loop admins to configure point values
 - **Badge Showcase**: Allow users to feature their favorite badge on their profile
 - **Badge Notifications**: Push notifications when badges are earned
+- **Badge Rarity Display**: Show how many users have earned each badge

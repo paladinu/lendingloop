@@ -1829,4 +1829,406 @@ public class ItemRequestServiceTests
         _mockLoopScoreService.Verify(s => s.ReverseLendPointsAsync(ownerId, requestId, itemName), Times.Once);
     }
 
+    [Fact]
+    public async Task CompleteRequestAsync_CallsRecordCompletedLendingTransactionAsync_ForOwner()
+    {
+        //arrange
+        var requestId = "request123";
+        var ownerId = "owner123";
+        var requesterId = "requester123";
+        var itemId = "item123";
+        var itemName = "Test Item";
+
+        var request = new ItemRequest
+        {
+            Id = requestId,
+            ItemId = itemId,
+            RequesterId = requesterId,
+            OwnerId = ownerId,
+            Status = RequestStatus.Approved,
+            ExpectedReturnDate = DateTime.UtcNow.AddDays(7)
+        };
+
+        var item = new SharedItem
+        {
+            Id = itemId,
+            Name = itemName,
+            UserId = ownerId,
+            Description = "Test Description",
+            IsAvailable = true,
+            VisibleToLoopIds = new List<string>(),
+            VisibleToAllLoops = false,
+            VisibleToFutureLoops = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var requester = new User
+        {
+            Id = requesterId,
+            Email = "requester@example.com",
+            FirstName = "Requester",
+            LastName = "User",
+            InvitedBy = null
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<ItemRequest>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<ItemRequest> { request });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<FindOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<UpdateDefinition<ItemRequest>>(),
+                It.IsAny<FindOneAndUpdateOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(new ItemRequest
+            {
+                Id = requestId,
+                ItemId = itemId,
+                RequesterId = requesterId,
+                OwnerId = ownerId,
+                Status = RequestStatus.Completed,
+                CompletedAt = DateTime.UtcNow,
+                ExpectedReturnDate = DateTime.UtcNow.AddDays(7)
+            });
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockItemsService.Setup(s => s.UpdateItemAvailabilityAsync(itemId, true)).ReturnsAsync(item);
+        _mockUserService.Setup(s => s.GetUserByIdAsync(requesterId)).ReturnsAsync(requester);
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(requesterId, 1000)).ReturnsAsync(new List<ScoreHistoryEntry>());
+
+        //act
+        await _service.CompleteRequestAsync(requestId, ownerId);
+
+        //assert
+        _mockLoopScoreService.Verify(s => s.RecordCompletedLendingTransactionAsync(ownerId, requestId, itemName), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteRequestAsync_ChecksForCommunityBuilderBadge_WhenRequesterWasInvited()
+    {
+        //arrange
+        var requestId = "request123";
+        var ownerId = "owner123";
+        var requesterId = "requester123";
+        var inviterId = "inviter123";
+        var itemId = "item123";
+        var itemName = "Test Item";
+
+        var request = new ItemRequest
+        {
+            Id = requestId,
+            ItemId = itemId,
+            RequesterId = requesterId,
+            OwnerId = ownerId,
+            Status = RequestStatus.Approved,
+            ExpectedReturnDate = DateTime.UtcNow.AddDays(7)
+        };
+
+        var item = new SharedItem
+        {
+            Id = itemId,
+            Name = itemName,
+            UserId = ownerId,
+            Description = "Test Description",
+            IsAvailable = true,
+            VisibleToLoopIds = new List<string>(),
+            VisibleToAllLoops = false,
+            VisibleToFutureLoops = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var requester = new User
+        {
+            Id = requesterId,
+            Email = "requester@example.com",
+            FirstName = "Requester",
+            LastName = "User",
+            InvitedBy = inviterId
+        };
+
+        var inviter = new User
+        {
+            Id = inviterId,
+            Email = "inviter@example.com",
+            FirstName = "Inviter",
+            LastName = "User",
+            LoopScore = 50
+        };
+
+        // This is the requester's first transaction (only borrow points just awarded)
+        var scoreHistory = new List<ScoreHistoryEntry>
+        {
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Points = 1,
+                ActionType = ScoreActionType.BorrowCompleted,
+                ItemRequestId = requestId,
+                ItemName = itemName
+            }
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<ItemRequest>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<ItemRequest> { request });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<FindOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<UpdateDefinition<ItemRequest>>(),
+                It.IsAny<FindOneAndUpdateOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(new ItemRequest
+            {
+                Id = requestId,
+                ItemId = itemId,
+                RequesterId = requesterId,
+                OwnerId = ownerId,
+                Status = RequestStatus.Completed,
+                CompletedAt = DateTime.UtcNow,
+                ExpectedReturnDate = DateTime.UtcNow.AddDays(7)
+            });
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockItemsService.Setup(s => s.UpdateItemAvailabilityAsync(itemId, true)).ReturnsAsync(item);
+        _mockUserService.Setup(s => s.GetUserByIdAsync(requesterId)).ReturnsAsync(requester);
+        _mockUserService.Setup(s => s.GetUserByIdAsync(inviterId)).ReturnsAsync(inviter);
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(requesterId, 1000)).ReturnsAsync(scoreHistory);
+        _mockLoopScoreService.Setup(s => s.GetActiveInvitedUsersCountAsync(inviterId)).ReturnsAsync(10);
+        _mockLoopScoreService.Setup(s => s.GetUserBadgesAsync(inviterId)).ReturnsAsync(new List<BadgeAward>());
+
+        //act
+        await _service.CompleteRequestAsync(requestId, ownerId);
+
+        //assert
+        _mockLoopScoreService.Verify(s => s.GetActiveInvitedUsersCountAsync(inviterId), Times.Once);
+        _mockLoopScoreService.Verify(s => s.AwardAchievementBadgeAsync(inviterId, BadgeType.CommunityBuilder), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteRequestAsync_DoesNotCheckCommunityBuilderBadge_WhenNotFirstTransaction()
+    {
+        //arrange
+        var requestId = "request123";
+        var ownerId = "owner123";
+        var requesterId = "requester123";
+        var inviterId = "inviter123";
+        var itemId = "item123";
+        var itemName = "Test Item";
+
+        var request = new ItemRequest
+        {
+            Id = requestId,
+            ItemId = itemId,
+            RequesterId = requesterId,
+            OwnerId = ownerId,
+            Status = RequestStatus.Approved,
+            ExpectedReturnDate = DateTime.UtcNow.AddDays(7)
+        };
+
+        var item = new SharedItem
+        {
+            Id = itemId,
+            Name = itemName,
+            UserId = ownerId,
+            Description = "Test Description",
+            IsAvailable = true,
+            VisibleToLoopIds = new List<string>(),
+            VisibleToAllLoops = false,
+            VisibleToFutureLoops = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var requester = new User
+        {
+            Id = requesterId,
+            Email = "requester@example.com",
+            FirstName = "Requester",
+            LastName = "User",
+            InvitedBy = inviterId
+        };
+
+        // Multiple transactions - not the first
+        var scoreHistory = new List<ScoreHistoryEntry>
+        {
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-5),
+                Points = 1,
+                ActionType = ScoreActionType.BorrowCompleted,
+                ItemRequestId = "oldrequest",
+                ItemName = "Old Item"
+            },
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Points = 1,
+                ActionType = ScoreActionType.BorrowCompleted,
+                ItemRequestId = requestId,
+                ItemName = itemName
+            }
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<ItemRequest>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<ItemRequest> { request });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<FindOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<UpdateDefinition<ItemRequest>>(),
+                It.IsAny<FindOneAndUpdateOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(new ItemRequest
+            {
+                Id = requestId,
+                ItemId = itemId,
+                RequesterId = requesterId,
+                OwnerId = ownerId,
+                Status = RequestStatus.Completed,
+                CompletedAt = DateTime.UtcNow,
+                ExpectedReturnDate = DateTime.UtcNow.AddDays(7)
+            });
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockItemsService.Setup(s => s.UpdateItemAvailabilityAsync(itemId, true)).ReturnsAsync(item);
+        _mockUserService.Setup(s => s.GetUserByIdAsync(requesterId)).ReturnsAsync(requester);
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(requesterId, 1000)).ReturnsAsync(scoreHistory);
+
+        //act
+        await _service.CompleteRequestAsync(requestId, ownerId);
+
+        //assert
+        _mockLoopScoreService.Verify(s => s.GetActiveInvitedUsersCountAsync(It.IsAny<string>()), Times.Never);
+        _mockLoopScoreService.Verify(s => s.AwardAchievementBadgeAsync(It.IsAny<string>(), BadgeType.CommunityBuilder), Times.Never);
+    }
+
+    [Fact]
+    public async Task CompleteRequestAsync_ResetsConsecutiveReturns_WhenReturnedLate()
+    {
+        //arrange
+        var requestId = "request123";
+        var ownerId = "owner123";
+        var requesterId = "requester123";
+        var itemId = "item123";
+        var itemName = "Test Item";
+        var expectedReturnDate = DateTime.UtcNow.AddDays(-1); // Past date
+
+        var request = new ItemRequest
+        {
+            Id = requestId,
+            ItemId = itemId,
+            RequesterId = requesterId,
+            OwnerId = ownerId,
+            Status = RequestStatus.Approved,
+            ExpectedReturnDate = expectedReturnDate
+        };
+
+        var item = new SharedItem
+        {
+            Id = itemId,
+            Name = itemName,
+            UserId = ownerId,
+            Description = "Test Description",
+            IsAvailable = true,
+            VisibleToLoopIds = new List<string>(),
+            VisibleToAllLoops = false,
+            VisibleToFutureLoops = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var requester = new User
+        {
+            Id = requesterId,
+            Email = "requester@example.com",
+            FirstName = "Requester",
+            LastName = "User",
+            InvitedBy = null
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<ItemRequest>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<ItemRequest> { request });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<FindOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        _mockRequestsCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<ItemRequest>>(),
+                It.IsAny<UpdateDefinition<ItemRequest>>(),
+                It.IsAny<FindOneAndUpdateOptions<ItemRequest, ItemRequest>>(),
+                default))
+            .ReturnsAsync(new ItemRequest
+            {
+                Id = requestId,
+                ItemId = itemId,
+                RequesterId = requesterId,
+                OwnerId = ownerId,
+                Status = RequestStatus.Completed,
+                CompletedAt = DateTime.UtcNow, // Returned late
+                ExpectedReturnDate = expectedReturnDate
+            });
+
+        _mockItemsService.Setup(s => s.GetItemByIdAsync(itemId)).ReturnsAsync(item);
+        _mockItemsService.Setup(s => s.UpdateItemAvailabilityAsync(itemId, true)).ReturnsAsync(item);
+        _mockUserService.Setup(s => s.GetUserByIdAsync(requesterId)).ReturnsAsync(requester);
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(requesterId, 1000)).ReturnsAsync(new List<ScoreHistoryEntry>());
+
+        //act
+        await _service.CompleteRequestAsync(requestId, ownerId);
+
+        //assert
+        _mockLoopScoreService.Verify(s => s.ResetConsecutiveOnTimeReturnsAsync(requesterId), Times.Once);
+    }
 }

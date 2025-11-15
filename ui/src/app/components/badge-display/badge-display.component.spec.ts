@@ -288,4 +288,118 @@ describe('BadgeDisplayComponent', () => {
         //assert
         expect(requirement).toBe('Earned by completing 10 on-time returns');
     });
+
+    it('should return correct icons for new achievement badges', () => {
+        //arrange & act
+        const generousLenderIcon = component.getBadgeIcon('GenerousLender');
+        const perfectRecordIcon = component.getBadgeIcon('PerfectRecord');
+        const communityBuilderIcon = component.getBadgeIcon('CommunityBuilder');
+
+        //assert
+        expect(generousLenderIcon).toBe('🤝');
+        expect(perfectRecordIcon).toBe('💯');
+        expect(communityBuilderIcon).toBe('🌟');
+    });
+
+    it('should return correct labels for new achievement badges', () => {
+        //arrange & act
+        const generousLenderLabel = component.getBadgeLabel('GenerousLender');
+        const perfectRecordLabel = component.getBadgeLabel('PerfectRecord');
+        const communityBuilderLabel = component.getBadgeLabel('CommunityBuilder');
+
+        //assert
+        expect(generousLenderLabel).toBe('Generous Lender');
+        expect(perfectRecordLabel).toBe('Perfect Record');
+        expect(communityBuilderLabel).toBe('Community Builder');
+    });
+
+    it('should categorize new achievement badges correctly', () => {
+        //arrange
+        const mockBadges: BadgeAward[] = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() },
+            { badgeType: 'GenerousLender', awardedAt: new Date().toISOString() },
+            { badgeType: 'PerfectRecord', awardedAt: new Date().toISOString() },
+            { badgeType: 'CommunityBuilder', awardedAt: new Date().toISOString() }
+        ];
+        component.badges = mockBadges;
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(component.milestoneBadges.length).toBe(1);
+        expect(component.achievementBadges.length).toBe(3);
+        expect(component.achievementBadges.map(b => b.badgeType)).toContain('GenerousLender');
+        expect(component.achievementBadges.map(b => b.badgeType)).toContain('PerfectRecord');
+        expect(component.achievementBadges.map(b => b.badgeType)).toContain('CommunityBuilder');
+    });
+
+    it('should display new achievement badges with correct CSS classes', () => {
+        //arrange
+        const mockBadges: BadgeAward[] = [
+            { badgeType: 'GenerousLender', awardedAt: new Date().toISOString() },
+            { badgeType: 'PerfectRecord', awardedAt: new Date().toISOString() },
+            { badgeType: 'CommunityBuilder', awardedAt: new Date().toISOString() }
+        ];
+        component.badges = mockBadges;
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const achievementBadges = fixture.nativeElement.querySelectorAll('.badge-icon.achievement');
+        expect(achievementBadges.length).toBe(3);
+        expect(achievementBadges[0].classList.contains('generous-lender')).toBe(true);
+        expect(achievementBadges[1].classList.contains('perfect-record')).toBe(true);
+        expect(achievementBadges[2].classList.contains('community-builder')).toBe(true);
+    });
+
+    it('should return correct badge description for GenerousLender', () => {
+        //arrange & act
+        const description = component.getBadgeDescription('GenerousLender');
+
+        //assert
+        expect(description).toBe('Generous Lender - Completed 50 lending transactions');
+    });
+
+    it('should return correct badge description for PerfectRecord', () => {
+        //arrange & act
+        const description = component.getBadgeDescription('PerfectRecord');
+
+        //assert
+        expect(description).toBe('Perfect Record - 25 consecutive on-time returns');
+    });
+
+    it('should return correct badge description for CommunityBuilder', () => {
+        //arrange & act
+        const description = component.getBadgeDescription('CommunityBuilder');
+
+        //assert
+        expect(description).toBe('Community Builder - 10 invited users became active');
+    });
+
+    it('should return correct badge requirement for GenerousLender', () => {
+        //arrange & act
+        const requirement = component.getBadgeRequirement('GenerousLender');
+
+        //assert
+        expect(requirement).toBe('Earned by completing 50 lending transactions');
+    });
+
+    it('should return correct badge requirement for PerfectRecord', () => {
+        //arrange & act
+        const requirement = component.getBadgeRequirement('PerfectRecord');
+
+        //assert
+        expect(requirement).toBe('Earned by achieving 25 consecutive on-time returns');
+    });
+
+    it('should return correct badge requirement for CommunityBuilder', () => {
+        //arrange & act
+        const requirement = component.getBadgeRequirement('CommunityBuilder');
+
+        //assert
+        expect(requirement).toBe('Earned when 10 invited users become active');
+    });
 });

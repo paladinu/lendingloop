@@ -12,4 +12,9 @@ public interface ILoopScoreService
     Task<List<ScoreHistoryEntry>> GetScoreHistoryAsync(string userId, int limit = 50);
     Task<List<BadgeAward>> GetUserBadgesAsync(string userId);
     Task<int> GetOnTimeReturnCountAsync(string userId);
+    Task<int> GetCompletedLendingTransactionCountAsync(string userId);
+    Task<int> GetActiveInvitedUsersCountAsync(string userId);
+    Task RecordCompletedLendingTransactionAsync(string userId, string itemRequestId, string itemName);
+    Task ResetConsecutiveOnTimeReturnsAsync(string userId);
+    Task AwardAchievementBadgeAsync(string userId, BadgeType badgeType);
 }

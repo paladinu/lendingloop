@@ -10,7 +10,12 @@ The LoopScore feature introduces a gamification system to encourage active parti
 - **User**: A registered member of the LendingLoop platform who can borrow and lend items
 - **Item Request**: A request from one user to borrow an item from another user
 - **On-Time Return**: Completion of an item request where the borrower returns the item by the agreed-upon date
+- **Late Return**: Completion of an item request where the borrower returns the item after the agreed-upon date
+- **Consecutive On-Time Returns**: A sequence of on-time returns without any late returns in between
+- **Lending Transaction**: An approved Item Request that reaches "Completed" status where the owner lent their item
 - **Loan Event**: When an item owner approves a borrow request and lends their item to another user
+- **Invited User**: A User who joined the platform through a loop invitation sent by another User
+- **Active Invited User**: An invited User who has completed at least one Item Request as either borrower or lender
 - **User Profile**: The data model containing user information including their LoopScore
 - **UI Component**: Any visual element in the Angular frontend that displays user information
 
@@ -112,3 +117,40 @@ The LoopScore feature introduces a gamification system to encourage active parti
 3. THE LoopScore System SHALL display achievement badges alongside milestone badges on the User's profile page
 4. THE LoopScore System SHALL store achievement badge awards with the timestamp when each badge was earned
 5. THE LoopScore System SHALL prevent duplicate achievement badge awards for the same accomplishment
+
+### Requirement 9
+
+**User Story:** As an active lender, I want to earn recognition for consistently sharing my items with the community, so that I feel valued for my generosity
+
+#### Acceptance Criteria
+
+1. WHEN a User completes fifty lending transactions, THE LoopScore System SHALL award a "Generous Lender" achievement badge to the User
+2. THE LoopScore System SHALL count lending transactions by tracking approved Item Requests that reach "Completed" status
+3. THE LoopScore System SHALL display the "Generous Lender" badge on the User's profile page alongside other achievement badges
+4. THE LoopScore System SHALL store the "Generous Lender" badge award with the timestamp when earned
+5. THE LoopScore System SHALL send an email notification to the User when the "Generous Lender" badge is awarded
+
+### Requirement 10
+
+**User Story:** As a reliable borrower, I want to earn recognition for my consistent on-time returns, so that other users can trust me with their valuable items
+
+#### Acceptance Criteria
+
+1. WHEN a User completes twenty-five consecutive on-time returns without any late returns, THE LoopScore System SHALL award a "Perfect Record" achievement badge to the User
+2. THE LoopScore System SHALL reset the consecutive on-time return count to zero when a User completes a late return
+3. THE LoopScore System SHALL display the "Perfect Record" badge on the User's profile page alongside other achievement badges
+4. THE LoopScore System SHALL store the "Perfect Record" badge award with the timestamp when earned
+5. THE LoopScore System SHALL send an email notification to the User when the "Perfect Record" badge is awarded
+
+### Requirement 11
+
+**User Story:** As a community builder, I want to earn recognition for growing the LendingLoop platform, so that I feel rewarded for bringing new active members to the community
+
+#### Acceptance Criteria
+
+1. WHEN ten Users invited by a User each complete at least one lending or borrowing transaction, THE LoopScore System SHALL award a "Community Builder" achievement badge to the inviting User
+2. THE LoopScore System SHALL track which User sent each invitation through the loop invitation system
+3. THE LoopScore System SHALL count an invited User as active when they complete their first Item Request as either borrower or lender
+4. THE LoopScore System SHALL display the "Community Builder" badge on the User's profile page alongside other achievement badges
+5. THE LoopScore System SHALL store the "Community Builder" badge award with the timestamp when earned
+6. THE LoopScore System SHALL send an email notification to the User when the "Community Builder" badge is awarded

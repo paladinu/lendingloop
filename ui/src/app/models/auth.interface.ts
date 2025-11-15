@@ -38,7 +38,7 @@ export interface BadgeAward {
     awardedAt: string;
 }
 
-export type BadgeType = 'Bronze' | 'Silver' | 'Gold' | 'FirstLend' | 'ReliableBorrower';
+export type BadgeType = 'Bronze' | 'Silver' | 'Gold' | 'FirstLend' | 'ReliableBorrower' | 'GenerousLender' | 'PerfectRecord' | 'CommunityBuilder';
 
 export interface VerifyEmailRequest {
     token: string;

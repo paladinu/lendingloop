@@ -296,3 +296,226 @@
   - Verify existing tests still pass
   - Fix any failing tests
   - _Requirements: 8.3_
+
+- [x] 19. Add additional achievement badge types to backend User model
+
+
+
+
+  - Update BadgeType enum in User.cs to include GenerousLender, PerfectRecord, and CommunityBuilder values
+  - Verify BSON serialization works correctly for new badge types
+  - _Requirements: 9.1, 9.4, 10.1, 10.4, 11.1, 11.4_
+
+
+- [x] 20. Add tracking fields to User model for new achievement badges
+
+
+
+  - Add consecutiveOnTimeReturns field to User.cs to track consecutive on-time returns for PerfectRecord badge
+  - Add invitedBy field to User.cs to track who invited the user for CommunityBuilder badge
+  - Add BSON attributes for MongoDB serialization
+  - _Requirements: 10.2, 11.2_
+
+
+- [x] 21. Extend ILoopScoreService interface for new achievement badges
+
+
+
+  - Add GetCompletedLendingTransactionCountAsync method signature
+  - Add GetActiveInvitedUsersCountAsync method signature
+  - Add RecordCompletedLendingTransactionAsync method signature
+  - _Requirements: 9.2, 11.2, 11.3_
+
+
+- [x] 22. Implement GenerousLender badge logic in LoopScoreService
+
+
+
+
+- [x] 22.1 Add RecordCompletedLendingTransactionAsync method
+
+
+  - Implement method to track completed lending transactions (when ItemRequest reaches Completed status and user is owner)
+  - Check if user has completed 50 lending transactions
+  - Award GenerousLender badge if threshold reached and badge not already earned
+  - Use MongoDB atomic operations ($addToSet) to prevent duplicate awards
+  - Send email notification when badge is awarded
+  - _Requirements: 9.1, 9.2, 9.4, 9.5_
+
+
+
+- [ ] 22.2 Add GetCompletedLendingTransactionCountAsync method
+
+  - Implement method to count ItemRequests with status "Completed" where user is the owner
+  - This count is separate from lending approvals
+
+  - _Requirements: 9.2_
+
+
+- [x] 23. Implement PerfectRecord badge logic in LoopScoreService
+
+
+
+- [x] 23.1 Update AwardOnTimeReturnPointsAsync to track consecutive returns
+
+
+  - Increment User.ConsecutiveOnTimeReturns field when on-time return is recorded
+  - Check if consecutive count reaches 25 and award PerfectRecord badge if not already earned
+  - Use MongoDB atomic operations to update consecutive count and award badge
+  - Send email notification when badge is awarded
+  - _Requirements: 10.1, 10.2, 10.4, 10.5_
+
+
+
+- [x] 23.2 Update AwardOnTimeReturnPointsAsync to reset consecutive count on late returns
+
+
+  - When a late return occurs (isOnTime parameter is false), reset User.ConsecutiveOnTimeReturns to zero
+  - This ensures the consecutive streak is broken by late returns
+  - _Requirements: 10.2_
+
+
+- [x] 24. Implement CommunityBuilder badge logic
+
+
+
+- [ ] 24.1 Add GetActiveInvitedUsersCountAsync method to LoopScoreService
+
+  - Implement method to count users where InvitedBy matches the given userId
+  - Filter to only count users who have at least one ScoreHistory entry (indicating they completed a transaction)
+
+  - _Requirements: 11.2, 11.3_
+
+
+- [x] 24.2 Add CommunityBuilder badge check to CompleteRequestAsync in ItemRequestService
+
+
+  - When a request is completed, check if the requester has an InvitedBy field set
+  - If so, check if this is the requester's first completed transaction (first ScoreHistory entry)
+  - If it's their first transaction, call GetActiveInvitedUsersCountAsync for the inviter
+  - If inviter has 10 active invited users and doesn't have CommunityBuilder badge, award it
+  - Send email notification to inviter when badge is awarded
+  - _Requirements: 11.1, 11.3, 11.4, 11.5, 11.6_
+
+
+- [ ] 25. Update ItemRequestService to record completed lending transactions
+
+
+  - In CompleteRequestAsync, after awarding points, call RecordCompletedLendingTransactionAsync for the owner
+  - This tracks completed lending transactions separately from approvals for GenerousLender badge
+  - _Requirements: 9.2_
+
+- [x] 26. Add unit tests for GenerousLender badge functionality
+
+
+
+
+  - Test RecordCompletedLendingTransactionAsync awards GenerousLender badge after 50 transactions
+  - Test RecordCompletedLendingTransactionAsync does not award badge before threshold
+  - Test GetCompletedLendingTransactionCountAsync returns correct count
+  - Test email is sent when GenerousLender badge is awarded
+  - Test duplicate badge awards are prevented
+  - _Requirements: 9.1, 9.2, 9.4, 9.5_
+
+
+- [ ] 27. Add unit tests for PerfectRecord badge functionality
+
+
+  - Test AwardOnTimeReturnPointsAsync increments consecutiveOnTimeReturns on each on-time return
+  - Test AwardOnTimeReturnPointsAsync resets consecutiveOnTimeReturns to zero on late returns
+  - Test AwardOnTimeReturnPointsAsync awards PerfectRecord badge after 25 consecutive on-time returns
+  - Test AwardOnTimeReturnPointsAsync does not award badge before threshold
+  - Test email is sent when PerfectRecord badge is awarded
+  - Test duplicate badge awards are prevented
+  - _Requirements: 10.1, 10.2, 10.4, 10.5_
+
+
+- [x] 28. Add unit tests for CommunityBuilder badge functionality
+
+
+
+  - Test GetActiveInvitedUsersCountAsync returns correct count of active invited users
+  - Test GetActiveInvitedUsersCountAsync only counts users with at least one ScoreHistory entry
+  - Test CompleteRequestAsync awards CommunityBuilder badge when inviter has 10 active invitees
+  - Test CompleteRequestAsync only checks for badge on invitee's first completed transaction
+  - Test email is sent to inviter when CommunityBuilder badge is awarded
+  - Test duplicate badge awards are prevented
+  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
+
+
+- [ ] 29. Update ItemRequestServiceTests for new LoopScoreService calls
+
+
+  - Test CompleteRequestAsync calls RecordCompletedLendingTransactionAsync for owner
+  - Test CompleteRequestAsync checks for CommunityBuilder badge when requester was invited
+  - _Requirements: 9.2, 11.3_
+
+
+- [x] 30. Update frontend BadgeType to include new achievement badges
+
+
+
+  - Update BadgeType type union in auth.interface.ts to include 'GenerousLender', 'PerfectRecord', and 'CommunityBuilder'
+  - Verify BadgeAward interface works with new badge types
+  - _Requirements: 9.3, 10.3, 11.4_
+
+- [x] 31. Update BadgeDisplayComponent for new achievement badges
+
+
+
+
+
+- [x] 31.1 Update getBadgeIcon helper method
+
+
+  - Add icon mappings for GenerousLender (🤝), PerfectRecord (💯), and CommunityBuilder (🌟)
+  - _Requirements: 9.3, 10.3, 11.4_
+
+
+
+- [ ] 31.2 Update getBadgeLabel helper method
+
+  - Add label mappings for GenerousLender ("Generous Lender"), PerfectRecord ("Perfect Record"), and CommunityBuilder ("Community Builder")
+  - _Requirements: 9.3, 10.3, 11.4_
+
+
+
+- [ ] 31.3 Update component CSS
+
+  - Add CSS classes for .generous-lender, .perfect-record, and .community-builder
+  - Style new achievement badges consistently with existing achievement badges
+
+  - _Requirements: 9.3, 10.3, 11.4_
+
+- [x] 32. Add unit tests for new achievement badge display
+
+
+
+  - Test getBadgeIcon() returns correct icons for GenerousLender, PerfectRecord, and CommunityBuilder
+  - Test getBadgeLabel() returns correct labels for new achievement badges
+  - Test new achievement badges display with correct CSS classes
+  - Test component correctly categorizes new badges as achievement badges
+  - _Requirements: 9.3, 10.3, 11.4_
+
+
+- [x] 33. Run all backend tests and verify new achievement badge tests pass
+
+
+
+  - Execute dotnet test from /Api.Tests directory
+  - Verify all new GenerousLender, PerfectRecord, and CommunityBuilder tests pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 9.1, 9.2, 9.4, 9.5, 10.1, 10.2, 10.4, 10.5, 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
+
+
+- [x] 34. Run all frontend tests and verify new achievement badge tests pass
+
+
+
+
+  - Execute npm test from /ui directory
+  - Verify all new BadgeDisplayComponent tests for new badges pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 9.3, 10.3, 11.4_

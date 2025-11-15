@@ -50,6 +50,13 @@ public class User
     
     [BsonElement("badges")]
     public List<BadgeAward> Badges { get; set; } = new();
+    
+    [BsonElement("consecutiveOnTimeReturns")]
+    public int ConsecutiveOnTimeReturns { get; set; } = 0;
+    
+    [BsonElement("invitedBy")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? InvitedBy { get; set; }
 }
 
 public class BadgeAward
@@ -71,7 +78,10 @@ public enum BadgeType
     
     // Achievement badges
     FirstLend,           // First lending transaction
-    ReliableBorrower     // 10 on-time returns
+    ReliableBorrower,    // 10 on-time returns
+    GenerousLender,      // 50 completed lending transactions
+    PerfectRecord,       // 25 consecutive on-time returns
+    CommunityBuilder     // 10 active invited users
 }
 
 public class ScoreHistoryEntry

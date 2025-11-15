@@ -366,11 +366,51 @@ public class ItemRequestService : IItemRequestService
                     {
                         await _loopScoreService.AwardOnTimeReturnPointsAsync(request.RequesterId, requestId, item.Name);
                     }
+                    else
+                    {
+                        // Late return - reset consecutive on-time returns
+                        await _loopScoreService.ResetConsecutiveOnTimeReturnsAsync(request.RequesterId);
+                    }
                 }
                 else
                 {
                     // If no expected return date, consider it on-time
                     await _loopScoreService.AwardOnTimeReturnPointsAsync(request.RequesterId, requestId, item.Name);
+                }
+                
+                // Record completed lending transaction for owner (for GenerousLender badge)
+                await _loopScoreService.RecordCompletedLendingTransactionAsync(request.OwnerId, requestId, item.Name);
+                
+                // Check for CommunityBuilder badge for inviter
+                var requester = await _userService.GetUserByIdAsync(request.RequesterId);
+                if (requester != null && !string.IsNullOrEmpty(requester.InvitedBy))
+                {
+                    // Check if this is the requester's first completed transaction
+                    var requesterScoreHistory = await _loopScoreService.GetScoreHistoryAsync(request.RequesterId, 1000);
+                    var isFirstTransaction = requesterScoreHistory.Count == 1; // Only the borrow points just awarded
+                    
+                    if (isFirstTransaction)
+                    {
+                        // Check if inviter qualifies for CommunityBuilder badge
+                        var activeInvitedUsersCount = await _loopScoreService.GetActiveInvitedUsersCountAsync(requester.InvitedBy);
+                        
+                        if (activeInvitedUsersCount >= 10)
+                        {
+                            // Award CommunityBuilder badge to inviter
+                            var inviter = await _userService.GetUserByIdAsync(requester.InvitedBy);
+                            if (inviter != null)
+                            {
+                                var inviterBadges = await _loopScoreService.GetUserBadgesAsync(requester.InvitedBy);
+                                var hasCommunityBuilderBadge = inviterBadges.Any(b => b.BadgeType == BadgeType.CommunityBuilder);
+                                
+                                if (!hasCommunityBuilderBadge)
+                                {
+                                    // Award the badge through a dedicated method
+                                    await AwardCommunityBuilderBadgeAsync(requester.InvitedBy, inviter);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -599,5 +639,20 @@ public class ItemRequestService : IItemRequestService
         }
 
         return enrichedRequests;
+    }
+
+    private async Task AwardCommunityBuilderBadgeAsync(string inviterId, User inviter)
+    {
+        try
+        {
+            _logger.LogInformation("Awarding CommunityBuilder badge to user {UserId}", inviterId);
+            
+            // Award the badge using LoopScoreService
+            await _loopScoreService.AwardAchievementBadgeAsync(inviterId, BadgeType.CommunityBuilder);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error awarding CommunityBuilder badge to user {UserId}", inviterId);
+        }
     }
 }

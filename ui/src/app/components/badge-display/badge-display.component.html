@@ -30,6 +30,9 @@
                     <span class="badge-icon achievement"
                           [class.first-lend]="badge.badgeType === 'FirstLend'"
                           [class.reliable-borrower]="badge.badgeType === 'ReliableBorrower'"
+                          [class.generous-lender]="badge.badgeType === 'GenerousLender'"
+                          [class.perfect-record]="badge.badgeType === 'PerfectRecord'"
+                          [class.community-builder]="badge.badgeType === 'CommunityBuilder'"
                           [attr.aria-label]="getBadgeDescription(badge.badgeType)"
                           [title]="getBadgeDescription(badge.badgeType)">
                         {{ getBadgeIcon(badge.badgeType) }}

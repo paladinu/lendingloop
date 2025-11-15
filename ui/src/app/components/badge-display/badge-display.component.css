@@ -77,6 +77,19 @@
     filter: sepia(1) saturate(3) hue-rotate(40deg) brightness(1.1);
 }
 
+.badge-icon.generous-lender {
+    /* Handshake icon styling */
+}
+
+.badge-icon.perfect-record {
+    /* 100 emoji styling */
+}
+
+.badge-icon.community-builder {
+    /* Star icon styling */
+    filter: sepia(1) saturate(3) hue-rotate(40deg) brightness(1.2);
+}
+
 .badge-details {
     flex: 1;
     display: flex;
