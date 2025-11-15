@@ -106,7 +106,8 @@ public class AuthController : ControllerBase
                     FirstName = createdUser.FirstName,
                     LastName = createdUser.LastName,
                     StreetAddress = createdUser.StreetAddress,
-                    IsEmailVerified = createdUser.IsEmailVerified
+                    IsEmailVerified = createdUser.IsEmailVerified,
+                    LoopScore = createdUser.LoopScore
                 }
             });
         }
@@ -193,7 +194,8 @@ public class AuthController : ControllerBase
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     StreetAddress = user.StreetAddress,
-                    IsEmailVerified = user.IsEmailVerified
+                    IsEmailVerified = user.IsEmailVerified,
+                    LoopScore = user.LoopScore
                 }
             });
         }
@@ -240,7 +242,8 @@ public class AuthController : ControllerBase
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     StreetAddress = user.StreetAddress,
-                    IsEmailVerified = user.IsEmailVerified
+                    IsEmailVerified = user.IsEmailVerified,
+                    LoopScore = user.LoopScore
                 }
             });
         }
@@ -304,7 +307,8 @@ public class AuthController : ControllerBase
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 StreetAddress = user.StreetAddress,
-                IsEmailVerified = user.IsEmailVerified
+                IsEmailVerified = user.IsEmailVerified,
+                LoopScore = user.LoopScore
             });
         }
         catch (Exception ex)

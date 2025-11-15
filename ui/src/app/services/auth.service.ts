@@ -77,6 +77,15 @@ export class AuthService {
         return this.currentUser$;
     }
 
+    refreshCurrentUser(): Observable<UserProfile> {
+        return this.http.get<UserProfile>(`${this.API_URL}/me`).pipe(
+            tap(user => {
+                localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+                this.currentUserSubject.next(user);
+            })
+        );
+    }
+
     isAuthenticated(): boolean {
         const token = this.getToken();
         console.log('AuthService - checking authentication, token exists:', !!token);

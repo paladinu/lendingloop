@@ -11,4 +11,5 @@ export interface SharedItem {
     createdAt: Date;
     updatedAt: Date;
     ownerName?: string;
+    ownerScore?: number;
 }

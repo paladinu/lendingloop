@@ -57,7 +57,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Requested by</span>
-                            <span class="info-value">{{ request.requesterName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.requesterName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.requesterLoopScore !== undefined" 
+                                    [score]="request.requesterLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">
@@ -115,7 +122,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Borrowed by</span>
-                            <span class="info-value">{{ request.requesterName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.requesterName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.requesterLoopScore !== undefined" 
+                                    [score]="request.requesterLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">

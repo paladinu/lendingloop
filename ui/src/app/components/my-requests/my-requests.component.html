@@ -61,7 +61,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Owner</span>
-                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.ownerName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.ownerLoopScore !== undefined" 
+                                    [score]="request.ownerLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">
@@ -125,7 +132,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Owner</span>
-                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.ownerName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.ownerLoopScore !== undefined" 
+                                    [score]="request.ownerLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">
@@ -179,7 +193,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Owner</span>
-                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.ownerName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.ownerLoopScore !== undefined" 
+                                    [score]="request.ownerLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">
@@ -233,7 +254,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Owner</span>
-                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.ownerName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.ownerLoopScore !== undefined" 
+                                    [score]="request.ownerLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">
@@ -287,7 +315,14 @@
                         <span class="info-icon">👤</span>
                         <div class="info-text">
                             <span class="info-label">Owner</span>
-                            <span class="info-value">{{ request.ownerName || 'User' }}</span>
+                            <span class="info-value">
+                                {{ request.ownerName || 'User' }}
+                                <app-loop-score-display 
+                                    *ngIf="request.ownerLoopScore !== undefined" 
+                                    [score]="request.ownerLoopScore" 
+                                    size="small">
+                                </app-loop-score-display>
+                            </span>
                         </div>
                     </div>
                     <div class="date-info">

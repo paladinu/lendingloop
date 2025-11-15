@@ -1,0 +1,21 @@
+<app-toolbar></app-toolbar>
+
+<div class="profile-container">
+  <div class="profile-header">
+    <div class="user-avatar">
+      <span class="avatar-icon">{{ getUserDisplayName().charAt(0).toUpperCase() }}</span>
+    </div>
+    <div class="user-details">
+      <h1 class="user-name">
+        {{ getUserDisplayName() }}
+        <app-loop-score-display *ngIf="currentUser && currentUser.loopScore !== undefined" [score]="currentUser.loopScore" size="large"></app-loop-score-display>
+      </h1>
+      <p class="user-email">{{ currentUser?.email }}</p>
+      <p class="user-address" *ngIf="currentUser && currentUser.streetAddress">{{ currentUser.streetAddress }}</p>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <app-score-history></app-score-history>
+  </div>
+</div>

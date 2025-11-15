@@ -8,12 +8,13 @@ import { Loop } from '../../models/loop.interface';
 import { SharedItem } from '../../models/shared-item.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { ItemRequestButtonComponent } from '../item-request-button/item-request-button.component';
+import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
 import { ItemRequest } from '../../models/item-request.interface';
 
 @Component({
   selector: 'app-loop-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ToolbarComponent, ItemRequestButtonComponent],
+  imports: [CommonModule, FormsModule, ToolbarComponent, ItemRequestButtonComponent, LoopScoreDisplayComponent],
   templateUrl: './loop-detail.component.html',
   styleUrls: ['./loop-detail.component.css']
 })

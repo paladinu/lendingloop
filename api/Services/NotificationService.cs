@@ -105,6 +105,23 @@ public class NotificationService : INotificationService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_notificationsCollection == null || _notificationsCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _notificationsCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Compound index on userId + createdAt for user notification queries
             var userIdCreatedAtIndexKeys = Builders<Notification>.IndexKeys
                 .Ascending(n => n.UserId)

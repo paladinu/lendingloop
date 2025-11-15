@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
+import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
 
 @Component({
   selector: 'app-item-card',
@@ -17,7 +18,8 @@ import { Loop } from '../../models/loop.interface';
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    LoopScoreDisplayComponent
   ],
   templateUrl: './item-card.component.html',
   styleUrls: ['./item-card.component.css']

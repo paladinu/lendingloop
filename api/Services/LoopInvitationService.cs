@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 using MongoDB.Driver;
 using System.Security.Cryptography;
@@ -326,6 +327,23 @@ public class LoopInvitationService : ILoopInvitationService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_invitationsCollection == null || _invitationsCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _invitationsCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Create index on loopId
             var loopIdIndexKeys = Builders<LoopInvitation>.IndexKeys.Ascending(i => i.LoopId);
             var loopIdIndexModel = new CreateIndexModel<LoopInvitation>(loopIdIndexKeys);
@@ -374,5 +392,52 @@ public class LoopInvitationService : ILoopInvitationService
         {
             _logger.LogWarning(ex, "Could not create indexes for LoopInvitations collection");
         }
+    }
+
+    public async Task<LoopInvitationResponse> EnrichLoopInvitationAsync(LoopInvitation invitation)
+    {
+        var response = new LoopInvitationResponse
+        {
+            Id = invitation.Id,
+            LoopId = invitation.LoopId,
+            InvitedByUserId = invitation.InvitedByUserId,
+            InvitedEmail = invitation.InvitedEmail,
+            InvitedUserId = invitation.InvitedUserId,
+            InvitationToken = invitation.InvitationToken,
+            Status = invitation.Status,
+            ExpiresAt = invitation.ExpiresAt,
+            CreatedAt = invitation.CreatedAt,
+            AcceptedAt = invitation.AcceptedAt
+        };
+
+        // Populate loop name
+        var loop = await _loopService.GetLoopByIdAsync(invitation.LoopId);
+        if (loop != null)
+        {
+            response.LoopName = loop.Name;
+        }
+
+        // Populate inviter name and score
+        var inviter = await _userService.GetUserByIdAsync(invitation.InvitedByUserId);
+        if (inviter != null)
+        {
+            response.InvitedByUserName = $"{inviter.FirstName} {inviter.LastName}".Trim();
+            response.InvitedByUserLoopScore = inviter.LoopScore;
+        }
+
+        return response;
+    }
+
+    public async Task<List<LoopInvitationResponse>> EnrichLoopInvitationsAsync(List<LoopInvitation> invitations)
+    {
+        var enrichedInvitations = new List<LoopInvitationResponse>();
+        
+        foreach (var invitation in invitations)
+        {
+            var enriched = await EnrichLoopInvitationAsync(invitation);
+            enrichedInvitations.Add(enriched);
+        }
+
+        return enrichedInvitations;
     }
 }

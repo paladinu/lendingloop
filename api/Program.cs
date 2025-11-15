@@ -137,6 +137,9 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
     // Register Notification Service
     builder.Services.AddScoped<INotificationService, NotificationService>();
     
+    // Register LoopScore Service
+    builder.Services.AddScoped<ILoopScoreService, LoopScoreService>();
+    
     // Register Database Migration Service
     builder.Services.AddScoped<DatabaseMigration>();
     

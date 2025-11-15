@@ -16,6 +16,11 @@
     text-align: center;
 }
 
+/* Score section */
+.score-section {
+    margin-bottom: 40px;
+}
+
 /* Items section */
 .items-section {
     margin-top: 40px;

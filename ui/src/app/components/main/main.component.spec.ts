@@ -60,7 +60,8 @@ describe('MainComponent', () => {
     } as unknown as jest.Mocked<ItemsService>;
 
     const authServiceMock = {
-      getCurrentUser: jest.fn()
+      getCurrentUser: jest.fn(),
+      refreshCurrentUser: jest.fn()
     } as unknown as jest.Mocked<AuthService>;
 
     const loopServiceMock = {
@@ -99,6 +100,7 @@ describe('MainComponent', () => {
     router = TestBed.inject(Router) as jest.Mocked<Router>;
 
     authService.getCurrentUser.mockReturnValue(of(mockUser));
+    authService.refreshCurrentUser.mockReturnValue(of(mockUser));
     itemsService.getItems.mockReturnValue(of(mockItems));
     loopService.getUserLoops.mockReturnValue(of(mockLoops));
     

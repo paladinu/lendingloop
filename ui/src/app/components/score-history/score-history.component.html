@@ -1,0 +1,49 @@
+<div class="score-history-container">
+    <div class="score-rules-section">
+        <h3>How to Earn Points</h3>
+        <div class="rules-list">
+            <div class="rule-item">
+                <span class="rule-icon">📦</span>
+                <span class="rule-text">Borrow an item: <strong>+{{ scoreRules.borrowCompleted }} point</strong></span>
+            </div>
+            <div class="rule-item">
+                <span class="rule-icon">✅</span>
+                <span class="rule-text">Return on time: <strong>+{{ scoreRules.onTimeReturn }} point</strong></span>
+            </div>
+            <div class="rule-item">
+                <span class="rule-icon">🤝</span>
+                <span class="rule-text">Lend an item: <strong>+{{ scoreRules.lendApproved }} points</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="history-section">
+        <h3>Your Score History</h3>
+
+        <div *ngIf="loading" class="loading-state">
+            <p>Loading your score history...</p>
+        </div>
+
+        <div *ngIf="error && !loading" class="error-state">
+            <p>{{ error }}</p>
+        </div>
+
+        <div *ngIf="!loading && !error && scoreHistory.length === 0" class="empty-state">
+            <p>No activity yet. Start borrowing or lending items to earn points!</p>
+        </div>
+
+        <div *ngIf="!loading && !error && scoreHistory.length > 0" class="history-list">
+            <div *ngFor="let entry of scoreHistory" class="history-entry" [ngClass]="{'negative-points': entry.points < 0}">
+                <div class="entry-icon">{{ getActionTypeIcon(entry.actionType) }}</div>
+                <div class="entry-details">
+                    <div class="entry-action">{{ getActionTypeLabel(entry.actionType) }}</div>
+                    <div class="entry-item">{{ entry.itemName }}</div>
+                    <div class="entry-date">{{ entry.timestamp | date: 'short' }}</div>
+                </div>
+                <div class="entry-points" [ngClass]="{'positive': entry.points > 0, 'negative': entry.points < 0}">
+                    {{ entry.points > 0 ? '+' : '' }}{{ entry.points }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

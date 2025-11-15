@@ -8,4 +8,5 @@ public class UserProfile
     public string LastName { get; set; } = string.Empty;
     public string StreetAddress { get; set; } = string.Empty;
     public bool IsEmailVerified { get; set; }
+    public int LoopScore { get; set; } = 0;
 }

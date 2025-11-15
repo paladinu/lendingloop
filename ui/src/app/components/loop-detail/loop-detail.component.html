@@ -84,7 +84,14 @@
         <h3>{{ item.name }}</h3>
         <p class="item-description" *ngIf="item.description">{{ item.description }}</p>
         <div class="item-meta">
-          <span class="owner">By {{ item.ownerName || 'Unknown' }}</span>
+          <span class="owner">
+            By {{ item.ownerName || 'Unknown' }}
+            <app-loop-score-display 
+              *ngIf="item.ownerScore !== undefined" 
+              [score]="item.ownerScore" 
+              size="small">
+            </app-loop-score-display>
+          </span>
           <span class="date">{{ item.createdAt | date:'short' }}</span>
         </div>
         <div class="item-status" *ngIf="item.isAvailable">

@@ -52,6 +52,7 @@ describe('LoopDetailComponent', () => {
     mockAuthService = {
       getCurrentUserId: jest.fn().mockReturnValue('user1'),
       getCurrentUser: jest.fn().mockReturnValue(of({ id: 'user1', email: 'test@example.com', firstName: 'Test', lastName: 'User', streetAddress: '123 Test St', isEmailVerified: true })),
+      refreshCurrentUser: jest.fn().mockReturnValue(of({ id: 'user1', email: 'test@example.com', firstName: 'Test', lastName: 'User', streetAddress: '123 Test St', isEmailVerified: true })),
     } as any;
 
     mockActivatedRoute = {

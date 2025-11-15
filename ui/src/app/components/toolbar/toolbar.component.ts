@@ -10,6 +10,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserProfile } from '../../models/auth.interface';
 import { ItemRequestService } from '../../services/item-request.service';
 import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
+import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
 
 @Component({
   selector: 'app-toolbar',
@@ -22,7 +23,8 @@ import { NotificationBellComponent } from '../notification-bell/notification-bel
     MatIconModule,
     MatMenuModule,
     MatDividerModule,
-    NotificationBellComponent
+    NotificationBellComponent,
+    LoopScoreDisplayComponent
   ],
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.css']
@@ -41,6 +43,7 @@ export class ToolbarComponent implements OnInit {
   ngOnInit(): void {
     this.loadCurrentUser();
     this.loadPendingRequestCount();
+    this.refreshUserData();
   }
 
   loadCurrentUser(): void {
@@ -52,6 +55,17 @@ export class ToolbarComponent implements OnInit {
         console.error('Error loading current user:', err);
         // If we can't get the current user, redirect to login
         this.logout();
+      }
+    });
+  }
+
+  refreshUserData(): void {
+    this.authService.refreshCurrentUser().subscribe({
+      next: (user) => {
+        this.currentUser = user;
+      },
+      error: (err) => {
+        console.error('Error refreshing user data:', err);
       }
     });
   }

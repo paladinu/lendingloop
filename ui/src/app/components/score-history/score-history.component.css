@@ -1,0 +1,155 @@
+.score-history-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.score-rules-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.score-rules-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 18px;
+}
+
+.rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rule-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rule-icon {
+    font-size: 24px;
+}
+
+.rule-text {
+    color: #555;
+    font-size: 14px;
+}
+
+.rule-text strong {
+    color: #333;
+}
+
+.history-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 18px;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.error-state {
+    color: #d32f2f;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-entry {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: box-shadow 0.2s;
+}
+
+.history-entry:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.history-entry.negative-points {
+    border-left: 3px solid #d32f2f;
+}
+
+.entry-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.entry-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.entry-action {
+    font-weight: 600;
+    color: #333;
+    font-size: 15px;
+}
+
+.entry-item {
+    color: #666;
+    font-size: 13px;
+}
+
+.entry-date {
+    color: #999;
+    font-size: 12px;
+}
+
+.entry-points {
+    font-size: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
+    min-width: 50px;
+    text-align: right;
+}
+
+.entry-points.positive {
+    color: #4caf50;
+}
+
+.entry-points.negative {
+    color: #d32f2f;
+}
+
+@media (max-width: 600px) {
+    .score-history-container {
+        padding: 10px;
+    }
+
+    .history-entry {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .entry-icon {
+        font-size: 24px;
+    }
+
+    .entry-points {
+        font-size: 18px;
+        min-width: 40px;
+    }
+}

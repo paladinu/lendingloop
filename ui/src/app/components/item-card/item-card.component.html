@@ -8,6 +8,12 @@
   
   <mat-card-content>
     <div class="item-details">
+      <div class="owner-info" *ngIf="item.ownerName">
+        <span class="owner-label">Owner:</span>
+        <span class="owner-name">{{ item.ownerName }}</span>
+        <app-loop-score-display *ngIf="item.ownerScore !== undefined" [score]="item.ownerScore" size="small"></app-loop-score-display>
+      </div>
+      
       <div class="status-row">
         <mat-chip [highlighted]="item.isAvailable" class="status-chip">
           {{ item.isAvailable ? 'Available' : 'Not Available' }}

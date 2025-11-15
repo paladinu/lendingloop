@@ -25,7 +25,14 @@
     <div *ngFor="let invitation of invitations" class="invitation-card">
       <div class="invitation-content">
         <h3>{{ invitation.loopName }}</h3>
-        <p class="inviter">Invited by {{ invitation.invitedByUserName }}</p>
+        <p class="inviter">
+          Invited by {{ invitation.invitedByUserName }}
+          <app-loop-score-display 
+            *ngIf="invitation.invitedByUserLoopScore !== undefined" 
+            [score]="invitation.invitedByUserLoopScore" 
+            size="small">
+          </app-loop-score-display>
+        </p>
         <p class="date">{{ invitation.createdAt | date:'medium' }}</p>
       </div>
       <div class="invitation-actions">

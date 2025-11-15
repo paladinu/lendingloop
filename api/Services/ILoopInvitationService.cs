@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 
 namespace Api.Services;
@@ -12,4 +13,6 @@ public interface ILoopInvitationService
     Task<List<LoopInvitation>> GetPendingInvitationsForLoopAsync(string loopId);
     Task ExpireOldInvitationsAsync();
     Task DeleteInvitationsForLoopAsync(string loopId);
+    Task<LoopInvitationResponse> EnrichLoopInvitationAsync(LoopInvitation invitation);
+    Task<List<LoopInvitationResponse>> EnrichLoopInvitationsAsync(List<LoopInvitation> invitations);
 }

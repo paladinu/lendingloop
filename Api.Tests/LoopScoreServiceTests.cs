@@ -1,0 +1,279 @@
+using Api.Models;
+using Api.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
+using Moq;
+using Xunit;
+
+namespace Api.Tests;
+
+public class LoopScoreServiceTests
+{
+    private readonly Mock<IMongoDatabase> _mockDatabase;
+    private readonly Mock<IMongoCollection<User>> _mockUsersCollection;
+    private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<ILogger<LoopScoreService>> _mockLogger;
+    private readonly LoopScoreService _service;
+
+    public LoopScoreServiceTests()
+    {
+        _mockDatabase = new Mock<IMongoDatabase>();
+        _mockUsersCollection = new Mock<IMongoCollection<User>>();
+        _mockConfiguration = new Mock<IConfiguration>();
+        _mockLogger = new Mock<ILogger<LoopScoreService>>();
+
+        _mockConfiguration.Setup(c => c["MongoDB:UsersCollectionName"]).Returns("users");
+        _mockDatabase.Setup(db => db.GetCollection<User>("users", null))
+            .Returns(_mockUsersCollection.Object);
+
+        _service = new LoopScoreService(_mockDatabase.Object, _mockConfiguration.Object, _mockLogger.Object);
+    }
+
+    [Fact]
+    public async Task AwardBorrowPointsAsync_IncreasesScoreByOne_AndCreatesHistoryEntry()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var updateResult = new Mock<UpdateResult>();
+        updateResult.Setup(r => r.ModifiedCount).Returns(1);
+        
+        _mockUsersCollection
+            .Setup(c => c.UpdateOneAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<UpdateOptions>(),
+                default))
+            .ReturnsAsync(updateResult.Object);
+
+        //act
+        await _service.AwardBorrowPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockUsersCollection.Verify(c => c.UpdateOneAsync(
+            It.IsAny<FilterDefinition<User>>(),
+            It.IsAny<UpdateDefinition<User>>(),
+            It.IsAny<UpdateOptions>(),
+            default), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task AwardLendPointsAsync_IncreasesScoreByFour_AndCreatesHistoryEntry()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var updateResult = new Mock<UpdateResult>();
+        updateResult.Setup(r => r.ModifiedCount).Returns(1);
+        
+        _mockUsersCollection
+            .Setup(c => c.UpdateOneAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<UpdateOptions>(),
+                default))
+            .ReturnsAsync(updateResult.Object);
+
+        //act
+        await _service.AwardLendPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockUsersCollection.Verify(c => c.UpdateOneAsync(
+            It.IsAny<FilterDefinition<User>>(),
+            It.IsAny<UpdateDefinition<User>>(),
+            It.IsAny<UpdateOptions>(),
+            default), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ReverseLendPointsAsync_DecreasesScore_ButNotBelowZero()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var updateResult = new Mock<UpdateResult>();
+        updateResult.Setup(r => r.ModifiedCount).Returns(1);
+        
+        _mockUsersCollection
+            .Setup(c => c.UpdateOneAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<UpdateOptions>(),
+                default))
+            .ReturnsAsync(updateResult.Object);
+
+        //act
+        await _service.ReverseLendPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        // Verify that UpdateOneAsync is called twice: once for the decrement, once for ensuring minimum
+        _mockUsersCollection.Verify(c => c.UpdateOneAsync(
+            It.IsAny<FilterDefinition<User>>(),
+            It.IsAny<UpdateDefinition<User>>(),
+            It.IsAny<UpdateOptions>(),
+            default), Times.AtLeast(2));
+    }
+
+    [Fact]
+    public async Task GetUserScoreAsync_ReturnsCurrentScore()
+    {
+        //arrange
+        var userId = "user123";
+        var user = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            LoopScore = 10
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { user });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var score = await _service.GetUserScoreAsync(userId);
+
+        //assert
+        Assert.Equal(10, score);
+    }
+
+    [Fact]
+    public async Task GetUserScoreAsync_ReturnsZero_WhenUserNotFound()
+    {
+        //arrange
+        var userId = "nonexistent";
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User>());
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var score = await _service.GetUserScoreAsync(userId);
+
+        //assert
+        Assert.Equal(0, score);
+    }
+
+    [Fact]
+    public async Task GetScoreHistoryAsync_ReturnsRecentEntries_InDescendingOrder()
+    {
+        //arrange
+        var userId = "user123";
+        var history = new List<ScoreHistoryEntry>
+        {
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-2),
+                Points = 1,
+                ActionType = ScoreActionType.BorrowCompleted,
+                ItemRequestId = "req1",
+                ItemName = "Item 1"
+            },
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-1),
+                Points = 4,
+                ActionType = ScoreActionType.LendApproved,
+                ItemRequestId = "req2",
+                ItemName = "Item 2"
+            },
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Points = 1,
+                ActionType = ScoreActionType.OnTimeReturn,
+                ItemRequestId = "req3",
+                ItemName = "Item 3"
+            }
+        };
+
+        var user = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            LoopScore = 6,
+            ScoreHistory = history
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { user });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var result = await _service.GetScoreHistoryAsync(userId, 10);
+
+        //assert
+        Assert.Equal(3, result.Count);
+        Assert.Equal("Item 3", result[0].ItemName); // Most recent first
+        Assert.Equal("Item 2", result[1].ItemName);
+        Assert.Equal("Item 1", result[2].ItemName);
+    }
+
+    [Fact]
+    public async Task GetScoreHistoryAsync_ReturnsEmptyList_WhenUserNotFound()
+    {
+        //arrange
+        var userId = "nonexistent";
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User>());
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var result = await _service.GetScoreHistoryAsync(userId);
+
+        //assert
+        Assert.Empty(result);
+    }
+}

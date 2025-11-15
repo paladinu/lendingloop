@@ -26,6 +26,7 @@ describe('ItemRequestListComponent', () => {
 
         mockAuthService = {
             getCurrentUser: jest.fn().mockReturnValue(of(null)),
+            refreshCurrentUser: jest.fn().mockReturnValue(of(null)),
             logout: jest.fn()
         };
 

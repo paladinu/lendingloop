@@ -21,6 +21,7 @@ import { PublicLoopsComponent } from './components/public-loops/public-loops.com
 import { ArchivedLoopsComponent } from './components/archived-loops/archived-loops.component';
 import { LoopSettingsComponent } from './components/loop-settings/loop-settings.component';
 import { NotificationsPageComponent } from './components/notifications-page/notifications-page.component';
+import { ProfileComponent } from './components/profile/profile.component';
 
 export const routes: Routes = [
     // Authentication routes (no guard needed)
@@ -89,6 +90,13 @@ export const routes: Routes = [
     {
         path: 'notifications',
         component: NotificationsPageComponent,
+        canActivate: [AuthGuard]
+    },
+
+    // Profile route (protected)
+    {
+        path: 'profile',
+        component: ProfileComponent,
         canActivate: [AuthGuard]
     },
 

@@ -41,4 +41,38 @@ public class User
     
     [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
+    
+    [BsonElement("loopScore")]
+    public int LoopScore { get; set; } = 0;
+    
+    [BsonElement("scoreHistory")]
+    public List<ScoreHistoryEntry> ScoreHistory { get; set; } = new();
+}
+
+public class ScoreHistoryEntry
+{
+    [BsonElement("timestamp")]
+    public DateTime Timestamp { get; set; }
+    
+    [BsonElement("points")]
+    public int Points { get; set; }
+    
+    [BsonElement("actionType")]
+    [BsonRepresentation(BsonType.String)]
+    public ScoreActionType ActionType { get; set; }
+    
+    [BsonElement("itemRequestId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string ItemRequestId { get; set; } = string.Empty;
+    
+    [BsonElement("itemName")]
+    public string ItemName { get; set; } = string.Empty;
+}
+
+public enum ScoreActionType
+{
+    BorrowCompleted,
+    OnTimeReturn,
+    LendApproved,
+    LendCancelled
 }

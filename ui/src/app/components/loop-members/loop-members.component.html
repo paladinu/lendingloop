@@ -32,7 +32,10 @@
         <span class="avatar-icon">{{ getMemberDisplayName(member).charAt(0).toUpperCase() }}</span>
       </div>
       <div class="member-info">
-        <h3 class="member-name">{{ getMemberDisplayName(member) }}</h3>
+        <h3 class="member-name">
+          {{ getMemberDisplayName(member) }}
+          <app-loop-score-display *ngIf="member.loopScore !== undefined" [score]="member.loopScore" size="small"></app-loop-score-display>
+        </h3>
         <p class="member-email">{{ member.email }}</p>
       </div>
     </div>

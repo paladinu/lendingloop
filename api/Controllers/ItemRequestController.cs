@@ -63,7 +63,7 @@ public class ItemRequestController : ControllerBase
     }
 
     [HttpGet("my-requests")]
-    public async Task<ActionResult<List<ItemRequest>>> GetMyRequests()
+    public async Task<ActionResult<List<ItemRequestResponse>>> GetMyRequests()
     {
         try
         {
@@ -74,7 +74,8 @@ public class ItemRequestController : ControllerBase
             }
 
             var requests = await _itemRequestService.GetRequestsByRequesterAsync(userId);
-            return Ok(requests);
+            var enrichedRequests = await _itemRequestService.EnrichItemRequestsAsync(requests);
+            return Ok(enrichedRequests);
         }
         catch (Exception ex)
         {
@@ -83,7 +84,7 @@ public class ItemRequestController : ControllerBase
     }
 
     [HttpGet("pending")]
-    public async Task<ActionResult<List<ItemRequest>>> GetPendingRequests()
+    public async Task<ActionResult<List<ItemRequestResponse>>> GetPendingRequests()
     {
         try
         {
@@ -94,7 +95,8 @@ public class ItemRequestController : ControllerBase
             }
 
             var requests = await _itemRequestService.GetPendingRequestsByOwnerAsync(userId);
-            return Ok(requests);
+            var enrichedRequests = await _itemRequestService.EnrichItemRequestsAsync(requests);
+            return Ok(enrichedRequests);
         }
         catch (Exception ex)
         {

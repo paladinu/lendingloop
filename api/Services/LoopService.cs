@@ -503,6 +503,23 @@ public class LoopService : ILoopService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_loopsCollection == null || _loopsCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _loopsCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Create index on creatorId field
             var creatorIdIndexKeys = Builders<Loop>.IndexKeys.Ascending(l => l.CreatorId);
             var creatorIdIndexModel = new CreateIndexModel<Loop>(creatorIdIndexKeys);

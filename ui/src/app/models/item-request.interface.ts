@@ -12,7 +12,9 @@ export interface ItemRequest {
     // Populated fields for display
     itemName?: string;
     requesterName?: string;
+    requesterLoopScore?: number;
     ownerName?: string;
+    ownerLoopScore?: number;
 }
 
 export enum RequestStatus {

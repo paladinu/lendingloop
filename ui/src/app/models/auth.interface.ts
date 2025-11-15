@@ -29,6 +29,7 @@ export interface UserProfile {
     lastName: string;
     streetAddress: string;
     isEmailVerified: boolean;
+    loopScore: number;
 }
 
 export interface VerifyEmailRequest {
@@ -39,3 +40,13 @@ export interface VerificationResponse {
     message: string;
     success: boolean;
 }
+
+export interface ScoreHistoryEntry {
+    timestamp: string;
+    points: number;
+    actionType: 'BorrowCompleted' | 'OnTimeReturn' | 'LendApproved' | 'LendCancelled';
+    itemRequestId: string;
+    itemName: string;
+}
+
+export type ScoreActionType = 'BorrowCompleted' | 'OnTimeReturn' | 'LendApproved' | 'LendCancelled';

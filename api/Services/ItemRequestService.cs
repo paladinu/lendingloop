@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 using MongoDB.Driver;
 
@@ -10,6 +11,7 @@ public class ItemRequestService : IItemRequestService
     private readonly INotificationService _notificationService;
     private readonly IEmailService _emailService;
     private readonly IUserService _userService;
+    private readonly ILoopScoreService _loopScoreService;
     private readonly ILogger<ItemRequestService> _logger;
 
     public ItemRequestService(
@@ -19,6 +21,7 @@ public class ItemRequestService : IItemRequestService
         INotificationService notificationService,
         IEmailService emailService,
         IUserService userService,
+        ILoopScoreService loopScoreService,
         ILogger<ItemRequestService> logger)
     {
         var collectionName = configuration["MongoDB:ItemRequestsCollectionName"] ?? "itemrequests";
@@ -27,6 +30,7 @@ public class ItemRequestService : IItemRequestService
         _notificationService = notificationService;
         _emailService = emailService;
         _userService = userService;
+        _loopScoreService = loopScoreService;
         _logger = logger;
         
         // Ensure indexes are created when service is instantiated
@@ -179,6 +183,13 @@ public class ItemRequestService : IItemRequestService
         {
             await UpdateItemAvailabilityAsync(request.ItemId, false);
 
+            // Award lending points to owner
+            var item = await _itemsService.GetItemByIdAsync(request.ItemId);
+            if (item != null)
+            {
+                await _loopScoreService.AwardLendPointsAsync(ownerId, requestId, item.Name);
+            }
+
             // Send notifications to requester
             await SendNotificationsAsync(
                 request.RequesterId,   // recipient (requester)
@@ -254,11 +265,14 @@ public class ItemRequestService : IItemRequestService
             throw new UnauthorizedAccessException("Only the requester can cancel their request");
         }
 
-        // Verify status is pending
-        if (request.Status != RequestStatus.Pending)
+        // Verify status is pending or approved
+        if (request.Status != RequestStatus.Pending && request.Status != RequestStatus.Approved)
         {
-            throw new InvalidOperationException("Only pending requests can be cancelled");
+            throw new InvalidOperationException("Only pending or approved requests can be cancelled");
         }
+
+        // Track if request was approved before cancellation
+        var wasApproved = request.Status == RequestStatus.Approved;
 
         // Update request status
         var filter = Builders<ItemRequest>.Filter.Eq(r => r.Id, requestId);
@@ -273,9 +287,22 @@ public class ItemRequestService : IItemRequestService
 
         var updatedRequest = await _requestsCollection.FindOneAndUpdateAsync(filter, update, options);
 
-        // Send notifications to owner
+        // Handle post-cancellation actions
         if (updatedRequest != null)
         {
+            // If request was approved, reverse lending points and restore item availability
+            if (wasApproved)
+            {
+                await UpdateItemAvailabilityAsync(request.ItemId, true);
+                
+                var item = await _itemsService.GetItemByIdAsync(request.ItemId);
+                if (item != null)
+                {
+                    await _loopScoreService.ReverseLendPointsAsync(request.OwnerId, requestId, item.Name);
+                }
+            }
+
+            // Send notifications to owner
             await SendNotificationsAsync(
                 request.OwnerId,       // recipient (owner)
                 requesterId,           // related user (requester)
@@ -325,6 +352,27 @@ public class ItemRequestService : IItemRequestService
         if (updatedRequest != null)
         {
             await UpdateItemAvailabilityAsync(request.ItemId, true);
+
+            // Award borrow points to requester
+            var item = await _itemsService.GetItemByIdAsync(request.ItemId);
+            if (item != null)
+            {
+                await _loopScoreService.AwardBorrowPointsAsync(request.RequesterId, requestId, item.Name);
+
+                // Check if return is on-time and award bonus points
+                if (request.ExpectedReturnDate.HasValue)
+                {
+                    if (updatedRequest.CompletedAt <= request.ExpectedReturnDate.Value)
+                    {
+                        await _loopScoreService.AwardOnTimeReturnPointsAsync(request.RequesterId, requestId, item.Name);
+                    }
+                }
+                else
+                {
+                    // If no expected return date, consider it on-time
+                    await _loopScoreService.AwardOnTimeReturnPointsAsync(request.RequesterId, requestId, item.Name);
+                }
+            }
 
             // Send notifications to requester
             await SendNotificationsAsync(
@@ -442,6 +490,23 @@ public class ItemRequestService : IItemRequestService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_requestsCollection == null || _requestsCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _requestsCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Index on itemId for item-specific queries
             var itemIdIndexKeys = Builders<ItemRequest>.IndexKeys.Ascending(r => r.ItemId);
             var itemIdIndexModel = new CreateIndexModel<ItemRequest>(itemIdIndexKeys);
@@ -479,5 +544,60 @@ public class ItemRequestService : IItemRequestService
         {
             Console.WriteLine($"Warning: Could not create indexes for ItemRequests collection: {ex.Message}");
         }
+    }
+
+    public async Task<ItemRequestResponse> EnrichItemRequestAsync(ItemRequest request)
+    {
+        var response = new ItemRequestResponse
+        {
+            Id = request.Id,
+            ItemId = request.ItemId,
+            RequesterId = request.RequesterId,
+            OwnerId = request.OwnerId,
+            Status = request.Status,
+            Message = request.Message,
+            ExpectedReturnDate = request.ExpectedReturnDate,
+            RequestedAt = request.RequestedAt,
+            RespondedAt = request.RespondedAt,
+            CompletedAt = request.CompletedAt
+        };
+
+        // Populate item name
+        var item = await _itemsService.GetItemByIdAsync(request.ItemId);
+        if (item != null)
+        {
+            response.ItemName = item.Name;
+        }
+
+        // Populate requester name and score
+        var requester = await _userService.GetUserByIdAsync(request.RequesterId);
+        if (requester != null)
+        {
+            response.RequesterName = $"{requester.FirstName} {requester.LastName}".Trim();
+            response.RequesterLoopScore = requester.LoopScore;
+        }
+
+        // Populate owner name and score
+        var owner = await _userService.GetUserByIdAsync(request.OwnerId);
+        if (owner != null)
+        {
+            response.OwnerName = $"{owner.FirstName} {owner.LastName}".Trim();
+            response.OwnerLoopScore = owner.LoopScore;
+        }
+
+        return response;
+    }
+
+    public async Task<List<ItemRequestResponse>> EnrichItemRequestsAsync(List<ItemRequest> requests)
+    {
+        var enrichedRequests = new List<ItemRequestResponse>();
+        
+        foreach (var request in requests)
+        {
+            var enriched = await EnrichItemRequestAsync(request);
+            enrichedRequests.Add(enriched);
+        }
+
+        return enrichedRequests;
     }
 }

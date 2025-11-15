@@ -117,15 +117,24 @@ public class ItemRequestControllerTests
             new ItemRequest { Id = "req2", RequesterId = _testUserId, Status = RequestStatus.Approved }
         };
 
+        var enrichedRequests = new List<ItemRequestResponse>
+        {
+            new ItemRequestResponse { Id = "req1", RequesterId = _testUserId, Status = RequestStatus.Pending },
+            new ItemRequestResponse { Id = "req2", RequesterId = _testUserId, Status = RequestStatus.Approved }
+        };
+
         _mockItemRequestService.Setup(s => s.GetRequestsByRequesterAsync(_testUserId))
             .ReturnsAsync(expectedRequests);
+        
+        _mockItemRequestService.Setup(s => s.EnrichItemRequestsAsync(expectedRequests))
+            .ReturnsAsync(enrichedRequests);
 
         //act
         var result = await _controller.GetMyRequests();
 
         //assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedRequests = Assert.IsType<List<ItemRequest>>(okResult.Value);
+        var returnedRequests = Assert.IsType<List<ItemRequestResponse>>(okResult.Value);
         Assert.Equal(2, returnedRequests.Count);
     }
 
@@ -139,15 +148,24 @@ public class ItemRequestControllerTests
             new ItemRequest { Id = "req2", OwnerId = _testUserId, Status = RequestStatus.Pending }
         };
 
+        var enrichedRequests = new List<ItemRequestResponse>
+        {
+            new ItemRequestResponse { Id = "req1", OwnerId = _testUserId, Status = RequestStatus.Pending },
+            new ItemRequestResponse { Id = "req2", OwnerId = _testUserId, Status = RequestStatus.Pending }
+        };
+
         _mockItemRequestService.Setup(s => s.GetPendingRequestsByOwnerAsync(_testUserId))
             .ReturnsAsync(expectedRequests);
+        
+        _mockItemRequestService.Setup(s => s.EnrichItemRequestsAsync(expectedRequests))
+            .ReturnsAsync(enrichedRequests);
 
         //act
         var result = await _controller.GetPendingRequests();
 
         //assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedRequests = Assert.IsType<List<ItemRequest>>(okResult.Value);
+        var returnedRequests = Assert.IsType<List<ItemRequestResponse>>(okResult.Value);
         Assert.Equal(2, returnedRequests.Count);
         Assert.All(returnedRequests, r => Assert.Equal(RequestStatus.Pending, r.Status));
     }

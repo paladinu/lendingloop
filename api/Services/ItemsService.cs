@@ -226,6 +226,23 @@ public class ItemsService : IItemsService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_itemsCollection == null || _itemsCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _itemsCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Create index on userId field for faster user-specific queries
             var userIdIndexKeys = Builders<SharedItem>.IndexKeys.Ascending(item => item.UserId);
             var userIdIndexModel = new CreateIndexModel<SharedItem>(userIdIndexKeys);

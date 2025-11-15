@@ -147,19 +147,27 @@ public class ItemsServiceTests
 **All services and components in the `/ui` project SHOULD have corresponding unit tests.**
 
 - Test files should be named: `{component/service}.spec.ts`
-- Use Jest as the testing framework (configured in the project)
-- Mock HTTP calls and dependencies
+- **CRITICAL: ALWAYS use Jest as the testing framework - NEVER use Jasmine**
+- This project is configured for Jest, not Jasmine
+- Use Jest syntax: `jest.fn()`, `jest.spyOn()`, etc.
+- **DO NOT use Jasmine syntax**: No `jasmine.createSpy()`, `jasmine.createSpyObj()`, etc.
+- Mock HTTP calls and dependencies using Jest mocking utilities
 - Test component logic, not implementation details
 - Focus on user interactions and state changes
 - **REQUIRED**: Run `npm test` from `/ui` after implementation to verify all tests pass
 
-Example test structure:
+Example test structure (Jest syntax):
 ```typescript
 describe('ItemsService', () => {
   it('should fetch items successfully', () => {
     //arrange
+    const mockHttp = { get: jest.fn() };
+    
     //act
+    // test code here
+    
     //assert
+    expect(mockHttp.get).toHaveBeenCalled();
   });
 });
 ```

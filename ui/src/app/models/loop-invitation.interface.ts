@@ -4,6 +4,7 @@ export interface LoopInvitation {
   loopName?: string;
   invitedByUserId: string;
   invitedByUserName?: string;
+  invitedByUserLoopScore?: number;
   invitedEmail: string;
   invitedUserId?: string;
   invitationToken: string;

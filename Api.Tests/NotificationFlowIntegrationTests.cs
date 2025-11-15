@@ -98,6 +98,8 @@ public class NotificationFlowIntegrationTests
             mockNotificationLogger.Object
         );
         
+        var mockLoopScoreService = new Mock<ILoopScoreService>();
+        
         var itemRequestService = new ItemRequestService(
             mockDatabase.Object,
             mockConfiguration.Object,
@@ -105,6 +107,7 @@ public class NotificationFlowIntegrationTests
             notificationService,
             mockEmailService.Object,
             mockUserService.Object,
+            mockLoopScoreService.Object,
             mockRequestLogger.Object
         );
         
@@ -305,6 +308,8 @@ public class NotificationFlowIntegrationTests
             mockNotificationLogger.Object
         );
         
+        var mockLoopScoreService = new Mock<ILoopScoreService>();
+        
         var itemRequestService = new ItemRequestService(
             mockDatabase.Object,
             mockConfiguration.Object,
@@ -312,6 +317,7 @@ public class NotificationFlowIntegrationTests
             notificationService,
             mockEmailService.Object,
             mockUserService.Object,
+            mockLoopScoreService.Object,
             mockRequestLogger.Object
         );
         

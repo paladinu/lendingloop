@@ -75,6 +75,23 @@ public class UserService : IUserService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_usersCollection == null || _usersCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _usersCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Create unique index on email field
             var emailIndexKeys = Builders<User>.IndexKeys.Ascending(u => u.Email);
             var emailIndexOptions = new CreateIndexOptions { Unique = true };

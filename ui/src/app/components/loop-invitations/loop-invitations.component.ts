@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import { LoopService } from '../../services/loop.service';
 import { LoopInvitation } from '../../models/loop-invitation.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
 
 @Component({
   selector: 'app-loop-invitations',
   standalone: true,
-  imports: [CommonModule, ToolbarComponent],
+  imports: [CommonModule, ToolbarComponent, LoopScoreDisplayComponent],
   templateUrl: './loop-invitations.component.html',
   styleUrls: ['./loop-invitations.component.css']
 })

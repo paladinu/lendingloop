@@ -5,11 +5,12 @@ import { LoopService } from '../../services/loop.service';
 import { LoopMember } from '../../models/loop-member.interface';
 import { Loop } from '../../models/loop.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
 
 @Component({
   selector: 'app-loop-members',
   standalone: true,
-  imports: [CommonModule, ToolbarComponent],
+  imports: [CommonModule, ToolbarComponent, LoopScoreDisplayComponent],
   templateUrl: './loop-members.component.html',
   styleUrls: ['./loop-members.component.css']
 })

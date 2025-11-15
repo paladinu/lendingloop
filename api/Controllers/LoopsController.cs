@@ -188,40 +188,7 @@ public class LoopsController : ControllerBase
         try
         {
             var invitations = await _invitationService.GetPendingInvitationsForUserAsync(userId);
-            
-            // Enrich invitations with loop and inviter information
-            var enrichedInvitations = new List<object>();
-            foreach (var invitation in invitations)
-            {
-                var loop = await _loopService.GetLoopByIdAsync(invitation.LoopId);
-                var inviter = await _userService.GetUserByIdAsync(invitation.InvitedByUserId);
-                
-                var inviterName = inviter != null
-                    ? $"{inviter.FirstName} {inviter.LastName}".Trim()
-                    : "Unknown";
-
-                if (string.IsNullOrEmpty(inviterName) || inviterName == "Unknown")
-                {
-                    inviterName = inviter?.Email ?? "Unknown";
-                }
-
-                enrichedInvitations.Add(new
-                {
-                    invitation.Id,
-                    invitation.LoopId,
-                    LoopName = loop?.Name ?? "Unknown",
-                    invitation.InvitedByUserId,
-                    InvitedByUserName = inviterName,
-                    invitation.InvitedEmail,
-                    invitation.InvitedUserId,
-                    invitation.InvitationToken,
-                    invitation.Status,
-                    invitation.ExpiresAt,
-                    invitation.CreatedAt,
-                    invitation.AcceptedAt
-                });
-            }
-
+            var enrichedInvitations = await _invitationService.EnrichLoopInvitationsAsync(invitations);
             return Ok(enrichedInvitations);
         }
         catch (Exception ex)
@@ -337,7 +304,8 @@ public class LoopsController : ControllerBase
                 m.Id,
                 m.Email,
                 m.FirstName,
-                m.LastName
+                m.LastName,
+                m.LoopScore
             });
 
             return Ok(memberDtos);
@@ -405,7 +373,8 @@ public class LoopsController : ControllerBase
                     item.VisibleToFutureLoops,
                     item.CreatedAt,
                     item.UpdatedAt,
-                    OwnerName = ownerName
+                    OwnerName = ownerName,
+                    OwnerScore = owner?.LoopScore ?? 0
                 });
             }
 

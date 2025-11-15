@@ -186,6 +186,23 @@ public class LoopJoinRequestService : ILoopJoinRequestService
     {
         try
         {
+            // Skip index creation if collection is not initialized (e.g., in test scenarios)
+            if (_joinRequestsCollection == null || _joinRequestsCollection.Database == null)
+            {
+                return;
+            }
+
+            // Verify database connection before creating indexes
+            try
+            {
+                await _joinRequestsCollection.Database.ListCollectionNamesAsync();
+            }
+            catch
+            {
+                // Database not accessible, skip index creation
+                return;
+            }
+
             // Create index on loopId
             var loopIdIndexKeys = Builders<LoopJoinRequest>.IndexKeys.Ascending(r => r.LoopId);
             var loopIdIndexModel = new CreateIndexModel<LoopJoinRequest>(loopIdIndexKeys);

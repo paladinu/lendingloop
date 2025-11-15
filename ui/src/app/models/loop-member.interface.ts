@@ -3,4 +3,5 @@ export interface LoopMember {
   email: string;
   firstName: string;
   lastName: string;
+  loopScore?: number;
 }

@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ItemRequestService } from '../../services/item-request.service';
 import { ItemRequest, RequestStatus } from '../../models/item-request.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
 
 @Component({
     selector: 'app-my-requests',
     standalone: true,
-    imports: [CommonModule, ToolbarComponent],
+    imports: [CommonModule, ToolbarComponent, LoopScoreDisplayComponent],
     templateUrl: './my-requests.component.html',
     styleUrls: ['./my-requests.component.css']
 })

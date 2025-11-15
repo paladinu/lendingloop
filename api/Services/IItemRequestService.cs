@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 
 namespace Api.Services;
@@ -14,4 +15,6 @@ public interface IItemRequestService
     Task<ItemRequest?> CancelRequestAsync(string requestId, string requesterId);
     Task<ItemRequest?> CompleteRequestAsync(string requestId, string ownerId);
     Task<ItemRequest?> GetActiveRequestForItemAsync(string itemId);
+    Task<ItemRequestResponse> EnrichItemRequestAsync(ItemRequest request);
+    Task<List<ItemRequestResponse>> EnrichItemRequestsAsync(List<ItemRequest> requests);
 }
