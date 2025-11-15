@@ -49,7 +49,14 @@ export class LoginComponent {
           console.log('Is authenticated:', this.authService.isAuthenticated());
 
           // Check if there's an intended route stored by the AuthGuard
-          const intendedRoute = this.authService.getIntendedRoute();
+          let intendedRoute = this.authService.getIntendedRoute();
+          
+          // Don't redirect to login/register/auth routes after successful login
+          const publicRoutes = ['/login', '/register', '/verify-email', '/auth/login', '/auth/register', '/auth/verify-email', '/auth'];
+          if (intendedRoute && publicRoutes.some(route => intendedRoute!.startsWith(route))) {
+            console.log('Ignoring intended route (public auth route):', intendedRoute);
+            intendedRoute = null;
+          }
           
           if (intendedRoute) {
             // User was trying to access a specific route, redirect there

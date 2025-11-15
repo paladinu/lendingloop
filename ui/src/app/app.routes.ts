@@ -100,11 +100,11 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
     },
 
-    // Protected main app route
+    // Root redirect
     {
         path: '',
-        component: MainComponent,
-        canActivate: [AuthGuard]
+        redirectTo: 'loops',
+        pathMatch: 'full'
     },
 
     // Fallback route

@@ -42,11 +42,11 @@
 }
 
 .badge-icon.silver {
-    filter: grayscale(0.3) brightness(1.2);
+    filter: grayscale(1) brightness(1) contrast(1.1);
 }
 
 .badge-icon.gold {
-    filter: sepia(1) saturate(5) hue-rotate(30deg) brightness(1.1);
+    filter: sepia(1) saturate(3) hue-rotate(-10deg) brightness(1);
 }
 
 .badge-details {
