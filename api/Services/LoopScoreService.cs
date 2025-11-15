@@ -29,11 +29,21 @@ public class LoopScoreService : ILoopScoreService
     public async Task AwardOnTimeReturnPointsAsync(string userId, string itemRequestId, string itemName)
     {
         await AwardPointsAsync(userId, itemRequestId, itemName, 1, ScoreActionType.OnTimeReturn);
+        
+        // Check if user has reached 10 on-time returns for ReliableBorrower badge
+        var onTimeReturnCount = await GetOnTimeReturnCountAsync(userId);
+        if (onTimeReturnCount >= 10)
+        {
+            await CheckAndAwardAchievementBadgeAsync(userId, BadgeType.ReliableBorrower);
+        }
     }
 
     public async Task AwardLendPointsAsync(string userId, string itemRequestId, string itemName)
     {
         await AwardPointsAsync(userId, itemRequestId, itemName, 4, ScoreActionType.LendApproved);
+        
+        // Check and award FirstLend achievement badge
+        await CheckAndAwardAchievementBadgeAsync(userId, BadgeType.FirstLend);
     }
 
     public async Task ReverseLendPointsAsync(string userId, string itemRequestId, string itemName)
@@ -73,6 +83,18 @@ public class LoopScoreService : ILoopScoreService
         }
 
         return user.Badges.OrderBy(b => b.AwardedAt).ToList();
+    }
+
+    public async Task<int> GetOnTimeReturnCountAsync(string userId)
+    {
+        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        
+        if (user == null || user.ScoreHistory == null)
+        {
+            return 0;
+        }
+
+        return user.ScoreHistory.Count(entry => entry.ActionType == ScoreActionType.OnTimeReturn);
     }
 
     private async Task AwardPointsAsync(string userId, string itemRequestId, string itemName, int points, ScoreActionType actionType)
@@ -220,6 +242,64 @@ public class LoopScoreService : ILoopScoreService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking and awarding badges for user {UserId}", user?.Id);
+            // Don't throw - this is a secondary operation
+        }
+    }
+
+    private async Task CheckAndAwardAchievementBadgeAsync(string userId, BadgeType badgeType)
+    {
+        try
+        {
+            var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+            
+            if (user == null)
+            {
+                _logger.LogWarning("User {UserId} not found when checking for {BadgeType} badge", userId, badgeType);
+                return;
+            }
+
+            var existingBadges = user.Badges?.Select(b => b.BadgeType).ToHashSet() ?? new HashSet<BadgeType>();
+            
+            // Check if badge already awarded
+            if (existingBadges.Contains(badgeType))
+            {
+                _logger.LogInformation("User {UserId} already has {BadgeType} badge", userId, badgeType);
+                return;
+            }
+
+            var newBadge = new BadgeAward
+            {
+                BadgeType = badgeType,
+                AwardedAt = DateTime.UtcNow
+            };
+
+            // Use $addToSet to prevent duplicate awards atomically
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+            var update = Builders<User>.Update.AddToSet(u => u.Badges, newBadge);
+            
+            await _usersCollection.UpdateOneAsync(filter, update);
+
+            _logger.LogInformation("Awarded {BadgeType} achievement badge to user {UserId}", badgeType, userId);
+
+            // Send email notification
+            try
+            {
+                await _emailService.SendBadgeAwardEmailAsync(
+                    user.Email,
+                    $"{user.FirstName} {user.LastName}".Trim(),
+                    badgeType.ToString(),
+                    user.LoopScore
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send badge award email to user {UserId} for {BadgeType} badge", userId, badgeType);
+                // Don't throw - badge was awarded successfully, email is secondary
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error awarding {BadgeType} achievement badge to user {UserId}", badgeType, userId);
             // Don't throw - this is a secondary operation
         }
     }

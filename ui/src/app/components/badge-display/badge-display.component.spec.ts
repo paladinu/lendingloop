@@ -30,6 +30,7 @@ describe('BadgeDisplayComponent', () => {
         component.badges = mockBadges;
 
         //act
+        component.ngOnInit();
         fixture.detectChanges();
 
         //assert
@@ -47,6 +48,7 @@ describe('BadgeDisplayComponent', () => {
         component.badges = mockBadges;
 
         //act
+        component.ngOnInit();
         fixture.detectChanges();
 
         //assert
@@ -78,6 +80,7 @@ describe('BadgeDisplayComponent', () => {
         component.badges = mockBadges;
 
         //act
+        component.ngOnInit();
         fixture.detectChanges();
 
         //assert
@@ -143,6 +146,7 @@ describe('BadgeDisplayComponent', () => {
         component.badges = mockBadges;
 
         //act
+        component.ngOnInit();
         fixture.detectChanges();
 
         //assert
@@ -153,5 +157,135 @@ describe('BadgeDisplayComponent', () => {
         expect(badgeTitle.textContent).toContain('Bronze Badge');
         expect(badgeDescription.textContent).toContain('Earned by reaching 10 points');
         expect(badgeDate.textContent).toContain('Earned');
+    });
+
+    it('should categorize badges into milestone and achievement sections correctly', () => {
+        //arrange
+        const mockBadges: BadgeAward[] = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() },
+            { badgeType: 'FirstLend', awardedAt: new Date().toISOString() },
+            { badgeType: 'Silver', awardedAt: new Date().toISOString() },
+            { badgeType: 'ReliableBorrower', awardedAt: new Date().toISOString() }
+        ];
+        component.badges = mockBadges;
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(component.milestoneBadges.length).toBe(2);
+        expect(component.achievementBadges.length).toBe(2);
+        expect(component.milestoneBadges[0].badgeType).toBe('Bronze');
+        expect(component.milestoneBadges[1].badgeType).toBe('Silver');
+        expect(component.achievementBadges[0].badgeType).toBe('FirstLend');
+        expect(component.achievementBadges[1].badgeType).toBe('ReliableBorrower');
+    });
+
+    it('should return correct icons for achievement badges', () => {
+        //arrange & act
+        const firstLendIcon = component.getBadgeIcon('FirstLend');
+        const reliableBorrowerIcon = component.getBadgeIcon('ReliableBorrower');
+
+        //assert
+        expect(firstLendIcon).toBe('🎁');
+        expect(reliableBorrowerIcon).toBe('⭐');
+    });
+
+    it('should return correct labels for achievement badges', () => {
+        //arrange & act
+        const firstLendLabel = component.getBadgeLabel('FirstLend');
+        const reliableBorrowerLabel = component.getBadgeLabel('ReliableBorrower');
+
+        //assert
+        expect(firstLendLabel).toBe('First Lend');
+        expect(reliableBorrowerLabel).toBe('Reliable Borrower');
+    });
+
+    it('should display achievement badges with correct CSS classes', () => {
+        //arrange
+        const mockBadges: BadgeAward[] = [
+            { badgeType: 'FirstLend', awardedAt: new Date().toISOString() },
+            { badgeType: 'ReliableBorrower', awardedAt: new Date().toISOString() }
+        ];
+        component.badges = mockBadges;
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const achievementBadges = fixture.nativeElement.querySelectorAll('.badge-icon.achievement');
+        expect(achievementBadges.length).toBe(2);
+        expect(achievementBadges[0].classList.contains('first-lend')).toBe(true);
+        expect(achievementBadges[1].classList.contains('reliable-borrower')).toBe(true);
+    });
+
+    it('should show achievement badge section only when achievement badges exist', () => {
+        //arrange
+        const mockBadges: BadgeAward[] = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() },
+            { badgeType: 'FirstLend', awardedAt: new Date().toISOString() }
+        ];
+        component.badges = mockBadges;
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const achievementSection = fixture.nativeElement.querySelector('.achievement-badges');
+        expect(achievementSection).toBeTruthy();
+        
+        const sectionTitle = achievementSection.querySelector('.section-title');
+        expect(sectionTitle.textContent).toContain('Achievement Badges');
+    });
+
+    it('should not show achievement badge section when no achievement badges exist', () => {
+        //arrange
+        const mockBadges: BadgeAward[] = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() },
+            { badgeType: 'Silver', awardedAt: new Date().toISOString() }
+        ];
+        component.badges = mockBadges;
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const achievementSection = fixture.nativeElement.querySelector('.achievement-badges');
+        expect(achievementSection).toBeFalsy();
+    });
+
+    it('should return correct badge description for FirstLend', () => {
+        //arrange & act
+        const description = component.getBadgeDescription('FirstLend');
+
+        //assert
+        expect(description).toBe('First Lend - Completed your first lending transaction');
+    });
+
+    it('should return correct badge description for ReliableBorrower', () => {
+        //arrange & act
+        const description = component.getBadgeDescription('ReliableBorrower');
+
+        //assert
+        expect(description).toBe('Reliable Borrower - Completed 10 on-time returns');
+    });
+
+    it('should return correct badge requirement for FirstLend', () => {
+        //arrange & act
+        const requirement = component.getBadgeRequirement('FirstLend');
+
+        //assert
+        expect(requirement).toBe('Earned by completing your first lend');
+    });
+
+    it('should return correct badge requirement for ReliableBorrower', () => {
+        //arrange & act
+        const requirement = component.getBadgeRequirement('ReliableBorrower');
+
+        //assert
+        expect(requirement).toBe('Earned by completing 10 on-time returns');
     });
 });

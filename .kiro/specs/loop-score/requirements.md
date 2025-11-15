@@ -100,3 +100,15 @@ The LoopScore feature introduces a gamification system to encourage active parti
 4. THE LoopScore System SHALL display earned badges on the User's profile page
 5. THE LoopScore System SHALL store badge awards with the timestamp when each badge was earned
 6. THE LoopScore System SHALL email the user letting them know about their achievement.
+
+### Requirement 8
+
+**User Story:** As a platform user, I want to earn special achievement badges for specific accomplishments, so that I can showcase my unique contributions to the community
+
+#### Acceptance Criteria
+
+1. WHEN a User completes their first lending transaction, THE LoopScore System SHALL award a "First Lend" achievement badge to the User
+2. WHEN a User completes ten on-time returns, THE LoopScore System SHALL award a "Reliable Borrower" achievement badge to the User
+3. THE LoopScore System SHALL display achievement badges alongside milestone badges on the User's profile page
+4. THE LoopScore System SHALL store achievement badge awards with the timestamp when each badge was earned
+5. THE LoopScore System SHALL prevent duplicate achievement badge awards for the same accomplishment

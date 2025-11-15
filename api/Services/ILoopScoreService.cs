@@ -11,4 +11,5 @@ public interface ILoopScoreService
     Task<int> GetUserScoreAsync(string userId);
     Task<List<ScoreHistoryEntry>> GetScoreHistoryAsync(string userId, int limit = 50);
     Task<List<BadgeAward>> GetUserBadgesAsync(string userId);
+    Task<int> GetOnTimeReturnCountAsync(string userId);
 }

@@ -617,4 +617,463 @@ public class LoopScoreServiceTests
         //assert
         Assert.Empty(result);
     }
+
+    [Fact]
+    public async Task AwardLendPointsAsync_AwardsFirstLendBadge_OnFirstLendingTransaction()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var userAfterUpdate = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 4,
+            Badges = new List<BadgeAward>()
+        };
+
+        var userForBadgeCheck = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 4,
+            Badges = new List<BadgeAward>()
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { userForBadgeCheck });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<FindOneAndUpdateOptions<User>>(),
+                default))
+            .ReturnsAsync(userAfterUpdate);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        var updateResult = new Mock<UpdateResult>();
+        updateResult.Setup(r => r.ModifiedCount).Returns(1);
+        
+        _mockUsersCollection
+            .Setup(c => c.UpdateOneAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<UpdateOptions>(),
+                default))
+            .ReturnsAsync(updateResult.Object);
+
+        _mockEmailService
+            .Setup(e => e.SendBadgeAwardEmailAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>()))
+            .ReturnsAsync(true);
+
+        //act
+        await _service.AwardLendPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockUsersCollection.Verify(c => c.UpdateOneAsync(
+            It.IsAny<FilterDefinition<User>>(),
+            It.IsAny<UpdateDefinition<User>>(),
+            It.IsAny<UpdateOptions>(),
+            default), Times.AtLeastOnce);
+
+        _mockEmailService.Verify(e => e.SendBadgeAwardEmailAsync(
+            userAfterUpdate.Email,
+            It.IsAny<string>(),
+            "FirstLend",
+            It.IsAny<int>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AwardLendPointsAsync_DoesNotAwardFirstLendBadge_OnSubsequentLends()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var userAfterUpdate = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 8,
+            Badges = new List<BadgeAward>()
+        };
+
+        var userForBadgeCheck = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 8,
+            Badges = new List<BadgeAward>
+            {
+                new BadgeAward { BadgeType = BadgeType.FirstLend, AwardedAt = DateTime.UtcNow.AddDays(-1) }
+            }
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { userForBadgeCheck });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<FindOneAndUpdateOptions<User>>(),
+                default))
+            .ReturnsAsync(userAfterUpdate);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        _mockEmailService
+            .Setup(e => e.SendBadgeAwardEmailAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>()))
+            .ReturnsAsync(true);
+
+        //act
+        await _service.AwardLendPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockEmailService.Verify(e => e.SendBadgeAwardEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            "FirstLend",
+            It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AwardOnTimeReturnPointsAsync_AwardsReliableBorrowerBadge_After10OnTimeReturns()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        // Create 10 on-time return entries (including the one being added)
+        var scoreHistory = new List<ScoreHistoryEntry>();
+        for (int i = 0; i < 9; i++)
+        {
+            scoreHistory.Add(new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-i - 1),
+                Points = 1,
+                ActionType = ScoreActionType.OnTimeReturn,
+                ItemRequestId = $"req{i}",
+                ItemName = $"Item {i}"
+            });
+        }
+
+        // Add the current entry to reach 10 total
+        var scoreHistoryAfterUpdate = new List<ScoreHistoryEntry>(scoreHistory)
+        {
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Points = 1,
+                ActionType = ScoreActionType.OnTimeReturn,
+                ItemRequestId = itemRequestId,
+                ItemName = itemName
+            }
+        };
+
+        var userAfterUpdate = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 15,
+            ScoreHistory = scoreHistoryAfterUpdate,
+            Badges = new List<BadgeAward>
+            {
+                new BadgeAward { BadgeType = BadgeType.Bronze, AwardedAt = DateTime.UtcNow.AddDays(-5) }
+            }
+        };
+
+        var userForBadgeCheck = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 15,
+            ScoreHistory = scoreHistoryAfterUpdate,
+            Badges = new List<BadgeAward>
+            {
+                new BadgeAward { BadgeType = BadgeType.Bronze, AwardedAt = DateTime.UtcNow.AddDays(-5) }
+            }
+        };
+
+        _mockUsersCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<FindOneAndUpdateOptions<User>>(),
+                default))
+            .ReturnsAsync(userAfterUpdate);
+
+        // Setup for GetOnTimeReturnCountAsync call
+        var mockCursor1 = new Mock<IAsyncCursor<User>>();
+        mockCursor1.Setup(c => c.Current).Returns(new List<User> { userForBadgeCheck });
+        mockCursor1.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor1.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        // Setup for CheckAndAwardAchievementBadgeAsync call
+        var mockCursor2 = new Mock<IAsyncCursor<User>>();
+        mockCursor2.Setup(c => c.Current).Returns(new List<User> { userForBadgeCheck });
+        mockCursor2.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor2.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .SetupSequence(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor1.Object)
+            .ReturnsAsync(mockCursor2.Object);
+
+        var updateResult = new Mock<UpdateResult>();
+        updateResult.Setup(r => r.ModifiedCount).Returns(1);
+        
+        _mockUsersCollection
+            .Setup(c => c.UpdateOneAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<UpdateOptions>(),
+                default))
+            .ReturnsAsync(updateResult.Object);
+
+        _mockEmailService
+            .Setup(e => e.SendBadgeAwardEmailAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>()))
+            .ReturnsAsync(true);
+
+        //act
+        await _service.AwardOnTimeReturnPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockEmailService.Verify(e => e.SendBadgeAwardEmailAsync(
+            userAfterUpdate.Email,
+            It.IsAny<string>(),
+            "ReliableBorrower",
+            It.IsAny<int>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AwardOnTimeReturnPointsAsync_DoesNotAwardReliableBorrowerBadge_BeforeThreshold()
+    {
+        //arrange
+        var userId = "user123";
+        var itemRequestId = "request123";
+        var itemName = "Test Item";
+        
+        var scoreHistory = new List<ScoreHistoryEntry>();
+        for (int i = 0; i < 5; i++)
+        {
+            scoreHistory.Add(new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-i),
+                Points = 1,
+                ActionType = ScoreActionType.OnTimeReturn,
+                ItemRequestId = $"req{i}",
+                ItemName = $"Item {i}"
+            });
+        }
+
+        var userAfterUpdate = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 6,
+            ScoreHistory = scoreHistory,
+            Badges = new List<BadgeAward>()
+        };
+
+        var userForBadgeCheck = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            FirstName = "Test",
+            LastName = "User",
+            LoopScore = 6,
+            ScoreHistory = new List<ScoreHistoryEntry>(scoreHistory)
+            {
+                new ScoreHistoryEntry
+                {
+                    Timestamp = DateTime.UtcNow,
+                    Points = 1,
+                    ActionType = ScoreActionType.OnTimeReturn,
+                    ItemRequestId = itemRequestId,
+                    ItemName = itemName
+                }
+            },
+            Badges = new List<BadgeAward>()
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { userForBadgeCheck });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindOneAndUpdateAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<UpdateDefinition<User>>(),
+                It.IsAny<FindOneAndUpdateOptions<User>>(),
+                default))
+            .ReturnsAsync(userAfterUpdate);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        _mockEmailService
+            .Setup(e => e.SendBadgeAwardEmailAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>()))
+            .ReturnsAsync(true);
+
+        //act
+        await _service.AwardOnTimeReturnPointsAsync(userId, itemRequestId, itemName);
+
+        //assert
+        _mockEmailService.Verify(e => e.SendBadgeAwardEmailAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            "ReliableBorrower",
+            It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetOnTimeReturnCountAsync_ReturnsCorrectCount()
+    {
+        //arrange
+        var userId = "user123";
+        var scoreHistory = new List<ScoreHistoryEntry>
+        {
+            new ScoreHistoryEntry { ActionType = ScoreActionType.OnTimeReturn, Points = 1 },
+            new ScoreHistoryEntry { ActionType = ScoreActionType.BorrowCompleted, Points = 1 },
+            new ScoreHistoryEntry { ActionType = ScoreActionType.OnTimeReturn, Points = 1 },
+            new ScoreHistoryEntry { ActionType = ScoreActionType.LendApproved, Points = 4 },
+            new ScoreHistoryEntry { ActionType = ScoreActionType.OnTimeReturn, Points = 1 }
+        };
+
+        var user = new User
+        {
+            Id = userId,
+            Email = "test@example.com",
+            LoopScore = 8,
+            ScoreHistory = scoreHistory
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User> { user });
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(true)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var count = await _service.GetOnTimeReturnCountAsync(userId);
+
+        //assert
+        Assert.Equal(3, count);
+    }
+
+    [Fact]
+    public async Task GetOnTimeReturnCountAsync_ReturnsZero_WhenUserNotFound()
+    {
+        //arrange
+        var userId = "nonexistent";
+
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<User>());
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        _mockUsersCollection
+            .Setup(c => c.FindAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<FindOptions<User, User>>(),
+                default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var count = await _service.GetOnTimeReturnCountAsync(userId);
+
+        //assert
+        Assert.Equal(0, count);
+    }
 }

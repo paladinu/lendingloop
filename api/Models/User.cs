@@ -64,9 +64,14 @@ public class BadgeAward
 
 public enum BadgeType
 {
+    // Milestone badges
     Bronze,   // 10 points
     Silver,   // 50 points
-    Gold      // 100 points
+    Gold,     // 100 points
+    
+    // Achievement badges
+    FirstLend,           // First lending transaction
+    ReliableBorrower     // 10 on-time returns
 }
 
 public class ScoreHistoryEntry

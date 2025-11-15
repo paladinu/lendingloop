@@ -1,21 +1,49 @@
 <div class="badges-container">
-    <div *ngIf="badges && badges.length > 0" class="badges-list">
-        <div *ngFor="let badge of badges" class="badge-item">
-            <span class="badge-icon" 
-                  [class.bronze]="badge.badgeType === 'Bronze'"
-                  [class.silver]="badge.badgeType === 'Silver'"
-                  [class.gold]="badge.badgeType === 'Gold'"
-                  [attr.aria-label]="getBadgeDescription(badge.badgeType)"
-                  [title]="getBadgeDescription(badge.badgeType)">
-                🏆
-            </span>
-            <div class="badge-details">
-                <div class="badge-title">{{ badge.badgeType }} Badge</div>
-                <div class="badge-description">{{ getBadgeRequirement(badge.badgeType) }}</div>
-                <div class="badge-date">Earned {{ badge.awardedAt | date: 'mediumDate' }}</div>
+    <div *ngIf="badges && badges.length > 0">
+        <!-- Milestone Badges Section -->
+        <div *ngIf="milestoneBadges.length > 0" class="badge-section milestone-badges">
+            <h4 class="section-title">Milestone Badges</h4>
+            <div class="badges-list">
+                <div *ngFor="let badge of milestoneBadges" class="badge-item">
+                    <span class="badge-icon" 
+                          [class.bronze]="badge.badgeType === 'Bronze'"
+                          [class.silver]="badge.badgeType === 'Silver'"
+                          [class.gold]="badge.badgeType === 'Gold'"
+                          [attr.aria-label]="getBadgeDescription(badge.badgeType)"
+                          [title]="getBadgeDescription(badge.badgeType)">
+                        🏆
+                    </span>
+                    <div class="badge-details">
+                        <div class="badge-title">{{ badge.badgeType }} Badge</div>
+                        <div class="badge-description">{{ getBadgeRequirement(badge.badgeType) }}</div>
+                        <div class="badge-date">Earned {{ badge.awardedAt | date: 'mediumDate' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievement Badges Section -->
+        <div *ngIf="achievementBadges.length > 0" class="badge-section achievement-badges">
+            <h4 class="section-title">Achievement Badges</h4>
+            <div class="badges-list">
+                <div *ngFor="let badge of achievementBadges" class="badge-item">
+                    <span class="badge-icon achievement"
+                          [class.first-lend]="badge.badgeType === 'FirstLend'"
+                          [class.reliable-borrower]="badge.badgeType === 'ReliableBorrower'"
+                          [attr.aria-label]="getBadgeDescription(badge.badgeType)"
+                          [title]="getBadgeDescription(badge.badgeType)">
+                        {{ getBadgeIcon(badge.badgeType) }}
+                    </span>
+                    <div class="badge-details">
+                        <div class="badge-title">{{ getBadgeLabel(badge.badgeType) }}</div>
+                        <div class="badge-description">{{ getBadgeRequirement(badge.badgeType) }}</div>
+                        <div class="badge-date">Earned {{ badge.awardedAt | date: 'mediumDate' }}</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    
     <div *ngIf="!badges || badges.length === 0" class="empty-state">
         <p class="empty-message">No badges earned yet. Keep participating to earn badges!</p>
     </div>

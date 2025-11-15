@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BadgeAward, BadgeType } from '../../models/auth.interface';
 
@@ -9,8 +9,40 @@ import { BadgeAward, BadgeType } from '../../models/auth.interface';
     templateUrl: './badge-display.component.html',
     styleUrls: ['./badge-display.component.css']
 })
-export class BadgeDisplayComponent {
+export class BadgeDisplayComponent implements OnInit {
     @Input() badges: BadgeAward[] = [];
+    
+    milestoneBadges: BadgeAward[] = [];
+    achievementBadges: BadgeAward[] = [];
+
+    ngOnInit(): void {
+        this.categorizeBadges();
+    }
+
+    categorizeBadges(): void {
+        this.milestoneBadges = this.badges.filter(b => 
+            ['Bronze', 'Silver', 'Gold'].includes(b.badgeType)
+        );
+        this.achievementBadges = this.badges.filter(b => 
+            ['FirstLend', 'ReliableBorrower'].includes(b.badgeType)
+        );
+    }
+
+    getBadgeIcon(badgeType: BadgeType): string {
+        const icons: Record<string, string> = {
+            'FirstLend': '🎁',
+            'ReliableBorrower': '⭐'
+        };
+        return icons[badgeType] || '🏅';
+    }
+
+    getBadgeLabel(badgeType: BadgeType): string {
+        const labels: Record<string, string> = {
+            'FirstLend': 'First Lend',
+            'ReliableBorrower': 'Reliable Borrower'
+        };
+        return labels[badgeType] || badgeType;
+    }
 
     getBadgeDescription(badgeType: BadgeType): string {
         switch (badgeType) {
@@ -20,6 +52,10 @@ export class BadgeDisplayComponent {
                 return 'Silver Badge - Reached 50 LoopScore points';
             case 'Gold':
                 return 'Gold Badge - Reached 100 LoopScore points';
+            case 'FirstLend':
+                return 'First Lend - Completed your first lending transaction';
+            case 'ReliableBorrower':
+                return 'Reliable Borrower - Completed 10 on-time returns';
             default:
                 return 'Badge';
         }
@@ -33,6 +69,10 @@ export class BadgeDisplayComponent {
                 return 'Earned by reaching 50 points';
             case 'Gold':
                 return 'Earned by reaching 100 points';
+            case 'FirstLend':
+                return 'Earned by completing your first lend';
+            case 'ReliableBorrower':
+                return 'Earned by completing 10 on-time returns';
             default:
                 return '';
         }

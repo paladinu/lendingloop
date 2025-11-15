@@ -92,9 +92,14 @@ public class BadgeAward
 
 public enum BadgeType
 {
+    // Milestone badges
     Bronze,   // 10 points
     Silver,   // 50 points
-    Gold      // 100 points
+    Gold,     // 100 points
+    
+    // Achievement badges
+    FirstLend,           // First lending transaction
+    ReliableBorrower     // 10 on-time returns
 }
 
 public class ScoreHistoryEntry
@@ -138,6 +143,7 @@ public interface ILoopScoreService
     Task<int> GetUserScoreAsync(string userId);
     Task<List<ScoreHistoryEntry>> GetScoreHistoryAsync(string userId, int limit = 50);
     Task<List<BadgeAward>> GetUserBadgesAsync(string userId);
+    Task<int> GetOnTimeReturnCountAsync(string userId);
 }
 ```
 
@@ -147,11 +153,15 @@ The service will:
 - Calculate points based on action type
 - Update User.LoopScore field
 - Add entries to User.ScoreHistory
-- Check for badge milestones after each score update
-- Award badges automatically when thresholds are reached (10, 50, 100 points)
+- Check for milestone badges after each score update (Bronze, Silver, Gold)
+- Check for achievement badges after relevant actions:
+  - **FirstLend**: Awarded on first lending transaction (when AwardLendPointsAsync is called for the first time)
+  - **ReliableBorrower**: Awarded when user completes 10 on-time returns
+- Award badges automatically when thresholds are reached (10, 50, 100 points for milestones)
 - Prevent duplicate badge awards
 - Enforce minimum score of zero
 - Use atomic MongoDB operations to prevent race conditions
+- Send email notifications when badges are awarded
 
 #### 4. Updated ItemRequestService
 
@@ -187,7 +197,7 @@ export interface ScoreHistoryEntry {
 }
 
 export interface BadgeAward {
-    badgeType: 'Bronze' | 'Silver' | 'Gold';
+    badgeType: 'Bronze' | 'Silver' | 'Gold' | 'FirstLend' | 'ReliableBorrower';
     awardedAt: string;
 }
 ```
@@ -265,19 +275,64 @@ A reusable component that displays earned badges:
     selector: 'app-badge-display',
     template: `
         <div class="badges-container">
-            <span *ngFor="let badge of badges" 
-                  class="badge-icon" 
-                  [class.bronze]="badge.badgeType === 'Bronze'"
-                  [class.silver]="badge.badgeType === 'Silver'"
-                  [class.gold]="badge.badgeType === 'Gold'"
-                  [attr.aria-label]="badge.badgeType + ' badge earned on ' + (badge.awardedAt | date)">
-                🏆
-            </span>
+            <div class="milestone-badges" *ngIf="milestoneBadges.length > 0">
+                <h4>Milestone Badges</h4>
+                <span *ngFor="let badge of milestoneBadges" 
+                      class="badge-icon" 
+                      [class.bronze]="badge.badgeType === 'Bronze'"
+                      [class.silver]="badge.badgeType === 'Silver'"
+                      [class.gold]="badge.badgeType === 'Gold'"
+                      [attr.aria-label]="badge.badgeType + ' badge earned on ' + (badge.awardedAt | date)">
+                    🏆
+                </span>
+            </div>
+            <div class="achievement-badges" *ngIf="achievementBadges.length > 0">
+                <h4>Achievement Badges</h4>
+                <span *ngFor="let badge of achievementBadges" 
+                      class="badge-icon achievement"
+                      [class.first-lend]="badge.badgeType === 'FirstLend'"
+                      [class.reliable-borrower]="badge.badgeType === 'ReliableBorrower'"
+                      [attr.aria-label]="getBadgeLabel(badge.badgeType) + ' earned on ' + (badge.awardedAt | date)">
+                    {{ getBadgeIcon(badge.badgeType) }}
+                </span>
+            </div>
         </div>
     `
 })
-export class BadgeDisplayComponent {
+export class BadgeDisplayComponent implements OnInit {
     @Input() badges: BadgeAward[] = [];
+    
+    milestoneBadges: BadgeAward[] = [];
+    achievementBadges: BadgeAward[] = [];
+    
+    ngOnInit(): void {
+        this.categorizeBadges();
+    }
+    
+    categorizeBadges(): void {
+        this.milestoneBadges = this.badges.filter(b => 
+            ['Bronze', 'Silver', 'Gold'].includes(b.badgeType)
+        );
+        this.achievementBadges = this.badges.filter(b => 
+            ['FirstLend', 'ReliableBorrower'].includes(b.badgeType)
+        );
+    }
+    
+    getBadgeIcon(badgeType: string): string {
+        const icons: Record<string, string> = {
+            'FirstLend': '🎁',
+            'ReliableBorrower': '⭐'
+        };
+        return icons[badgeType] || '🏅';
+    }
+    
+    getBadgeLabel(badgeType: string): string {
+        const labels: Record<string, string> = {
+            'FirstLend': 'First Lend',
+            'ReliableBorrower': 'Reliable Borrower'
+        };
+        return labels[badgeType] || badgeType;
+    }
 }
 ```
 
@@ -314,7 +369,7 @@ The following existing components will be updated to display scores:
     ],
     badges: [  // NEW: Array of earned badges
         {
-            badgeType: string,  // "Bronze", "Silver", or "Gold"
+            badgeType: string,  // "Bronze", "Silver", "Gold", "FirstLend", "ReliableBorrower"
             awardedAt: ISODate
         }
     ]
@@ -361,7 +416,12 @@ Test cases:
 - `AwardPoints_AwardsSilverBadge_WhenScoreReaches50`
 - `AwardPoints_AwardsGoldBadge_WhenScoreReaches100`
 - `AwardPoints_DoesNotAwardDuplicateBadges_WhenScoreExceedsMilestone`
-- `GetUserBadgesAsync_ReturnsAllEarnedBadges`
+- `AwardLendPointsAsync_AwardsFirstLendBadge_OnFirstLendingTransaction`
+- `AwardLendPointsAsync_DoesNotAwardFirstLendBadge_OnSubsequentLends`
+- `AwardOnTimeReturnPointsAsync_AwardsReliableBorrowerBadge_After10OnTimeReturns`
+- `AwardOnTimeReturnPointsAsync_DoesNotAwardReliableBorrowerBadge_BeforeThreshold`
+- `GetUserBadgesAsync_ReturnsAllEarnedBadges_IncludingAchievements`
+- `GetOnTimeReturnCountAsync_ReturnsCorrectCount`
 
 #### Updated ItemRequestServiceTests.cs
 
@@ -411,7 +471,10 @@ Test cases:
 
 Test cases:
 - `should display all earned badges`
+- `should categorize badges into milestone and achievement sections`
 - `should apply correct CSS class for each badge type`
+- `should display correct icons for achievement badges`
+- `should display correct labels for achievement badges`
 - `should show empty state when no badges earned`
 - `should format badge awarded dates correctly`
 
@@ -496,35 +559,54 @@ Test the complete flow:
 
 ## Badge Award Logic
 
-### Milestone Thresholds
+### Milestone Badge Thresholds
 
 - **Bronze Badge**: Awarded when user reaches 10 points
 - **Silver Badge**: Awarded when user reaches 50 points
 - **Gold Badge**: Awarded when user reaches 100 points
 
+### Achievement Badge Criteria
+
+- **FirstLend Badge**: Awarded when user completes their first lending transaction (first time AwardLendPointsAsync is called)
+- **ReliableBorrower Badge**: Awarded when user completes 10 on-time returns (tracked via ScoreHistory entries with actionType "OnTimeReturn")
+
 ### Award Rules
 
-1. Badges are checked and awarded automatically after each score update
+1. Badges are checked and awarded automatically after relevant actions:
+   - Milestone badges: After each score update
+   - FirstLend: When AwardLendPointsAsync is called
+   - ReliableBorrower: When AwardOnTimeReturnPointsAsync is called
 2. Each badge can only be awarded once per user
-3. Badges are never removed, even if score decreases
+3. Badges are never removed, even if score decreases or behavior changes
 4. Badge awards are timestamped for display purposes
-5. Users can earn multiple badges as they progress through milestones
+5. Users can earn multiple badges as they progress through milestones and achievements
+6. Email notifications are sent when badges are awarded
 
 ### Implementation Details
 
-After each score update operation:
-1. Check current user score against badge thresholds
-2. Identify any new badges that should be awarded
+**For Milestone Badges** (after each score update operation):
+1. Check current user score against badge thresholds (10, 50, 100)
+2. Identify any new milestone badges that should be awarded
 3. Filter out badges already earned by the user
 4. Add new badge awards to user's badges array with current timestamp
 5. Use atomic MongoDB operations to prevent duplicate awards
 
+**For Achievement Badges**:
+1. **FirstLend**: Check if user already has FirstLend badge; if not, award it when AwardLendPointsAsync is called
+2. **ReliableBorrower**: Count ScoreHistory entries with actionType "OnTimeReturn"; if count reaches 10 and badge not yet awarded, award it
+3. Use atomic MongoDB operations to prevent duplicate awards
+4. Send email notification for each badge awarded
+
 ## Future Enhancements
 
 - **Leaderboards**: Display top scorers within each loop
-- **Additional Badges**: Platinum badge at 250 points, Diamond at 500 points
-- **Special Achievements**: Badges for specific accomplishments (first lend, 10 on-time returns, etc.)
+- **Additional Milestone Badges**: Platinum badge at 250 points, Diamond at 500 points
+- **More Achievement Badges**: 
+  - "Generous Lender" for 50 lending transactions
+  - "Perfect Record" for 25 consecutive on-time returns
+  - "Community Builder" for inviting 10 users who complete transactions
 - **Streak Bonuses**: Extra points for consecutive on-time returns
 - **Decay System**: Reduce points over time to encourage ongoing participation
 - **Custom Point Values**: Allow loop admins to configure point values
 - **Badge Showcase**: Allow users to feature their favorite badge on their profile
+- **Badge Notifications**: Push notifications when badges are earned
