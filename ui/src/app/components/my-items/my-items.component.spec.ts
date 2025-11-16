@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
-import { MainComponent } from './main.component';
+import { MyItemsComponent } from './my-items.component';
 import { ItemsService } from '../../services/items.service';
 import { AuthService } from '../../services/auth.service';
 import { LoopService } from '../../services/loop.service';
@@ -14,9 +14,9 @@ import { Loop } from '../../models/loop.interface';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { getMockToolbarServices } from '../../testing/mock-services';
 
-describe('MainComponent', () => {
-  let component: MainComponent;
-  let fixture: ComponentFixture<MainComponent>;
+describe('MyItemsComponent', () => {
+  let component: MyItemsComponent;
+  let fixture: ComponentFixture<MyItemsComponent>;
   let itemsService: jest.Mocked<ItemsService>;
   let authService: jest.Mocked<AuthService>;
   let loopService: jest.Mocked<LoopService>;
@@ -78,7 +78,7 @@ describe('MainComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [MainComponent, ToolbarComponent],
+      imports: [MyItemsComponent, ToolbarComponent],
       providers: [
         provideHttpClient(),
         { provide: ItemsService, useValue: itemsServiceMock },
@@ -92,7 +92,7 @@ describe('MainComponent', () => {
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(MainComponent);
+    fixture = TestBed.createComponent(MyItemsComponent);
     component = fixture.componentInstance;
     itemsService = TestBed.inject(ItemsService) as jest.Mocked<ItemsService>;
     authService = TestBed.inject(AuthService) as jest.Mocked<AuthService>;

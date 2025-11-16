@@ -97,7 +97,7 @@ export class ItemEditComponent implements OnInit {
         }
         this.loading = false;
         setTimeout(() => {
-          this.router.navigate(['/']);
+          this.router.navigate(['/items']);
         }, 2000);
       }
     });
@@ -161,7 +161,7 @@ export class ItemEditComponent implements OnInit {
               this.success = 'Item updated successfully!';
               this.loading = false;
               setTimeout(() => {
-                this.router.navigate(['/']);
+                this.router.navigate(['/items']);
               }, 1500);
             },
             error: (err) => {
@@ -169,7 +169,7 @@ export class ItemEditComponent implements OnInit {
               this.success = 'Item updated but image upload failed.';
               this.loading = false;
               setTimeout(() => {
-                this.router.navigate(['/']);
+                this.router.navigate(['/items']);
               }, 2000);
             }
           });
@@ -177,7 +177,7 @@ export class ItemEditComponent implements OnInit {
           this.success = 'Item updated successfully!';
           this.loading = false;
           setTimeout(() => {
-            this.router.navigate(['/']);
+            this.router.navigate(['/items']);
           }, 1500);
         }
       },
@@ -198,6 +198,6 @@ export class ItemEditComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['/items']);
   }
 }

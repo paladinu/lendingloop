@@ -10,6 +10,11 @@
         <span>My Loops</span>
     </button>
 
+    <button mat-button routerLink="/items" class="nav-button">
+        <mat-icon>inventory_2</mat-icon>
+        <span>My Items</span>
+    </button>
+
     <button mat-button routerLink="/loops/invitations" class="nav-button">
         <mat-icon>mail</mat-icon>
         <span>Invitations</span>
@@ -26,14 +31,13 @@
         <span>My Requests</span>
     </button>
 
-    <app-notification-bell></app-notification-bell>
-
     <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
-        <mat-icon>account_circle</mat-icon>
         <span class="user-name">{{ getUserDisplayName() }}</span>
-        <app-loop-score-display *ngIf="currentUser && currentUser.loopScore !== undefined" [score]="currentUser.loopScore" size="small"></app-loop-score-display>
         <mat-icon>arrow_drop_down</mat-icon>
+        <app-loop-score-display *ngIf="currentUser && currentUser.loopScore !== undefined" [score]="currentUser.loopScore" size="small"></app-loop-score-display>
     </button>
+
+    <app-notification-bell></app-notification-bell>
 
     <mat-menu #userMenu="matMenu">
         <div class="user-info">

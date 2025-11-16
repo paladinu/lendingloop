@@ -4,7 +4,7 @@ import { AuthLayoutComponent } from './components/auth-layout/auth-layout.compon
 import { LoginComponent } from './components/login/login.component';
 import { RegisterComponent } from './components/register/register.component';
 import { EmailVerificationComponent } from './components/email-verification/email-verification.component';
-import { MainComponent } from './components/main/main.component';
+import { MyItemsComponent } from './components/my-items/my-items.component';
 import { LoopListComponent } from './components/loop-list/loop-list.component';
 import { LoopCreateComponent } from './components/loop-create/loop-create.component';
 import { LoopDetailComponent } from './components/loop-detail/loop-detail.component';
@@ -61,19 +61,14 @@ export const routes: Routes = [
 
     // Item routes (protected)
     {
-        path: 'items/add',
-        component: ItemAddComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'items/:id/edit',
-        component: ItemEditComponent,
-        canActivate: [AuthGuard]
-    },
-    {
-        path: 'items/:id/visibility',
-        component: ItemVisibilityComponent,
-        canActivate: [AuthGuard]
+        path: 'items',
+        canActivate: [AuthGuard],
+        children: [
+            { path: '', component: MyItemsComponent },
+            { path: 'add', component: ItemAddComponent },
+            { path: ':id/edit', component: ItemEditComponent },
+            { path: ':id/visibility', component: ItemVisibilityComponent }
+        ]
     },
 
     // Item Request routes (protected)

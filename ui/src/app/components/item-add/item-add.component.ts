@@ -107,7 +107,7 @@ export class ItemAddComponent implements OnInit {
               this.success = 'Item added successfully!';
               this.loading = false;
               setTimeout(() => {
-                this.router.navigate(['/']);
+                this.router.navigate(['/items']);
               }, 1500);
             },
             error: (err) => {
@@ -115,7 +115,7 @@ export class ItemAddComponent implements OnInit {
               this.success = 'Item added but image upload failed.';
               this.loading = false;
               setTimeout(() => {
-                this.router.navigate(['/']);
+                this.router.navigate(['/items']);
               }, 2000);
             }
           });
@@ -123,7 +123,7 @@ export class ItemAddComponent implements OnInit {
           this.success = 'Item added successfully!';
           this.loading = false;
           setTimeout(() => {
-            this.router.navigate(['/']);
+            this.router.navigate(['/items']);
           }, 1500);
         }
       },
@@ -136,6 +136,6 @@ export class ItemAddComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['/items']);
   }
 }

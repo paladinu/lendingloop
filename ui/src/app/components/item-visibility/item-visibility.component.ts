@@ -114,7 +114,7 @@ export class ItemVisibilityComponent implements OnInit {
         this.success = 'Visibility settings updated successfully';
         this.loading = false;
         setTimeout(() => {
-          this.router.navigate(['/']);
+          this.router.navigate(['/items']);
         }, 1500);
       },
       error: (err) => {
@@ -125,7 +125,7 @@ export class ItemVisibilityComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.router.navigate(['/']);
+    this.router.navigate(['/items']);
   }
 
   get hasNoVisibility(): boolean {

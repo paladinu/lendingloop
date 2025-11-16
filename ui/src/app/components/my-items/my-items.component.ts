@@ -14,7 +14,7 @@ import { ItemCardComponent } from '../item-card/item-card.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 @Component({
-  selector: 'app-main',
+  selector: 'app-my-items',
   standalone: true,
   imports: [
     CommonModule,
@@ -25,10 +25,10 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
     ItemCardComponent,
     ToolbarComponent
   ],
-  templateUrl: './main.component.html',
-  styleUrl: './main.component.css'
+  templateUrl: './my-items.component.html',
+  styleUrl: './my-items.component.css'
 })
-export class MainComponent implements OnInit {
+export class MyItemsComponent implements OnInit {
   items: SharedItem[] = [];
   loading: boolean = false;
   error: string = '';

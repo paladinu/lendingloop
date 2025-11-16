@@ -208,7 +208,7 @@ describe('ItemEditComponent', () => {
 
     //assert
     setTimeout(() => {
-      expect(router.navigate).toHaveBeenCalledWith(['/']);
+      expect(router.navigate).toHaveBeenCalledWith(['/items']);
       done();
     }, 1600);
   });
@@ -235,7 +235,7 @@ describe('ItemEditComponent', () => {
     component.onCancel();
 
     //assert
-    expect(router.navigate).toHaveBeenCalledWith(['/']);
+    expect(router.navigate).toHaveBeenCalledWith(['/items']);
   });
 
   it('should handle 403 forbidden error appropriately', () => {
