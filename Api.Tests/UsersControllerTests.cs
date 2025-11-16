@@ -201,4 +201,52 @@ public class UsersControllerTests
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         Assert.NotNull(notFoundResult.Value);
     }
+
+    [Fact]
+    public async Task GetBadgeProgress_ReturnsProgress_WhenUserExists()
+    {
+        //arrange
+        var userId = "user123";
+
+        var user = new User
+        {
+            Id = userId,
+            Email = "test@example.com"
+        };
+
+        var progress = new Dictionary<BadgeType, BadgeProgress>
+        {
+            { BadgeType.ReliableBorrower, new BadgeProgress { CurrentCount = 7, RequiredCount = 10, DisplayText = "7/10 on-time returns" } },
+            { BadgeType.GenerousLender, new BadgeProgress { CurrentCount = 20, RequiredCount = 50, DisplayText = "20/50 lending transactions" } }
+        };
+
+        _mockUserService.Setup(s => s.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        _mockLoopScoreService.Setup(s => s.GetAllBadgeProgressAsync(userId)).ReturnsAsync(progress);
+
+        //act
+        var result = await _controller.GetBadgeProgress(userId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedProgress = Assert.IsType<Dictionary<BadgeType, BadgeProgress>>(okResult.Value);
+        Assert.Equal(2, returnedProgress.Count);
+        Assert.Equal(7, returnedProgress[BadgeType.ReliableBorrower].CurrentCount);
+        Assert.Equal(10, returnedProgress[BadgeType.ReliableBorrower].RequiredCount);
+    }
+
+    [Fact]
+    public async Task GetBadgeProgress_Returns404_WhenUserNotFound()
+    {
+        //arrange
+        var userId = "nonexistent";
+
+        _mockUserService.Setup(s => s.GetUserByIdAsync(userId)).ReturnsAsync((User?)null);
+
+        //act
+        var result = await _controller.GetBadgeProgress(userId);
+
+        //assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.NotNull(notFoundResult.Value);
+    }
 }

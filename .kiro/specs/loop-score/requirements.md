@@ -169,3 +169,18 @@ The LoopScore feature introduces a gamification system to encourage active parti
 3. THE LoopScore System SHALL display earned badges in full color with the awarded timestamp
 4. THE LoopScore System SHALL show descriptive text for each badge explaining how to earn it
 5. THE LoopScore System SHALL visually distinguish between earned and unearned badges through styling
+
+### Requirement 13
+
+**User Story:** As a platform user, I want to see my progress toward earning unearned achievement badges, so that I can track how close I am to achieving each goal
+
+#### Acceptance Criteria
+
+1. WHERE a User has not earned an achievement badge, THE LoopScore System SHALL display the User's current progress toward that badge's requirement
+2. THE LoopScore System SHALL format progress as a fraction showing current count versus required count (e.g., "7/10 on-time returns")
+3. THE LoopScore System SHALL calculate progress for Reliable Borrower badge by counting completed on-time returns
+4. THE LoopScore System SHALL calculate progress for Generous Lender badge by counting completed lending transactions
+5. THE LoopScore System SHALL calculate progress for Perfect Record badge by showing current consecutive on-time returns count
+6. THE LoopScore System SHALL calculate progress for Community Builder badge by counting active invited users
+7. WHERE a badge has been earned, THE LoopScore System SHALL NOT display progress information
+8. THE LoopScore System SHALL update progress information in real-time as the User completes relevant actions

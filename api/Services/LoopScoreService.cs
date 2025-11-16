@@ -419,4 +419,113 @@ public class LoopScoreService : ILoopScoreService
     {
         await CheckAndAwardAchievementBadgeAsync(userId, badgeType);
     }
+
+    public async Task<BadgeProgress> GetBadgeProgressAsync(string userId, BadgeType badgeType)
+    {
+        //arrange
+        var user = await _usersCollection.Find(u => u.Id == userId).FirstOrDefaultAsync();
+        
+        if (user == null)
+        {
+            return new BadgeProgress { CurrentCount = 0, RequiredCount = 0, DisplayText = "User not found" };
+        }
+
+        //act - calculate progress based on badge type
+        int currentCount = 0;
+        int requiredCount = 0;
+        string description = "";
+
+        switch (badgeType)
+        {
+            case BadgeType.Bronze:
+                currentCount = user.LoopScore;
+                requiredCount = 10;
+                description = "points";
+                break;
+
+            case BadgeType.Silver:
+                currentCount = user.LoopScore;
+                requiredCount = 50;
+                description = "points";
+                break;
+
+            case BadgeType.Gold:
+                currentCount = user.LoopScore;
+                requiredCount = 100;
+                description = "points";
+                break;
+
+            case BadgeType.ReliableBorrower:
+                currentCount = await GetOnTimeReturnCountAsync(userId);
+                requiredCount = 10;
+                description = "on-time returns";
+                break;
+
+            case BadgeType.GenerousLender:
+                currentCount = await GetCompletedLendingTransactionCountAsync(userId);
+                requiredCount = 50;
+                description = "lending transactions";
+                break;
+
+            case BadgeType.PerfectRecord:
+                currentCount = user.ConsecutiveOnTimeReturns;
+                requiredCount = 25;
+                description = "consecutive on-time returns";
+                break;
+
+            case BadgeType.CommunityBuilder:
+                currentCount = await GetActiveInvitedUsersCountAsync(userId);
+                requiredCount = 10;
+                description = "active invited users";
+                break;
+
+            case BadgeType.FirstLend:
+                // Binary badge - either 0 or 1
+                var hasLent = user.ScoreHistory?.Any(e => e.ActionType == ScoreActionType.LendApproved) ?? false;
+                currentCount = hasLent ? 1 : 0;
+                requiredCount = 1;
+                description = "lending transaction";
+                break;
+
+            default:
+                return new BadgeProgress { CurrentCount = 0, RequiredCount = 0, DisplayText = "" };
+        }
+
+        //assert - return progress
+        return new BadgeProgress
+        {
+            CurrentCount = currentCount,
+            RequiredCount = requiredCount,
+            DisplayText = $"{currentCount}/{requiredCount} {description}"
+        };
+    }
+
+    public async Task<Dictionary<BadgeType, BadgeProgress>> GetAllBadgeProgressAsync(string userId)
+    {
+        //arrange
+        var result = new Dictionary<BadgeType, BadgeProgress>();
+        
+        // Get all badges that support progress tracking (both milestone and achievement)
+        var allBadges = new[]
+        {
+            BadgeType.Bronze,
+            BadgeType.Silver,
+            BadgeType.Gold,
+            BadgeType.ReliableBorrower,
+            BadgeType.GenerousLender,
+            BadgeType.PerfectRecord,
+            BadgeType.CommunityBuilder,
+            BadgeType.FirstLend
+        };
+
+        //act - get progress for each badge
+        foreach (var badgeType in allBadges)
+        {
+            var progress = await GetBadgeProgressAsync(userId, badgeType);
+            result[badgeType] = progress;
+        }
+
+        //assert
+        return result;
+    }
 }

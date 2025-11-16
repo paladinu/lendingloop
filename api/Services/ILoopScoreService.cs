@@ -17,4 +17,6 @@ public interface ILoopScoreService
     Task RecordCompletedLendingTransactionAsync(string userId, string itemRequestId, string itemName);
     Task ResetConsecutiveOnTimeReturnsAsync(string userId);
     Task AwardAchievementBadgeAsync(string userId, BadgeType badgeType);
+    Task<BadgeProgress> GetBadgeProgressAsync(string userId, BadgeType badgeType);
+    Task<Dictionary<BadgeType, BadgeProgress>> GetAllBadgeProgressAsync(string userId);
 }

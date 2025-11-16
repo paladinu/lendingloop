@@ -89,4 +89,26 @@ public class UsersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while retrieving the user badges" });
         }
     }
+
+    [HttpGet("{userId}/badge-progress")]
+    public async Task<ActionResult<Dictionary<BadgeType, BadgeProgress>>> GetBadgeProgress(string userId)
+    {
+        try
+        {
+            // Verify user exists
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+
+            var progress = await _loopScoreService.GetAllBadgeProgressAsync(userId);
+            return Ok(progress);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving badge progress for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving the badge progress" });
+        }
+    }
 }

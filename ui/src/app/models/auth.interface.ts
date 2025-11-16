@@ -47,6 +47,13 @@ export interface BadgeMetadata {
     category: 'milestone' | 'achievement';
     requirement: string;
     icon: string;
+    hasProgress: boolean;
+}
+
+export interface BadgeProgress {
+    currentCount: number;
+    requiredCount: number;
+    displayText: string;
 }
 
 export interface VerifyEmailRequest {

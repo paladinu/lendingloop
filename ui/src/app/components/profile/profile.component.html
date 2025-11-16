@@ -15,7 +15,7 @@
       
       <div class="badges-section" *ngIf="currentUser">
         <h3 class="section-heading">My Badges</h3>
-        <app-badge-display [earnedBadges]="currentUser.badges || []" [showAllBadges]="true"></app-badge-display>
+        <app-badge-display [earnedBadges]="currentUser.badges || []" [showAllBadges]="true" [userId]="currentUser.id"></app-badge-display>
       </div>
     </div>
   </div>

@@ -187,4 +187,101 @@ describe('LoopScoreService', () => {
         expect(achievementBadges.map(b => b.badgeType)).toContain('PerfectRecord');
         expect(achievementBadges.map(b => b.badgeType)).toContain('CommunityBuilder');
     });
+
+    it('getBadgeProgress() should make correct HTTP GET request', () => {
+        //arrange
+        const userId = 'user123';
+        const mockResponse = {
+            'ReliableBorrower': {
+                currentCount: 7,
+                requiredCount: 10,
+                displayText: '7/10 on-time returns'
+            },
+            'GenerousLender': {
+                currentCount: 20,
+                requiredCount: 50,
+                displayText: '20/50 lending transactions'
+            }
+        };
+
+        //act
+        service.getBadgeProgress(userId).subscribe(progressMap => {
+            //assert
+            expect(progressMap).toBeInstanceOf(Map);
+            expect(progressMap.size).toBe(2);
+            expect(progressMap.get('ReliableBorrower')?.currentCount).toBe(7);
+            expect(progressMap.get('GenerousLender')?.currentCount).toBe(20);
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/users/${userId}/badge-progress`);
+        expect(req.request.method).toBe('GET');
+        req.flush(mockResponse);
+    });
+
+    it('getBadgeProgress() should convert response to Map correctly', () => {
+        //arrange
+        const userId = 'user123';
+        const mockResponse = {
+            'PerfectRecord': {
+                currentCount: 12,
+                requiredCount: 25,
+                displayText: '12/25 consecutive on-time returns'
+            }
+        };
+
+        //act
+        service.getBadgeProgress(userId).subscribe(progressMap => {
+            //assert
+            expect(progressMap).toBeInstanceOf(Map);
+            const progress = progressMap.get('PerfectRecord');
+            expect(progress).toBeDefined();
+            expect(progress?.currentCount).toBe(12);
+            expect(progress?.requiredCount).toBe(25);
+            expect(progress?.displayText).toBe('12/25 consecutive on-time returns');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/users/${userId}/badge-progress`);
+        req.flush(mockResponse);
+    });
+
+    it('getAllBadgeMetadata() should include hasProgress flag for each badge', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        metadata.forEach(badge => {
+            expect(badge.hasProgress).toBeDefined();
+            expect(typeof badge.hasProgress).toBe('boolean');
+        });
+    });
+
+    it('getAllBadgeMetadata() should set hasProgress to true for trackable achievement badges', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        const reliableBorrower = metadata.find(b => b.badgeType === 'ReliableBorrower');
+        const generousLender = metadata.find(b => b.badgeType === 'GenerousLender');
+        const perfectRecord = metadata.find(b => b.badgeType === 'PerfectRecord');
+        const communityBuilder = metadata.find(b => b.badgeType === 'CommunityBuilder');
+
+        expect(reliableBorrower?.hasProgress).toBe(true);
+        expect(generousLender?.hasProgress).toBe(true);
+        expect(perfectRecord?.hasProgress).toBe(true);
+        expect(communityBuilder?.hasProgress).toBe(true);
+    });
+
+    it('getAllBadgeMetadata() should set hasProgress to false for milestone badges', () => {
+        //act
+        const metadata = service.getAllBadgeMetadata();
+
+        //assert
+        const bronze = metadata.find(b => b.badgeType === 'Bronze');
+        const silver = metadata.find(b => b.badgeType === 'Silver');
+        const gold = metadata.find(b => b.badgeType === 'Gold');
+
+        expect(bronze?.hasProgress).toBe(true);
+        expect(silver?.hasProgress).toBe(true);
+        expect(gold?.hasProgress).toBe(true);
+    });
 });

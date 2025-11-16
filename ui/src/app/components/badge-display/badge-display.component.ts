@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BadgeAward, BadgeType, BadgeMetadata } from '../../models/auth.interface';
+import { BadgeAward, BadgeType, BadgeMetadata, BadgeProgress } from '../../models/auth.interface';
 import { LoopScoreService } from '../../services/loop-score.service';
 import { FilterByCategoryPipe } from '../../pipes/filter-by-category.pipe';
 
@@ -8,6 +8,7 @@ export interface DisplayBadge {
     metadata: BadgeMetadata;
     earned: boolean;
     awardedAt?: string;
+    progress?: BadgeProgress;
 }
 
 @Component({
@@ -19,10 +20,13 @@ export interface DisplayBadge {
 })
 export class BadgeDisplayComponent implements OnInit {
     @Input() earnedBadges: BadgeAward[] = [];
+    @Input() userId: string = '';
     @Input() showAllBadges: boolean = true;
+    @Input() showProgress: boolean = true;
     
     allBadgeMetadata: BadgeMetadata[] = [];
     displayBadges: DisplayBadge[] = [];
+    badgeProgress: Map<BadgeType, BadgeProgress> = new Map();
     milestoneBadges: BadgeAward[] = [];
     achievementBadges: BadgeAward[] = [];
 
@@ -31,7 +35,21 @@ export class BadgeDisplayComponent implements OnInit {
     ngOnInit(): void {
         if (this.showAllBadges) {
             this.allBadgeMetadata = this.loopScoreService.getAllBadgeMetadata();
-            this.prepareDisplayBadges();
+            
+            if (this.showProgress && this.userId) {
+                this.loopScoreService.getBadgeProgress(this.userId).subscribe({
+                    next: (progress) => {
+                        this.badgeProgress = progress;
+                        this.prepareDisplayBadges();
+                    },
+                    error: (error) => {
+                        console.error('Error loading badge progress:', error);
+                        this.prepareDisplayBadges();
+                    }
+                });
+            } else {
+                this.prepareDisplayBadges();
+            }
         } else {
             this.categorizeBadges();
         }
@@ -40,12 +58,22 @@ export class BadgeDisplayComponent implements OnInit {
     prepareDisplayBadges(): void {
         this.displayBadges = this.allBadgeMetadata.map(metadata => {
             const earnedBadge = this.earnedBadges.find(b => b.badgeType === metadata.badgeType);
+            const progress = this.badgeProgress.get(metadata.badgeType);
+            
             return {
                 metadata: metadata,
                 earned: !!earnedBadge,
-                awardedAt: earnedBadge?.awardedAt
+                awardedAt: earnedBadge?.awardedAt,
+                progress: progress
             };
         });
+    }
+
+    getProgressText(badge: DisplayBadge): string {
+        if (badge.earned || !badge.progress) {
+            return '';
+        }
+        return badge.progress.displayText;
     }
 
     categorizeBadges(): void {

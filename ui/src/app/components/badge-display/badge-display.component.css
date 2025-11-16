@@ -169,6 +169,17 @@
     margin-top: 4px;
 }
 
+.badge-progress {
+    font-size: 12px;
+    color: #2196F3;
+    background-color: #E3F2FD;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
 .badge-earned-date {
     font-size: 11px;
     color: #4CAF50;

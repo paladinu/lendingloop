@@ -111,3 +111,15 @@ public enum ScoreActionType
     LendApproved,
     LendCancelled
 }
+
+public class BadgeProgress
+{
+    [BsonElement("currentCount")]
+    public int CurrentCount { get; set; }
+    
+    [BsonElement("requiredCount")]
+    public int RequiredCount { get; set; }
+    
+    [BsonElement("displayText")]
+    public string DisplayText { get; set; } = string.Empty;
+}

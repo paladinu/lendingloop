@@ -757,3 +757,228 @@
   - Verify existing tests still pass
   - Fix any failing tests
   - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
+
+- [x] 41. Add BadgeProgress model to backend
+
+
+
+
+  - Create BadgeProgress class in Models folder with CurrentCount, RequiredCount, and DisplayText properties
+  - Add BSON attributes for MongoDB serialization
+  - _Requirements: 13.1, 13.2_
+
+- [x] 42. Extend ILoopScoreService interface for progress tracking
+
+
+
+
+  - Add GetBadgeProgressAsync(string userId, BadgeType badgeType) method signature
+  - Add GetAllBadgeProgressAsync(string userId) method signature returning Dictionary<BadgeType, BadgeProgress>
+  - _Requirements: 13.1, 13.2, 13.8_
+
+- [x] 43. Implement badge progress calculation in LoopScoreService
+
+
+
+
+- [x] 43.1 Implement GetBadgeProgressAsync method
+
+
+
+  - For ReliableBorrower: Count ScoreHistory entries with actionType "OnTimeReturn", required count 10
+  - For GenerousLender: Call GetCompletedLendingTransactionCountAsync, required count 50
+  - For PerfectRecord: Return User.ConsecutiveOnTimeReturns, required count 25
+  - For CommunityBuilder: Call GetActiveInvitedUsersCountAsync, required count 10
+  - For FirstLend: Return 0/1 (binary badge)
+  - Generate displayText in format "X/Y [badge description]"
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6_
+
+- [x] 43.2 Implement GetAllBadgeProgressAsync method
+
+
+  - Call GetBadgeProgressAsync for each achievement badge type
+  - Return dictionary mapping BadgeType to BadgeProgress
+  - Optimize with batch database queries where possible
+  - _Requirements: 13.1, 13.2, 13.8_
+
+- [x] 44. Add UserController endpoint for badge progress
+
+
+
+
+  - Create GET /api/users/{userId}/badge-progress endpoint
+  - Call LoopScoreService.GetAllBadgeProgressAsync
+  - Return progress as JSON dictionary
+  - Handle user not found with 404 response
+  - _Requirements: 13.1, 13.8_
+
+- [x] 45. Add unit tests for badge progress backend
+
+
+
+
+  - Test GetBadgeProgressAsync returns correct progress for ReliableBorrower badge
+  - Test GetBadgeProgressAsync returns correct progress for GenerousLender badge
+  - Test GetBadgeProgressAsync returns correct progress for PerfectRecord badge
+  - Test GetBadgeProgressAsync returns correct progress for CommunityBuilder badge
+  - Test GetBadgeProgressAsync returns 0 when user has no relevant actions
+  - Test GetAllBadgeProgressAsync returns progress for all achievement badges
+  - Test UserController endpoint returns badge progress when user exists
+  - Test UserController endpoint returns 404 when user not found
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.8_
+
+- [x] 46. Add BadgeProgress interface to Angular
+
+
+
+
+  - Create BadgeProgress interface in auth.interface.ts with currentCount, requiredCount, displayText properties
+  - Update BadgeMetadata interface to include hasProgress boolean property
+  - _Requirements: 13.1, 13.2_
+
+- [x] 47. Update LoopScoreService in Angular for progress tracking
+
+
+
+
+
+- [x] 47.1 Add getBadgeProgress method
+
+
+  - Implement getBadgeProgress(userId: string): Observable<Map<BadgeType, BadgeProgress>>
+  - Make HTTP GET request to /api/users/{userId}/badge-progress
+  - Convert response object to Map for easier lookup
+  - _Requirements: 13.1, 13.8_
+
+- [x] 47.2 Update getAllBadgeMetadata to include hasProgress flag
+
+
+  - Set hasProgress: true for ReliableBorrower, GenerousLender, PerfectRecord, CommunityBuilder
+  - Set hasProgress: false for FirstLend and all milestone badges
+  - _Requirements: 13.1_
+
+- [x] 47.3 Add unit tests for progress tracking methods
+
+
+
+  - Test getBadgeProgress makes correct HTTP GET request
+  - Test getBadgeProgress converts response to Map correctly
+  - Test getAllBadgeMetadata includes hasProgress flag for each badge
+  - _Requirements: 13.1, 13.8_
+
+- [x] 48. Update BadgeDisplayComponent for progress tracking
+
+
+
+
+
+
+
+- [x] 48.1 Add progress tracking inputs and properties
+
+
+
+  - Add @Input() userId: string property (required to fetch progress)
+  - Add @Input() showProgress: boolean = true property to control progress display
+  - Add badgeProgress: Map<BadgeType, BadgeProgress> property
+  - Update DisplayBadge interface to include progress?: BadgeProgress property
+  - _Requirements: 13.1, 13.8_
+
+- [x] 48.2 Implement progress loading in ngOnInit
+
+
+
+  - Check if showProgress is true and userId is provided
+  - Call loopScoreService.getBadgeProgress(userId) and subscribe to result
+  - Store progress in badgeProgress Map
+  - Call prepareDisplayBadges after progress is loaded
+  - _Requirements: 13.1, 13.8_
+
+- [x] 48.3 Update prepareDisplayBadges to include progress
+
+
+  - For each badge, lookup progress from badgeProgress Map
+  - Add progress to DisplayBadge object if available
+  - _Requirements: 13.1, 13.2_
+
+
+- [x] 48.4 Add getProgressText helper method
+
+  - Return empty string if badge is earned or has no progress
+  - Return progress.displayText for unearned badges with progress
+  - _Requirements: 13.2, 13.7_
+
+- [x] 49. Update BadgeDisplayComponent template for progress
+
+
+
+
+
+
+  - Add badge-progress span element for unearned badges with progress
+  - Show progress text using getProgressText() method
+  - Only display progress when showProgress is true and badge has progress data
+  - Show requirement text for unearned badges without progress
+  - Ensure progress display is mutually exclusive with requirement text
+  - _Requirements: 13.1, 13.2, 13.7_
+
+- [x] 50. Add CSS styling for progress display
+
+
+
+
+  - Create .badge-progress class with blue color (#2196F3), light blue background (#E3F2FD)
+  - Style with padding, border-radius, and centered text
+  - Add appropriate font size and weight for readability
+  - Ensure progress text is visually distinct from requirement text
+  - _Requirements: 13.1, 13.2_
+
+- [x] 51. Update parent components to pass userId to BadgeDisplayComponent
+
+
+
+
+  - Update user profile component to pass [userId] input to badge-display
+  - Ensure userId is available from user profile data or auth service
+  - Verify showProgress defaults to true
+  - _Requirements: 13.1, 13.8_
+
+- [ ] 52. Add unit tests for progress display in BadgeDisplayComponent
+
+
+  - Test component fetches badge progress when userId is provided and showProgress is true
+  - Test component does not fetch progress when userId is missing
+  - Test component does not fetch progress when showProgress is false
+  - Test prepareDisplayBadges includes progress data in DisplayBadge objects
+  - Test getProgressText returns correct text for unearned badges with progress
+  - Test getProgressText returns empty string for earned badges
+  - Test getProgressText returns empty string for badges without progress
+  - Test template displays progress for unearned badges with progress data
+  - Test template does not display progress for earned badges
+  - Test template displays requirement text for badges without progress
+  - Test component handles API errors gracefully
+  - _Requirements: 13.1, 13.2, 13.7, 13.8_
+
+- [x] 53. Run all backend tests and verify progress tracking tests pass
+
+
+
+
+  - Execute dotnet test from /Api.Tests directory
+  - Verify all new badge progress tests pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.8_
+
+- [x] 54. Run all frontend tests and verify progress tracking tests pass
+
+
+
+
+
+  - Execute npm test from /ui directory
+  - Verify all new LoopScoreService progress tests pass
+  - Verify all new BadgeDisplayComponent progress tests pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 13.1, 13.2, 13.7, 13.8_

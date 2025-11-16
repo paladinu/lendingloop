@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { ScoreHistoryEntry, BadgeAward, BadgeMetadata } from '../models/auth.interface';
+import { ScoreHistoryEntry, BadgeAward, BadgeMetadata, BadgeProgress, BadgeType } from '../models/auth.interface';
 
 export interface ScoreRules {
     borrowCompleted: number;
@@ -61,7 +62,8 @@ export class LoopScoreService {
                 description: 'Awarded for reaching 10 points',
                 category: 'milestone',
                 requirement: 'Reach 10 points',
-                icon: '🏆'
+                icon: '🏆',
+                hasProgress: true
             },
             {
                 badgeType: 'Silver',
@@ -69,7 +71,8 @@ export class LoopScoreService {
                 description: 'Awarded for reaching 50 points',
                 category: 'milestone',
                 requirement: 'Reach 50 points',
-                icon: '🏆'
+                icon: '🏆',
+                hasProgress: true
             },
             {
                 badgeType: 'Gold',
@@ -77,7 +80,8 @@ export class LoopScoreService {
                 description: 'Awarded for reaching 100 points',
                 category: 'milestone',
                 requirement: 'Reach 100 points',
-                icon: '🏆'
+                icon: '🏆',
+                hasProgress: true
             },
             // Achievement badges
             {
@@ -86,7 +90,8 @@ export class LoopScoreService {
                 description: 'Complete your first lending transaction',
                 category: 'achievement',
                 requirement: 'Lend an item for the first time',
-                icon: '🎁'
+                icon: '🎁',
+                hasProgress: false
             },
             {
                 badgeType: 'ReliableBorrower',
@@ -94,7 +99,8 @@ export class LoopScoreService {
                 description: 'Return items on time consistently',
                 category: 'achievement',
                 requirement: 'Complete 10 on-time returns',
-                icon: '⭐'
+                icon: '⭐',
+                hasProgress: true
             },
             {
                 badgeType: 'GenerousLender',
@@ -102,7 +108,8 @@ export class LoopScoreService {
                 description: 'Share your items frequently',
                 category: 'achievement',
                 requirement: 'Complete 50 lending transactions',
-                icon: '🤝'
+                icon: '🤝',
+                hasProgress: true
             },
             {
                 badgeType: 'PerfectRecord',
@@ -110,7 +117,8 @@ export class LoopScoreService {
                 description: 'Maintain a perfect return streak',
                 category: 'achievement',
                 requirement: 'Complete 25 consecutive on-time returns',
-                icon: '💯'
+                icon: '💯',
+                hasProgress: true
             },
             {
                 badgeType: 'CommunityBuilder',
@@ -118,8 +126,22 @@ export class LoopScoreService {
                 description: 'Grow the LendingLoop community',
                 category: 'achievement',
                 requirement: 'Invite 10 users who become active',
-                icon: '🌟'
+                icon: '🌟',
+                hasProgress: true
             }
         ];
+    }
+
+    getBadgeProgress(userId: string): Observable<Map<BadgeType, BadgeProgress>> {
+        return this.http.get<Record<string, BadgeProgress>>(`${this.API_URL}/${userId}/badge-progress`)
+            .pipe(
+                map(response => {
+                    const progressMap = new Map<BadgeType, BadgeProgress>();
+                    Object.entries(response).forEach(([key, value]) => {
+                        progressMap.set(key as BadgeType, value);
+                    });
+                    return progressMap;
+                })
+            );
     }
 }

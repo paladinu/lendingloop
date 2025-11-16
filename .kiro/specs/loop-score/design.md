@@ -941,6 +941,307 @@ This design change requires updates to:
 4. **Component CSS**: Add styling for unearned badges
 5. **Unit Tests**: Add tests for displaying unearned badges and badge metadata
 
+## Badge Progress Tracking
+
+### Overview
+
+To help users understand how close they are to earning achievement badges, the system displays real-time progress information for unearned badges. This feature motivates users by showing concrete progress toward goals.
+
+### Progress Calculation Logic
+
+**Reliable Borrower Badge** (10 on-time returns):
+- Count ScoreHistory entries with actionType "OnTimeReturn"
+- Display as "X/10 on-time returns"
+- Progress range: 0-10
+
+**Generous Lender Badge** (50 lending transactions):
+- Count completed lending transactions (ItemRequests with status "Completed" where user is owner)
+- Display as "X/50 lending transactions"
+- Progress range: 0-50
+
+**Perfect Record Badge** (25 consecutive on-time returns):
+- Use User.ConsecutiveOnTimeReturns field
+- Display as "X/25 consecutive on-time returns"
+- Progress range: 0-25
+- Note: Resets to 0 on late returns
+
+**Community Builder Badge** (10 active invited users):
+- Count users where InvitedBy matches the user's ID and they have at least one ScoreHistory entry
+- Display as "X/10 active invited users"
+- Progress range: 0-10
+
+**First Lend Badge**:
+- No progress tracking needed (binary: either completed first lend or not)
+- Display requirement text only: "Complete your first lending transaction"
+
+### Backend API Extensions
+
+#### New LoopScoreService Methods
+
+```csharp
+public interface ILoopScoreService
+{
+    // Existing methods...
+    
+    Task<BadgeProgress> GetBadgeProgressAsync(string userId, BadgeType badgeType);
+    Task<Dictionary<BadgeType, BadgeProgress>> GetAllBadgeProgressAsync(string userId);
+}
+
+public class BadgeProgress
+{
+    public int CurrentCount { get; set; }
+    public int RequiredCount { get; set; }
+    public string DisplayText { get; set; }
+}
+```
+
+#### Implementation Details
+
+1. **GetBadgeProgressAsync**: Returns progress for a specific badge type
+   - For ReliableBorrower: Count ScoreHistory entries with actionType "OnTimeReturn"
+   - For GenerousLender: Call GetCompletedLendingTransactionCountAsync
+   - For PerfectRecord: Return User.ConsecutiveOnTimeReturns
+   - For CommunityBuilder: Call GetActiveInvitedUsersCountAsync
+   - For FirstLend: Return 0/1 (not typically displayed)
+
+2. **GetAllBadgeProgressAsync**: Returns progress for all achievement badges
+   - Efficiently batch all progress calculations in a single database query where possible
+   - Return dictionary mapping BadgeType to BadgeProgress
+
+#### New UserController Endpoint
+
+```csharp
+[HttpGet("{userId}/badge-progress")]
+public async Task<ActionResult<Dictionary<BadgeType, BadgeProgress>>> GetBadgeProgress(string userId)
+{
+    var progress = await _loopScoreService.GetAllBadgeProgressAsync(userId);
+    return Ok(progress);
+}
+```
+
+### Frontend Implementation
+
+#### Extended BadgeMetadata Interface
+
+```typescript
+export interface BadgeMetadata {
+    badgeType: BadgeType;
+    name: string;
+    description: string;
+    category: 'milestone' | 'achievement';
+    requirement: string;
+    icon: string;
+    hasProgress: boolean; // NEW: Indicates if badge supports progress tracking
+}
+
+export interface BadgeProgress {
+    currentCount: number;
+    requiredCount: number;
+    displayText: string;
+}
+```
+
+#### Updated LoopScoreService
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class LoopScoreService {
+    // Existing methods...
+    
+    getBadgeProgress(userId: string): Observable<Map<BadgeType, BadgeProgress>> {
+        return this.http.get<Record<string, BadgeProgress>>(
+            `${environment.apiUrl}/api/users/${userId}/badge-progress`
+        ).pipe(
+            map(response => new Map(Object.entries(response)))
+        );
+    }
+}
+```
+
+#### Enhanced BadgeDisplayComponent
+
+```typescript
+@Component({
+    selector: 'app-badge-display',
+    templateUrl: './badge-display.component.html',
+    styleUrls: ['./badge-display.component.css']
+})
+export class BadgeDisplayComponent implements OnInit {
+    @Input() earnedBadges: BadgeAward[] = [];
+    @Input() userId: string = ''; // NEW: Required to fetch progress
+    @Input() showAllBadges: boolean = true;
+    @Input() showProgress: boolean = true; // NEW: Control progress display
+    
+    allBadgeMetadata: BadgeMetadata[] = [];
+    displayBadges: DisplayBadge[] = [];
+    badgeProgress: Map<BadgeType, BadgeProgress> = new Map();
+    
+    constructor(private loopScoreService: LoopScoreService) {}
+    
+    ngOnInit(): void {
+        this.allBadgeMetadata = this.loopScoreService.getAllBadgeMetadata();
+        
+        if (this.showProgress && this.userId) {
+            this.loopScoreService.getBadgeProgress(this.userId).subscribe(
+                progress => {
+                    this.badgeProgress = progress;
+                    this.prepareDisplayBadges();
+                }
+            );
+        } else {
+            this.prepareDisplayBadges();
+        }
+    }
+    
+    prepareDisplayBadges(): void {
+        this.displayBadges = this.allBadgeMetadata.map(metadata => {
+            const earnedBadge = this.earnedBadges.find(b => b.badgeType === metadata.badgeType);
+            const progress = this.badgeProgress.get(metadata.badgeType);
+            
+            return {
+                metadata: metadata,
+                earned: !!earnedBadge,
+                awardedAt: earnedBadge?.awardedAt,
+                progress: progress // NEW: Include progress data
+            };
+        });
+    }
+    
+    getProgressText(badge: DisplayBadge): string {
+        if (badge.earned || !badge.progress) {
+            return '';
+        }
+        return badge.progress.displayText;
+    }
+}
+
+interface DisplayBadge {
+    metadata: BadgeMetadata;
+    earned: boolean;
+    awardedAt?: string;
+    progress?: BadgeProgress; // NEW: Progress information
+}
+```
+
+#### Updated Component Template
+
+```html
+<div class="badges-container">
+    <div class="milestone-badges">
+        <h4>Milestone Badges</h4>
+        <div class="badge-grid">
+            <div *ngFor="let badge of displayBadges | filterByCategory:'milestone'" 
+                 class="badge-item"
+                 [class.earned]="badge.earned"
+                 [class.unearned]="!badge.earned"
+                 [attr.aria-label]="getBadgeAriaLabel(badge)">
+                <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                <span class="badge-name">{{ badge.metadata.name }}</span>
+                <span class="badge-description">{{ badge.metadata.description }}</span>
+                <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="achievement-badges">
+        <h4>Achievement Badges</h4>
+        <div class="badge-grid">
+            <div *ngFor="let badge of displayBadges | filterByCategory:'achievement'" 
+                 class="badge-item"
+                 [class.earned]="badge.earned"
+                 [class.unearned]="!badge.earned"
+                 [attr.aria-label]="getBadgeAriaLabel(badge)">
+                <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                <span class="badge-name">{{ badge.metadata.name }}</span>
+                <span class="badge-description">{{ badge.metadata.description }}</span>
+                
+                <!-- Show progress for unearned badges with progress tracking -->
+                <span class="badge-progress" *ngIf="!badge.earned && badge.progress && showProgress">
+                    Progress: {{ getProgressText(badge) }}
+                </span>
+                
+                <!-- Show requirement for unearned badges without progress -->
+                <span class="badge-requirement" *ngIf="!badge.earned && !badge.progress">
+                    {{ badge.metadata.requirement }}
+                </span>
+                
+                <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### CSS Styling for Progress Display
+
+```css
+.badge-progress {
+    font-size: 12px;
+    color: #2196F3;
+    font-weight: 600;
+    margin-top: 8px;
+    padding: 4px 8px;
+    background-color: #E3F2FD;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.badge-item.unearned .badge-progress {
+    opacity: 0.9;
+}
+```
+
+### Design Rationale
+
+**Why Show Progress?**
+- **Motivation**: Seeing concrete progress (7/10) is more motivating than just seeing a requirement
+- **Transparency**: Users know exactly how close they are to earning each badge
+- **Engagement**: Progress tracking encourages users to complete "just one more" action to reach the goal
+- **Gamification Best Practice**: Progress bars and counters are proven engagement mechanisms
+
+**Why Calculate Progress Server-Side?**
+- **Accuracy**: Server has authoritative data about user actions
+- **Consistency**: Same calculation logic used for badge awards and progress display
+- **Security**: Prevents client-side manipulation of progress data
+- **Performance**: Server can efficiently query database for counts
+
+**Why Not Show Progress for Milestone Badges?**
+- Milestone badges are based on total score, which is already prominently displayed
+- Users can easily calculate their own progress (e.g., "I have 35 points, need 50 for Silver")
+- Reduces visual clutter on the badge display
+
+**Why Include Progress in Badge Display Component?**
+- **Cohesion**: Progress is directly related to badge display
+- **Reusability**: Component can be used with or without progress (controlled by @Input)
+- **User Experience**: Progress appears in context with the badge it relates to
+
+### Performance Considerations
+
+1. **Caching**: Cache badge progress data for 5 minutes to reduce API calls
+2. **Batch Loading**: Fetch all badge progress in a single API call rather than per-badge
+3. **Lazy Loading**: Only load progress when badge display component is visible
+4. **Optimistic Updates**: Update progress immediately in UI after user actions, sync with server in background
+
+### Testing Strategy
+
+#### Backend Unit Tests
+
+- Test GetBadgeProgressAsync returns correct progress for each badge type
+- Test GetAllBadgeProgressAsync returns progress for all achievement badges
+- Test progress calculation accuracy for each badge type
+- Test progress returns 0 when user has no relevant actions
+- Test progress caps at required count (doesn't exceed threshold)
+
+#### Frontend Unit Tests
+
+- Test component fetches badge progress on initialization
+- Test getProgressText returns correct formatted text
+- Test progress display only shows for unearned badges
+- Test progress display respects showProgress input flag
+- Test component handles missing userId gracefully
+- Test component handles API errors gracefully
+
 ## Future Enhancements
 
 - **Leaderboards**: Display top scorers within each loop
@@ -955,4 +1256,5 @@ This design change requires updates to:
 - **Badge Showcase**: Allow users to feature their favorite badge on their profile
 - **Badge Notifications**: Push notifications when badges are earned
 - **Badge Rarity Display**: Show how many users have earned each badge
-- **Progress Tracking**: Show progress toward unearned badges (e.g., "7/10 on-time returns")
+- **Visual Progress Bars**: Replace text progress with visual progress bars or circular indicators
+- **Progress Animations**: Animate progress changes when user completes relevant actions

@@ -13,7 +13,8 @@
                     <span class="badge-icon">{{ badge.metadata.icon }}</span>
                     <span class="badge-name">{{ badge.metadata.name }}</span>
                     <span class="badge-description">{{ badge.metadata.description }}</span>
-                    <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                    <span class="badge-progress" *ngIf="!badge.earned && showProgress && getProgressText(badge)">{{ getProgressText(badge) }}</span>
+                    <span class="badge-requirement" *ngIf="!badge.earned && (!showProgress || !getProgressText(badge))">{{ badge.metadata.requirement }}</span>
                     <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
                 </div>
             </div>
@@ -31,7 +32,8 @@
                     <span class="badge-icon">{{ badge.metadata.icon }}</span>
                     <span class="badge-name">{{ badge.metadata.name }}</span>
                     <span class="badge-description">{{ badge.metadata.description }}</span>
-                    <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                    <span class="badge-progress" *ngIf="!badge.earned && showProgress && getProgressText(badge)">{{ getProgressText(badge) }}</span>
+                    <span class="badge-requirement" *ngIf="!badge.earned && (!showProgress || !getProgressText(badge))">{{ badge.metadata.requirement }}</span>
                     <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
                 </div>
             </div>
