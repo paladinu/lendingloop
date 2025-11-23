@@ -1,4 +1,5 @@
 using Api.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Api.Services;
@@ -523,6 +524,219 @@ public class LoopScoreService : ILoopScoreService
         {
             var progress = await GetBadgeProgressAsync(userId, badgeType);
             result[badgeType] = progress;
+        }
+
+        //assert
+        return result;
+    }
+
+    public async Task<BadgeRarity> GetBadgeRarityAsync(BadgeType badgeType)
+    {
+        //arrange - count users with this badge
+        var usersWithBadge = await _usersCollection
+            .CountDocumentsAsync(u => u.Badges.Any(b => b.BadgeType == badgeType));
+
+        //arrange - count total active users (users with at least one ScoreHistory entry)
+        var totalActiveUsers = await _usersCollection
+            .CountDocumentsAsync(u => u.ScoreHistory.Count > 0);
+
+        //act - calculate percentage and determine rarity category
+        double percentage = 0;
+        if (totalActiveUsers > 0)
+        {
+            percentage = ((double)usersWithBadge / totalActiveUsers) * 100;
+        }
+
+        string rarityCategory;
+        if (percentage > 50)
+        {
+            rarityCategory = "Common";
+        }
+        else if (percentage > 25)
+        {
+            rarityCategory = "Uncommon";
+        }
+        else if (percentage > 10)
+        {
+            rarityCategory = "Rare";
+        }
+        else if (percentage > 5)
+        {
+            rarityCategory = "Very Rare";
+        }
+        else
+        {
+            rarityCategory = "Ultra Rare";
+        }
+
+        //assert - return rarity object
+        return new BadgeRarity
+        {
+            BadgeType = badgeType,
+            UsersWithBadge = (int)usersWithBadge,
+            TotalActiveUsers = (int)totalActiveUsers,
+            Percentage = percentage,
+            RarityCategory = rarityCategory
+        };
+    }
+
+    public async Task<Dictionary<BadgeType, BadgeRarity>> GetAllBadgeRaritiesAsync()
+    {
+        //arrange - use MongoDB aggregation pipeline to efficiently calculate rarities for all badge types
+        var result = new Dictionary<BadgeType, BadgeRarity>();
+        
+        // Get all badge types
+        var allBadges = new[]
+        {
+            BadgeType.Bronze,
+            BadgeType.Silver,
+            BadgeType.Gold,
+            BadgeType.FirstLend,
+            BadgeType.ReliableBorrower,
+            BadgeType.GenerousLender,
+            BadgeType.PerfectRecord,
+            BadgeType.CommunityBuilder
+        };
+
+        try
+        {
+            // Use aggregation pipeline to count active users once and badge counts in a single query
+            var pipeline = new[]
+            {
+                // Stage 1: Use $facet to run multiple aggregations in parallel
+                new BsonDocument("$facet", new BsonDocument
+                {
+                    // Count total active users (users with at least one ScoreHistory entry)
+                    { "activeUsers", new BsonArray
+                        {
+                            new BsonDocument("$match", new BsonDocument("scoreHistory.0", new BsonDocument("$exists", true))),
+                            new BsonDocument("$count", "total")
+                        }
+                    },
+                    // Count users per badge type
+                    { "badgeCounts", new BsonArray
+                        {
+                            new BsonDocument("$unwind", "$badges"),
+                            new BsonDocument("$group", new BsonDocument
+                            {
+                                { "_id", "$badges.badgeType" },
+                                { "count", new BsonDocument("$sum", 1) }
+                            })
+                        }
+                    }
+                })
+            };
+
+            var aggregationResult = await _usersCollection.Aggregate<BsonDocument>(pipeline).FirstOrDefaultAsync();
+
+            if (aggregationResult == null)
+            {
+                _logger.LogWarning("Aggregation returned null when calculating badge rarities");
+                // Return empty rarities for all badges
+                foreach (var badgeType in allBadges)
+                {
+                    result[badgeType] = new BadgeRarity
+                    {
+                        BadgeType = badgeType,
+                        UsersWithBadge = 0,
+                        TotalActiveUsers = 0,
+                        Percentage = 0,
+                        RarityCategory = "Ultra Rare"
+                    };
+                }
+                return result;
+            }
+
+            //act - extract results from aggregation
+            var activeUsersArray = aggregationResult["activeUsers"].AsBsonArray;
+            var totalActiveUsers = activeUsersArray.Count > 0 
+                ? activeUsersArray[0].AsBsonDocument["total"].AsInt32 
+                : 0;
+
+            var badgeCountsArray = aggregationResult["badgeCounts"].AsBsonArray;
+            var badgeCounts = new Dictionary<string, int>();
+            
+            foreach (var item in badgeCountsArray)
+            {
+                var doc = item.AsBsonDocument;
+                var badgeTypeStr = doc["_id"].AsString;
+                var count = doc["count"].AsInt32;
+                badgeCounts[badgeTypeStr] = count;
+            }
+
+            _logger.LogInformation("Calculated badge rarities: {TotalActiveUsers} active users, {BadgeCount} badge types with earners", 
+                totalActiveUsers, badgeCounts.Count);
+
+            // Calculate rarity for each badge type
+            foreach (var badgeType in allBadges)
+            {
+                var badgeTypeStr = badgeType.ToString();
+                var usersWithBadge = badgeCounts.ContainsKey(badgeTypeStr) ? badgeCounts[badgeTypeStr] : 0;
+
+                double percentage = 0;
+                if (totalActiveUsers > 0)
+                {
+                    percentage = ((double)usersWithBadge / totalActiveUsers) * 100;
+                }
+
+                string rarityCategory;
+                if (percentage > 50)
+                {
+                    rarityCategory = "Common";
+                }
+                else if (percentage > 25)
+                {
+                    rarityCategory = "Uncommon";
+                }
+                else if (percentage > 10)
+                {
+                    rarityCategory = "Rare";
+                }
+                else if (percentage > 5)
+                {
+                    rarityCategory = "Very Rare";
+                }
+                else
+                {
+                    rarityCategory = "Ultra Rare";
+                }
+
+                result[badgeType] = new BadgeRarity
+                {
+                    BadgeType = badgeType,
+                    UsersWithBadge = usersWithBadge,
+                    TotalActiveUsers = totalActiveUsers,
+                    Percentage = percentage,
+                    RarityCategory = rarityCategory
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating badge rarities using aggregation pipeline");
+            
+            // Fallback to individual queries if aggregation fails
+            _logger.LogInformation("Falling back to individual badge rarity queries");
+            foreach (var badgeType in allBadges)
+            {
+                try
+                {
+                    var rarity = await GetBadgeRarityAsync(badgeType);
+                    result[badgeType] = rarity;
+                }
+                catch (Exception innerEx)
+                {
+                    _logger.LogError(innerEx, "Error getting rarity for badge {BadgeType}", badgeType);
+                    result[badgeType] = new BadgeRarity
+                    {
+                        BadgeType = badgeType,
+                        UsersWithBadge = 0,
+                        TotalActiveUsers = 0,
+                        Percentage = 0,
+                        RarityCategory = "Ultra Rare"
+                    };
+                }
+            }
         }
 
         //assert

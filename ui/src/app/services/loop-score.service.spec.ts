@@ -284,4 +284,113 @@ describe('LoopScoreService', () => {
         expect(silver?.hasProgress).toBe(true);
         expect(gold?.hasProgress).toBe(true);
     });
+
+    it('getBadgeRarities() should make correct HTTP GET request', () => {
+        //arrange
+        const mockResponse = {
+            'Bronze': {
+                badgeType: 'Bronze',
+                usersWithBadge: 50,
+                totalActiveUsers: 100,
+                percentage: 50.0,
+                rarityCategory: 'Common'
+            },
+            'Silver': {
+                badgeType: 'Silver',
+                usersWithBadge: 20,
+                totalActiveUsers: 100,
+                percentage: 20.0,
+                rarityCategory: 'Rare'
+            }
+        };
+
+        //act
+        service.getBadgeRarities().subscribe(rarityMap => {
+            //assert
+            expect(rarityMap).toBeInstanceOf(Map);
+            expect(rarityMap.size).toBe(2);
+            expect(rarityMap.get('Bronze')?.percentage).toBe(50.0);
+            expect(rarityMap.get('Silver')?.rarityCategory).toBe('Rare');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/users/badges/rarity`);
+        expect(req.request.method).toBe('GET');
+        req.flush(mockResponse);
+    });
+
+    it('getBadgeRarities() should convert response to Map correctly', () => {
+        //arrange
+        const mockResponse = {
+            'Gold': {
+                badgeType: 'Gold',
+                usersWithBadge: 5,
+                totalActiveUsers: 100,
+                percentage: 5.0,
+                rarityCategory: 'Very Rare'
+            }
+        };
+
+        //act
+        service.getBadgeRarities().subscribe(rarityMap => {
+            //assert
+            expect(rarityMap).toBeInstanceOf(Map);
+            const rarity = rarityMap.get('Gold');
+            expect(rarity).toBeDefined();
+            expect(rarity?.usersWithBadge).toBe(5);
+            expect(rarity?.totalActiveUsers).toBe(100);
+            expect(rarity?.percentage).toBe(5.0);
+            expect(rarity?.rarityCategory).toBe('Very Rare');
+        });
+
+        const req = httpMock.expectOne(`${environment.apiUrl}/api/users/badges/rarity`);
+        req.flush(mockResponse);
+    });
+
+    it('getRarityColor() should return correct color for Common', () => {
+        //act
+        const color = service.getRarityColor('Common');
+
+        //assert
+        expect(color).toBe('#9E9E9E');
+    });
+
+    it('getRarityColor() should return correct color for Uncommon', () => {
+        //act
+        const color = service.getRarityColor('Uncommon');
+
+        //assert
+        expect(color).toBe('#4CAF50');
+    });
+
+    it('getRarityColor() should return correct color for Rare', () => {
+        //act
+        const color = service.getRarityColor('Rare');
+
+        //assert
+        expect(color).toBe('#2196F3');
+    });
+
+    it('getRarityColor() should return correct color for Very Rare', () => {
+        //act
+        const color = service.getRarityColor('Very Rare');
+
+        //assert
+        expect(color).toBe('#9C27B0');
+    });
+
+    it('getRarityColor() should return correct color for Ultra Rare', () => {
+        //act
+        const color = service.getRarityColor('Ultra Rare');
+
+        //assert
+        expect(color).toBe('#FF9800');
+    });
+
+    it('getRarityColor() should return default color for unknown category', () => {
+        //act
+        const color = service.getRarityColor('Unknown');
+
+        //assert
+        expect(color).toBe('#9E9E9E');
+    });
 });

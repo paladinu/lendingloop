@@ -943,7 +943,12 @@
   - Verify showProgress defaults to true
   - _Requirements: 13.1, 13.8_
 
-- [ ] 52. Add unit tests for progress display in BadgeDisplayComponent
+- [x] 52. Add unit tests for progress display in BadgeDisplayComponent
+
+
+
+
+
 
 
   - Test component fetches badge progress when userId is provided and showProgress is true
@@ -982,3 +987,217 @@
   - Verify existing tests still pass
   - Fix any failing tests
   - _Requirements: 13.1, 13.2, 13.7, 13.8_
+
+- [x] 55. Add BadgeRarity model to backend
+
+
+
+
+  - Create BadgeRarity class in Models folder with BadgeType, UsersWithBadge, TotalActiveUsers, Percentage, and RarityCategory properties
+  - Add BSON attributes for MongoDB serialization
+  - _Requirements: 14.1, 14.2, 14.3_
+
+- [x] 56. Extend ILoopScoreService interface for badge rarity
+
+
+
+
+  - Add GetBadgeRarityAsync(BadgeType badgeType) method signature
+  - Add GetAllBadgeRaritiesAsync() method signature returning Dictionary<BadgeType, BadgeRarity>
+  - _Requirements: 14.1, 14.2, 14.4_
+
+- [x] 57. Implement badge rarity calculation in LoopScoreService
+
+
+
+- [x] 57.1 Implement GetBadgeRarityAsync method
+
+
+  - Count users who have the specified badge in their Badges array
+  - Count total active users (users with at least one ScoreHistory entry)
+  - Calculate percentage: (usersWithBadge / totalActiveUsers) × 100
+  - Determine rarity category based on percentage thresholds (Common > 50%, Uncommon 25-50%, Rare 10-25%, Very Rare 5-10%, Ultra Rare < 5%)
+  - Return BadgeRarity object with all statistics
+  - Handle edge cases: zero active users, zero badge earners
+  - _Requirements: 14.1, 14.2, 14.3, 14.4_
+
+
+- [x] 57.2 Implement GetAllBadgeRaritiesAsync method
+
+
+
+
+
+  - Use MongoDB aggregation pipeline to efficiently calculate rarities for all badge types
+  - Count active users once and reuse for all badge calculations
+  - Return dictionary mapping BadgeType to BadgeRarity
+  - Optimize with batch database queries
+  - _Requirements: 14.1, 14.2, 14.4_
+
+
+- [x] 58. Add UserController endpoint for badge rarity
+
+
+
+  - Create GET /api/users/badges/rarity endpoint
+  - Call LoopScoreService.GetAllBadgeRaritiesAsync
+  - Return rarities as JSON dictionary
+  - No userId required (global statistics)
+  - _Requirements: 14.1, 14.2, 14.4_
+
+
+- [x] 59. Add unit tests for badge rarity backend
+
+
+
+  - Test GetBadgeRarityAsync calculates correct percentage for each badge type
+  - Test GetBadgeRarityAsync returns correct rarity category based on percentage
+  - Test GetBadgeRarityAsync only counts active users (with ScoreHistory entries)
+  - Test GetBadgeRarityAsync handles zero active users gracefully
+  - Test GetBadgeRarityAsync handles badges with zero earners
+  - Test GetAllBadgeRaritiesAsync returns rarity for all badge types
+  - Test rarity category thresholds (Common, Uncommon, Rare, Very Rare, Ultra Rare)
+  - Test UserController endpoint returns badge rarities successfully
+  - _Requirements: 14.1, 14.2, 14.3, 14.4_
+
+- [x] 60. Add BadgeRarity interface to Angular
+
+
+
+
+  - Create BadgeRarity interface in auth.interface.ts with badgeType, usersWithBadge, totalActiveUsers, percentage, rarityCategory properties
+  - Update BadgeMetadata interface to include optional rarity property
+  - _Requirements: 14.1, 14.2, 14.3_
+
+
+- [x] 61. Update LoopScoreService in Angular for badge rarity
+
+
+
+- [x] 61.1 Add getBadgeRarities method
+
+  - Implement getBadgeRarities(): Observable<Map<BadgeType, BadgeRarity>>
+  - Make HTTP GET request to /api/users/badges/rarity
+  - Convert response object to Map for easier lookup
+  - _Requirements: 14.1, 14.2, 14.4_
+
+
+- [x] 61.2 Add getRarityColor helper method
+
+  - Implement getRarityColor(rarityCategory: string): string
+  - Return color codes: Common (#9E9E9E grey), Uncommon (#4CAF50 green), Rare (#2196F3 blue), Very Rare (#9C27B0 purple), Ultra Rare (#FF9800 orange)
+  - _Requirements: 14.3, 14.5_
+
+
+- [x] 61.3 Add unit tests for rarity methods
+
+  - Test getBadgeRarities makes correct HTTP GET request
+  - Test getBadgeRarities converts response to Map correctly
+  - Test getRarityColor returns correct color for each rarity category
+  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+
+
+
+- [x] 62. Update BadgeDisplayComponent for badge rarity
+
+
+- [x] 62.1 Add rarity tracking inputs and properties
+
+  - Add @Input() showRarity: boolean = true property to control rarity display
+  - Add badgeRarities: Map<BadgeType, BadgeRarity> property
+  - Update DisplayBadge interface to include rarity?: BadgeRarity property
+  - _Requirements: 14.1, 14.2, 14.3_
+
+
+- [x] 62.2 Implement rarity loading in ngOnInit
+
+  - Check if showRarity is true
+  - Call loopScoreService.getBadgeRarities() and subscribe to result
+  - Store rarities in badgeRarities Map
+  - Handle errors gracefully (continue without rarity data)
+  - Refactor to load rarities first, then progress, then prepare display badges
+  - _Requirements: 14.1, 14.2, 14.4_
+
+
+
+- [x] 62.3 Update prepareDisplayBadges to include rarity
+
+  - For each badge, lookup rarity from badgeRarities Map
+  - Add rarity to DisplayBadge object if available
+  - _Requirements: 14.1, 14.2, 14.3_
+
+
+
+
+- [x] 62.4 Add helper methods for rarity display
+
+
+
+
+
+  - Implement getRarityText(badge: DisplayBadge): string to format rarity as "X.X% of users"
+  - Implement getRarityColor(rarityCategory: string): string by calling loopScoreService.getRarityColor
+
+  - _Requirements: 14.2, 14.3, 14.5_
+
+- [x] 63. Update BadgeDisplayComponent template for rarity
+
+
+  - Add badge-rarity span element for all badges (both earned and unearned)
+  - Display rarity category and percentage using getRarityText()
+  - Apply color styling using getRarityColor() with [style.color] binding
+  - Only display rarity when showRarity is true and badge has rarity data
+  - Position rarity display between description and requirement/progress/earned date
+  - _Requirements: 14.1, 14.2, 14.3, 14.5_
+
+
+- [x] 64. Add CSS styling for rarity display
+
+
+  - Create .badge-rarity class with small font size (11px), bold weight
+  - Style with semi-transparent background, border-radius, centered text
+  - Add uppercase text-transform and letter-spacing for visual distinction
+  - Differentiate styling for earned vs unearned badges (opacity)
+  - Ensure rarity text is visually distinct from other badge information
+  - _Requirements: 14.3, 14.5_
+
+
+- [x] 65. Add unit tests for rarity display in BadgeDisplayComponent
+
+
+  - Test component fetches badge rarities when showRarity is true
+  - Test component does not fetch rarities when showRarity is false
+  - Test prepareDisplayBadges includes rarity data in DisplayBadge objects
+  - Test getRarityText returns correct formatted text
+  - Test getRarityColor returns correct color for each rarity category
+  - Test template displays rarity for both earned and unearned badges
+  - Test template respects showRarity input flag
+  - Test component handles API errors gracefully (continues without rarity data)
+  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+
+
+- [x] 66. Run all backend tests and verify badge rarity tests pass
+
+
+
+  - Execute dotnet test from /Api.Tests directory
+  - Verify all new badge rarity tests pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 14.1, 14.2, 14.3, 14.4_
+
+
+- [x] 67. Run all frontend tests and verify badge rarity tests pass
+
+
+
+
+
+
+
+  - Execute npm test from /ui directory
+  - Verify all new LoopScoreService rarity tests pass
+  - Verify all new BadgeDisplayComponent rarity tests pass
+  - Verify existing tests still pass
+  - Fix any failing tests
+  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_

@@ -45,6 +45,8 @@ describe('ProfileComponent', () => {
       getUserScoreAsync: jest.fn().mockReturnValue(of(10)),
       getScoreExplanation: jest.fn().mockReturnValue([]),
       getBadgeProgress: jest.fn().mockReturnValue(of(new Map())),
+      getBadgeRarities: jest.fn().mockReturnValue(of(new Map())),
+      getRarityColor: jest.fn().mockReturnValue('#9E9E9E'),
       getAllBadgeMetadata: jest.fn().mockReturnValue([
         { badgeType: 'Bronze', name: 'Bronze Badge', description: 'Awarded for reaching 10 points', category: 'milestone', requirement: 'Reach 10 points', icon: '🏆' },
         { badgeType: 'Silver', name: 'Silver Badge', description: 'Awarded for reaching 50 points', category: 'milestone', requirement: 'Reach 50 points', icon: '🏆' },

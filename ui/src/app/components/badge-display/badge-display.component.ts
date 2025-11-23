@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BadgeAward, BadgeType, BadgeMetadata, BadgeProgress } from '../../models/auth.interface';
+import { BadgeAward, BadgeType, BadgeMetadata, BadgeProgress, BadgeRarity } from '../../models/auth.interface';
 import { LoopScoreService } from '../../services/loop-score.service';
 import { FilterByCategoryPipe } from '../../pipes/filter-by-category.pipe';
 
@@ -9,6 +9,7 @@ export interface DisplayBadge {
     earned: boolean;
     awardedAt?: string;
     progress?: BadgeProgress;
+    rarity?: BadgeRarity;
 }
 
 @Component({
@@ -23,10 +24,12 @@ export class BadgeDisplayComponent implements OnInit {
     @Input() userId: string = '';
     @Input() showAllBadges: boolean = true;
     @Input() showProgress: boolean = true;
+    @Input() showRarity: boolean = true;
     
     allBadgeMetadata: BadgeMetadata[] = [];
     displayBadges: DisplayBadge[] = [];
     badgeProgress: Map<BadgeType, BadgeProgress> = new Map();
+    badgeRarities: Map<BadgeType, BadgeRarity> = new Map();
     milestoneBadges: BadgeAward[] = [];
     achievementBadges: BadgeAward[] = [];
 
@@ -36,22 +39,40 @@ export class BadgeDisplayComponent implements OnInit {
         if (this.showAllBadges) {
             this.allBadgeMetadata = this.loopScoreService.getAllBadgeMetadata();
             
-            if (this.showProgress && this.userId) {
-                this.loopScoreService.getBadgeProgress(this.userId).subscribe({
-                    next: (progress) => {
-                        this.badgeProgress = progress;
-                        this.prepareDisplayBadges();
+            // Load rarities first, then progress, then prepare display badges
+            if (this.showRarity) {
+                this.loopScoreService.getBadgeRarities().subscribe({
+                    next: (rarities) => {
+                        this.badgeRarities = rarities;
+                        this.loadProgressAndPrepare();
                     },
                     error: (error) => {
-                        console.error('Error loading badge progress:', error);
-                        this.prepareDisplayBadges();
+                        console.error('Error loading badge rarities:', error);
+                        this.loadProgressAndPrepare();
                     }
                 });
             } else {
-                this.prepareDisplayBadges();
+                this.loadProgressAndPrepare();
             }
         } else {
             this.categorizeBadges();
+        }
+    }
+
+    private loadProgressAndPrepare(): void {
+        if (this.showProgress && this.userId) {
+            this.loopScoreService.getBadgeProgress(this.userId).subscribe({
+                next: (progress) => {
+                    this.badgeProgress = progress;
+                    this.prepareDisplayBadges();
+                },
+                error: (error) => {
+                    console.error('Error loading badge progress:', error);
+                    this.prepareDisplayBadges();
+                }
+            });
+        } else {
+            this.prepareDisplayBadges();
         }
     }
 
@@ -59,12 +80,14 @@ export class BadgeDisplayComponent implements OnInit {
         this.displayBadges = this.allBadgeMetadata.map(metadata => {
             const earnedBadge = this.earnedBadges.find(b => b.badgeType === metadata.badgeType);
             const progress = this.badgeProgress.get(metadata.badgeType);
+            const rarity = this.badgeRarities.get(metadata.badgeType);
             
             return {
                 metadata: metadata,
                 earned: !!earnedBadge,
                 awardedAt: earnedBadge?.awardedAt,
-                progress: progress
+                progress: progress,
+                rarity: rarity
             };
         });
     }
@@ -151,5 +174,16 @@ export class BadgeDisplayComponent implements OnInit {
             default:
                 return '';
         }
+    }
+
+    getRarityText(badge: DisplayBadge): string {
+        if (!badge.rarity) {
+            return '';
+        }
+        return `${badge.rarity.percentage.toFixed(1)}% of users`;
+    }
+
+    getRarityColor(rarityCategory: string): string {
+        return this.loopScoreService.getRarityColor(rarityCategory);
     }
 }

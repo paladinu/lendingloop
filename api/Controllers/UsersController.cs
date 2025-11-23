@@ -111,4 +111,19 @@ public class UsersController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while retrieving the badge progress" });
         }
     }
+
+    [HttpGet("badges/rarity")]
+    public async Task<ActionResult<Dictionary<BadgeType, BadgeRarity>>> GetBadgeRarities()
+    {
+        try
+        {
+            var rarities = await _loopScoreService.GetAllBadgeRaritiesAsync();
+            return Ok(rarities);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving badge rarities");
+            return StatusCode(500, new { message = "An error occurred while retrieving badge rarities" });
+        }
+    }
 }

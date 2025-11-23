@@ -249,4 +249,30 @@ public class UsersControllerTests
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         Assert.NotNull(notFoundResult.Value);
     }
+
+    [Fact]
+    public async Task GetBadgeRarities_ReturnsRarities_Successfully()
+    {
+        //arrange
+        var rarities = new Dictionary<BadgeType, BadgeRarity>
+        {
+            { BadgeType.Bronze, new BadgeRarity { BadgeType = BadgeType.Bronze, UsersWithBadge = 50, TotalActiveUsers = 100, Percentage = 50.0, RarityCategory = "Common" } },
+            { BadgeType.Silver, new BadgeRarity { BadgeType = BadgeType.Silver, UsersWithBadge = 20, TotalActiveUsers = 100, Percentage = 20.0, RarityCategory = "Rare" } },
+            { BadgeType.Gold, new BadgeRarity { BadgeType = BadgeType.Gold, UsersWithBadge = 5, TotalActiveUsers = 100, Percentage = 5.0, RarityCategory = "Very Rare" } }
+        };
+
+        _mockLoopScoreService.Setup(s => s.GetAllBadgeRaritiesAsync()).ReturnsAsync(rarities);
+
+        //act
+        var result = await _controller.GetBadgeRarities();
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedRarities = Assert.IsType<Dictionary<BadgeType, BadgeRarity>>(okResult.Value);
+        Assert.Equal(3, returnedRarities.Count);
+        Assert.Equal(50, returnedRarities[BadgeType.Bronze].UsersWithBadge);
+        Assert.Equal("Common", returnedRarities[BadgeType.Bronze].RarityCategory);
+        Assert.Equal(20, returnedRarities[BadgeType.Silver].UsersWithBadge);
+        Assert.Equal("Rare", returnedRarities[BadgeType.Silver].RarityCategory);
+    }
 }

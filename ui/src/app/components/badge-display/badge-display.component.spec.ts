@@ -3,6 +3,7 @@ import { BadgeDisplayComponent } from './badge-display.component';
 import { BadgeAward } from '../../models/auth.interface';
 import { LoopScoreService } from '../../services/loop-score.service';
 import { provideHttpClient } from '@angular/common/http';
+import { of } from 'rxjs';
 
 describe('BadgeDisplayComponent', () => {
     let component: BadgeDisplayComponent;
@@ -20,7 +21,10 @@ describe('BadgeDisplayComponent', () => {
                 { badgeType: 'GenerousLender', name: 'Generous Lender', description: 'Share your items frequently', category: 'achievement', requirement: 'Complete 50 lending transactions', icon: '🤝' },
                 { badgeType: 'PerfectRecord', name: 'Perfect Record', description: 'Maintain a perfect return streak', category: 'achievement', requirement: 'Complete 25 consecutive on-time returns', icon: '💯' },
                 { badgeType: 'CommunityBuilder', name: 'Community Builder', description: 'Grow the LendingLoop community', category: 'achievement', requirement: 'Invite 10 users who become active', icon: '🌟' }
-            ])
+            ]),
+            getBadgeProgress: jest.fn().mockReturnValue(of(new Map())),
+            getBadgeRarities: jest.fn().mockReturnValue(of(new Map())),
+            getRarityColor: jest.fn().mockReturnValue('#9E9E9E')
         };
 
         await TestBed.configureTestingModule({
@@ -687,5 +691,401 @@ describe('BadgeDisplayComponent', () => {
         const ariaLabel = badgeItems[0].getAttribute('aria-label');
         expect(ariaLabel).toContain('Bronze Badge');
         expect(ariaLabel).toContain('Reach 10 points');
+    });
+
+    // Tests for progress display - Task 52
+    it('should fetch badge progress when userId is provided and showProgress is true', () => {
+        //arrange
+        const mockProgress = new Map<BadgeType, BadgeProgress>([
+            ['ReliableBorrower', { currentCount: 5, requiredCount: 10, displayText: '5/10 on-time returns' }]
+        ]);
+        const getBadgeProgressSpy = jest.spyOn(mockLoopScoreService, 'getBadgeProgress').mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.next(mockProgress);
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showProgress = true;
+        component.userId = 'user123';
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(getBadgeProgressSpy).toHaveBeenCalledWith('user123');
+    });
+
+    it('should not fetch progress when userId is missing', () => {
+        //arrange
+        const getBadgeProgressSpy = jest.spyOn(mockLoopScoreService, 'getBadgeProgress');
+        component.showAllBadges = true;
+        component.showProgress = true;
+        component.userId = '';
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(getBadgeProgressSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not fetch progress when showProgress is false', () => {
+        //arrange
+        const getBadgeProgressSpy = jest.spyOn(mockLoopScoreService, 'getBadgeProgress');
+        component.showAllBadges = true;
+        component.showProgress = false;
+        component.userId = 'user123';
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(getBadgeProgressSpy).not.toHaveBeenCalled();
+    });
+
+    it('should include progress data in DisplayBadge objects', () => {
+        //arrange
+        const mockProgress = new Map<BadgeType, BadgeProgress>([
+            ['ReliableBorrower', { currentCount: 5, requiredCount: 10, displayText: '5/10 on-time returns' }],
+            ['GenerousLender', { currentCount: 20, requiredCount: 50, displayText: '20/50 lending transactions' }]
+        ]);
+        component.badgeProgress = mockProgress;
+        component.earnedBadges = [];
+        component.allBadgeMetadata = mockLoopScoreService.getAllBadgeMetadata();
+
+        //act
+        component.prepareDisplayBadges();
+
+        //assert
+        const reliableBorrowerBadge = component.displayBadges.find(b => b.metadata.badgeType === 'ReliableBorrower');
+        const generousLenderBadge = component.displayBadges.find(b => b.metadata.badgeType === 'GenerousLender');
+        
+        expect(reliableBorrowerBadge?.progress).toBeDefined();
+        expect(reliableBorrowerBadge?.progress?.currentCount).toBe(5);
+        expect(reliableBorrowerBadge?.progress?.requiredCount).toBe(10);
+        expect(reliableBorrowerBadge?.progress?.displayText).toBe('5/10 on-time returns');
+        
+        expect(generousLenderBadge?.progress).toBeDefined();
+        expect(generousLenderBadge?.progress?.currentCount).toBe(20);
+        expect(generousLenderBadge?.progress?.requiredCount).toBe(50);
+    });
+
+    it('should return correct text for unearned badges with progress', () => {
+        //arrange
+        const displayBadge: DisplayBadge = {
+            metadata: {
+                badgeType: 'ReliableBorrower',
+                name: 'Reliable Borrower',
+                description: 'Return items on time consistently',
+                category: 'achievement',
+                requirement: 'Complete 10 on-time returns',
+                icon: '⭐',
+                hasProgress: true
+            },
+            earned: false,
+            progress: {
+                currentCount: 7,
+                requiredCount: 10,
+                displayText: '7/10 on-time returns'
+            }
+        };
+
+        //act
+        const progressText = component.getProgressText(displayBadge);
+
+        //assert
+        expect(progressText).toBe('7/10 on-time returns');
+    });
+
+    it('should return empty string for earned badges', () => {
+        //arrange
+        const displayBadge: DisplayBadge = {
+            metadata: {
+                badgeType: 'ReliableBorrower',
+                name: 'Reliable Borrower',
+                description: 'Return items on time consistently',
+                category: 'achievement',
+                requirement: 'Complete 10 on-time returns',
+                icon: '⭐',
+                hasProgress: true
+            },
+            earned: true,
+            awardedAt: new Date().toISOString(),
+            progress: {
+                currentCount: 10,
+                requiredCount: 10,
+                displayText: '10/10 on-time returns'
+            }
+        };
+
+        //act
+        const progressText = component.getProgressText(displayBadge);
+
+        //assert
+        expect(progressText).toBe('');
+    });
+
+    it('should return empty string for badges without progress', () => {
+        //arrange
+        const displayBadge: DisplayBadge = {
+            metadata: {
+                badgeType: 'Bronze',
+                name: 'Bronze Badge',
+                description: 'Awarded for reaching 10 points',
+                category: 'milestone',
+                requirement: 'Reach 10 points',
+                icon: '🏆',
+                hasProgress: false
+            },
+            earned: false
+        };
+
+        //act
+        const progressText = component.getProgressText(displayBadge);
+
+        //assert
+        expect(progressText).toBe('');
+    });
+
+    it('should display progress for unearned badges with progress data', () => {
+        //arrange
+        const mockProgress = new Map<BadgeType, BadgeProgress>([
+            ['ReliableBorrower', { currentCount: 5, requiredCount: 10, displayText: '5/10 on-time returns' }]
+        ]);
+        mockLoopScoreService.getBadgeProgress = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.next(mockProgress);
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showProgress = true;
+        component.userId = 'user123';
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const progressElements = fixture.nativeElement.querySelectorAll('.badge-progress');
+        expect(progressElements.length).toBeGreaterThan(0);
+        
+        const reliableBorrowerProgress = Array.from(progressElements).find((el: any) => 
+            el.textContent.includes('5/10 on-time returns')
+        );
+        expect(reliableBorrowerProgress).toBeTruthy();
+    });
+
+    it('should not display progress for earned badges', () => {
+        //arrange
+        const mockProgress = new Map<BadgeType, BadgeProgress>([
+            ['ReliableBorrower', { currentCount: 10, requiredCount: 10, displayText: '10/10 on-time returns' }]
+        ]);
+        mockLoopScoreService.getBadgeProgress = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.next(mockProgress);
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showProgress = true;
+        component.userId = 'user123';
+        component.earnedBadges = [
+            { badgeType: 'ReliableBorrower', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const progressElements = fixture.nativeElement.querySelectorAll('.badge-progress');
+        const reliableBorrowerProgress = Array.from(progressElements).find((el: any) => 
+            el.textContent.includes('10/10 on-time returns')
+        );
+        expect(reliableBorrowerProgress).toBeFalsy();
+    });
+
+    it('should display requirement text for badges without progress', () => {
+        //arrange
+        const mockProgress = new Map<BadgeType, BadgeProgress>();
+        mockLoopScoreService.getBadgeProgress = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.next(mockProgress);
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showProgress = true;
+        component.userId = 'user123';
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const requirementElements = fixture.nativeElement.querySelectorAll('.badge-requirement');
+        expect(requirementElements.length).toBeGreaterThan(0);
+        
+        const bronzeRequirement = Array.from(requirementElements).find((el: any) => 
+            el.textContent.includes('Reach 10 points')
+        );
+        expect(bronzeRequirement).toBeTruthy();
+    });
+
+    it('should handle API errors gracefully', () => {
+        //arrange
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        mockLoopScoreService.getBadgeProgress = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.error(new Error('API Error'));
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showProgress = true;
+        component.userId = 'user123';
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading badge progress:', expect.any(Error));
+        expect(component.displayBadges.length).toBe(8); // Should still prepare display badges
+        
+        consoleErrorSpy.mockRestore();
+    });
+
+    // Badge Rarity Tests
+    it('should fetch badge rarities when showRarity is true', () => {
+        //arrange
+        const mockRarities = new Map([
+            ['Bronze', { badgeType: 'Bronze', usersWithBadge: 50, totalActiveUsers: 100, percentage: 50.0, rarityCategory: 'Common' }]
+        ]);
+        mockLoopScoreService.getBadgeRarities = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.next(mockRarities);
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showRarity = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(mockLoopScoreService.getBadgeRarities).toHaveBeenCalled();
+        expect(component.badgeRarities).toEqual(mockRarities);
+    });
+
+    it('should not fetch rarities when showRarity is false', () => {
+        //arrange
+        mockLoopScoreService.getBadgeRarities = jest.fn();
+        component.showAllBadges = true;
+        component.showRarity = false;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(mockLoopScoreService.getBadgeRarities).not.toHaveBeenCalled();
+    });
+
+    it('should include rarity data in DisplayBadge objects', () => {
+        //arrange
+        const mockRarities = new Map([
+            ['Bronze', { badgeType: 'Bronze', usersWithBadge: 50, totalActiveUsers: 100, percentage: 50.0, rarityCategory: 'Common' }]
+        ]);
+        mockLoopScoreService.getBadgeRarities = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.next(mockRarities);
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showRarity = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        const bronzeBadge = component.displayBadges.find(b => b.metadata.badgeType === 'Bronze');
+        expect(bronzeBadge?.rarity).toBeDefined();
+        expect(bronzeBadge?.rarity?.rarityCategory).toBe('Common');
+    });
+
+    it('getRarityText should return correct formatted text', () => {
+        //arrange
+        const badge: any = {
+            rarity: { percentage: 25.5, rarityCategory: 'Rare' }
+        };
+
+        //act
+        const text = component.getRarityText(badge);
+
+        //assert
+        expect(text).toBe('25.5% of users');
+    });
+
+    it('getRarityText should return empty string when no rarity', () => {
+        //arrange
+        const badge: any = { rarity: undefined };
+
+        //act
+        const text = component.getRarityText(badge);
+
+        //assert
+        expect(text).toBe('');
+    });
+
+    it('getRarityColor should call loopScoreService.getRarityColor', () => {
+        //arrange
+        mockLoopScoreService.getRarityColor = jest.fn().mockReturnValue('#2196F3');
+
+        //act
+        const color = component.getRarityColor('Rare');
+
+        //assert
+        expect(mockLoopScoreService.getRarityColor).toHaveBeenCalledWith('Rare');
+        expect(color).toBe('#2196F3');
+    });
+
+    it('should handle rarity API errors gracefully', () => {
+        //arrange
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        mockLoopScoreService.getBadgeRarities = jest.fn().mockReturnValue({
+            subscribe: (callbacks: any) => {
+                callbacks.error(new Error('Rarity API Error'));
+                return { unsubscribe: jest.fn() };
+            }
+        } as any);
+        
+        component.showAllBadges = true;
+        component.showRarity = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+
+        //assert
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading badge rarities:', expect.any(Error));
+        expect(component.displayBadges.length).toBe(8); // Should still prepare display badges
+        
+        consoleErrorSpy.mockRestore();
     });
 });

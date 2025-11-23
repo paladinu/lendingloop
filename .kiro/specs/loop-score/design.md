@@ -1242,6 +1242,433 @@ interface DisplayBadge {
 - Test component handles missing userId gracefully
 - Test component handles API errors gracefully
 
+## Badge Rarity Statistics
+
+### Overview
+
+To help users understand the prestige and difficulty of each badge, the system displays rarity statistics showing what percentage of users have earned each badge. This feature adds context to achievements and motivates users to pursue rare badges.
+
+### Rarity Calculation Logic
+
+**Rarity Percentage Formula**:
+```
+Rarity % = (Number of users with badge / Total active users) × 100
+```
+
+**Active User Definition**:
+- Users with at least one ScoreHistory entry (completed at least one transaction)
+- This excludes newly registered users who haven't participated yet
+- Provides more meaningful rarity statistics by focusing on engaged users
+
+**Rarity Categories**:
+- **Common**: > 50% of users have earned it
+- **Uncommon**: 25-50% of users have earned it
+- **Rare**: 10-25% of users have earned it
+- **Very Rare**: 5-10% of users have earned it
+- **Ultra Rare**: < 5% of users have earned it
+
+### Backend API Extensions
+
+#### New LoopScoreService Methods
+
+```csharp
+public interface ILoopScoreService
+{
+    // Existing methods...
+    
+    Task<BadgeRarity> GetBadgeRarityAsync(BadgeType badgeType);
+    Task<Dictionary<BadgeType, BadgeRarity>> GetAllBadgeRaritiesAsync();
+}
+
+public class BadgeRarity
+{
+    [BsonElement("badgeType")]
+    [BsonRepresentation(BsonType.String)]
+    public BadgeType BadgeType { get; set; }
+    
+    [BsonElement("usersWithBadge")]
+    public int UsersWithBadge { get; set; }
+    
+    [BsonElement("totalActiveUsers")]
+    public int TotalActiveUsers { get; set; }
+    
+    [BsonElement("percentage")]
+    public double Percentage { get; set; }
+    
+    [BsonElement("rarityCategory")]
+    public string RarityCategory { get; set; } // "Common", "Uncommon", "Rare", "Very Rare", "Ultra Rare"
+}
+```
+
+#### Implementation Details
+
+1. **GetBadgeRarityAsync**: Returns rarity statistics for a specific badge type
+   - Count users who have the badge in their Badges array
+   - Count total active users (users with at least one ScoreHistory entry)
+   - Calculate percentage: (usersWithBadge / totalActiveUsers) × 100
+   - Determine rarity category based on percentage thresholds
+   - Return BadgeRarity object with all statistics
+
+2. **GetAllBadgeRaritiesAsync**: Returns rarity statistics for all badge types
+   - Efficiently batch all rarity calculations using MongoDB aggregation pipeline
+   - Count active users once and reuse for all badge calculations
+   - Return dictionary mapping BadgeType to BadgeRarity
+
+#### MongoDB Aggregation Pipeline
+
+```javascript
+// Efficient aggregation to calculate all badge rarities
+db.users.aggregate([
+    // Stage 1: Count total active users
+    {
+        $facet: {
+            "activeUsers": [
+                { $match: { "scoreHistory.0": { $exists: true } } },
+                { $count: "total" }
+            ],
+            // Stage 2: Count users per badge type
+            "badgeCounts": [
+                { $unwind: "$badges" },
+                { $group: { _id: "$badges.badgeType", count: { $sum: 1 } } }
+            ]
+        }
+    }
+])
+```
+
+#### New UserController Endpoint
+
+```csharp
+[HttpGet("badges/rarity")]
+public async Task<ActionResult<Dictionary<BadgeType, BadgeRarity>>> GetBadgeRarities()
+{
+    var rarities = await _loopScoreService.GetAllBadgeRaritiesAsync();
+    return Ok(rarities);
+}
+```
+
+**Note**: This endpoint doesn't require userId since rarity statistics are global across all users.
+
+### Frontend Implementation
+
+#### Extended BadgeMetadata Interface
+
+```typescript
+export interface BadgeMetadata {
+    badgeType: BadgeType;
+    name: string;
+    description: string;
+    category: 'milestone' | 'achievement';
+    requirement: string;
+    icon: string;
+    hasProgress: boolean;
+    rarity?: BadgeRarity; // NEW: Rarity statistics
+}
+
+export interface BadgeRarity {
+    badgeType: BadgeType;
+    usersWithBadge: number;
+    totalActiveUsers: number;
+    percentage: number;
+    rarityCategory: 'Common' | 'Uncommon' | 'Rare' | 'Very Rare' | 'Ultra Rare';
+}
+```
+
+#### Updated LoopScoreService
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class LoopScoreService {
+    // Existing methods...
+    
+    getBadgeRarities(): Observable<Map<BadgeType, BadgeRarity>> {
+        return this.http.get<Record<string, BadgeRarity>>(
+            `${environment.apiUrl}/api/users/badges/rarity`
+        ).pipe(
+            map(response => new Map(Object.entries(response)))
+        );
+    }
+    
+    getRarityColor(rarityCategory: string): string {
+        const colors: Record<string, string> = {
+            'Common': '#9E9E9E',      // Grey
+            'Uncommon': '#4CAF50',    // Green
+            'Rare': '#2196F3',        // Blue
+            'Very Rare': '#9C27B0',   // Purple
+            'Ultra Rare': '#FF9800'   // Orange/Gold
+        };
+        return colors[rarityCategory] || '#9E9E9E';
+    }
+}
+```
+
+#### Enhanced BadgeDisplayComponent
+
+```typescript
+@Component({
+    selector: 'app-badge-display',
+    templateUrl: './badge-display.component.html',
+    styleUrls: ['./badge-display.component.css']
+})
+export class BadgeDisplayComponent implements OnInit {
+    @Input() earnedBadges: BadgeAward[] = [];
+    @Input() userId: string = '';
+    @Input() showAllBadges: boolean = true;
+    @Input() showProgress: boolean = true;
+    @Input() showRarity: boolean = true; // NEW: Control rarity display
+    
+    allBadgeMetadata: BadgeMetadata[] = [];
+    displayBadges: DisplayBadge[] = [];
+    badgeProgress: Map<BadgeType, BadgeProgress> = new Map();
+    badgeRarities: Map<BadgeType, BadgeRarity> = new Map(); // NEW: Rarity data
+    
+    constructor(private loopScoreService: LoopScoreService) {}
+    
+    ngOnInit(): void {
+        this.allBadgeMetadata = this.loopScoreService.getAllBadgeMetadata();
+        
+        // Load rarity statistics
+        if (this.showRarity) {
+            this.loopScoreService.getBadgeRarities().subscribe(
+                rarities => {
+                    this.badgeRarities = rarities;
+                    this.loadProgressAndPrepare();
+                },
+                error => {
+                    console.error('Failed to load badge rarities', error);
+                    this.loadProgressAndPrepare();
+                }
+            );
+        } else {
+            this.loadProgressAndPrepare();
+        }
+    }
+    
+    private loadProgressAndPrepare(): void {
+        if (this.showProgress && this.userId) {
+            this.loopScoreService.getBadgeProgress(this.userId).subscribe(
+                progress => {
+                    this.badgeProgress = progress;
+                    this.prepareDisplayBadges();
+                },
+                error => {
+                    console.error('Failed to load badge progress', error);
+                    this.prepareDisplayBadges();
+                }
+            );
+        } else {
+            this.prepareDisplayBadges();
+        }
+    }
+    
+    prepareDisplayBadges(): void {
+        this.displayBadges = this.allBadgeMetadata.map(metadata => {
+            const earnedBadge = this.earnedBadges.find(b => b.badgeType === metadata.badgeType);
+            const progress = this.badgeProgress.get(metadata.badgeType);
+            const rarity = this.badgeRarities.get(metadata.badgeType); // NEW: Include rarity
+            
+            return {
+                metadata: metadata,
+                earned: !!earnedBadge,
+                awardedAt: earnedBadge?.awardedAt,
+                progress: progress,
+                rarity: rarity // NEW: Add rarity to display badge
+            };
+        });
+    }
+    
+    getRarityColor(rarityCategory: string): string {
+        return this.loopScoreService.getRarityColor(rarityCategory);
+    }
+    
+    getRarityText(badge: DisplayBadge): string {
+        if (!badge.rarity) {
+            return '';
+        }
+        return `${badge.rarity.percentage.toFixed(1)}% of users`;
+    }
+}
+
+interface DisplayBadge {
+    metadata: BadgeMetadata;
+    earned: boolean;
+    awardedAt?: string;
+    progress?: BadgeProgress;
+    rarity?: BadgeRarity; // NEW: Rarity information
+}
+```
+
+#### Updated Component Template
+
+```html
+<div class="badges-container">
+    <div class="milestone-badges">
+        <h4>Milestone Badges</h4>
+        <div class="badge-grid">
+            <div *ngFor="let badge of displayBadges | filterByCategory:'milestone'" 
+                 class="badge-item"
+                 [class.earned]="badge.earned"
+                 [class.unearned]="!badge.earned"
+                 [attr.aria-label]="getBadgeAriaLabel(badge)">
+                <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                <span class="badge-name">{{ badge.metadata.name }}</span>
+                <span class="badge-description">{{ badge.metadata.description }}</span>
+                
+                <!-- Show rarity for all badges -->
+                <span class="badge-rarity" 
+                      *ngIf="showRarity && badge.rarity"
+                      [style.color]="getRarityColor(badge.rarity.rarityCategory)">
+                    {{ badge.rarity.rarityCategory }} - {{ getRarityText(badge) }}
+                </span>
+                
+                <span class="badge-requirement" *ngIf="!badge.earned">{{ badge.metadata.requirement }}</span>
+                <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="achievement-badges">
+        <h4>Achievement Badges</h4>
+        <div class="badge-grid">
+            <div *ngFor="let badge of displayBadges | filterByCategory:'achievement'" 
+                 class="badge-item"
+                 [class.earned]="badge.earned"
+                 [class.unearned]="!badge.earned"
+                 [attr.aria-label]="getBadgeAriaLabel(badge)">
+                <span class="badge-icon">{{ badge.metadata.icon }}</span>
+                <span class="badge-name">{{ badge.metadata.name }}</span>
+                <span class="badge-description">{{ badge.metadata.description }}</span>
+                
+                <!-- Show rarity for all badges -->
+                <span class="badge-rarity" 
+                      *ngIf="showRarity && badge.rarity"
+                      [style.color]="getRarityColor(badge.rarity.rarityCategory)">
+                    {{ badge.rarity.rarityCategory }} - {{ getRarityText(badge) }}
+                </span>
+                
+                <!-- Show progress for unearned badges with progress tracking -->
+                <span class="badge-progress" *ngIf="!badge.earned && badge.progress && showProgress">
+                    Progress: {{ getProgressText(badge) }}
+                </span>
+                
+                <!-- Show requirement for unearned badges without progress -->
+                <span class="badge-requirement" *ngIf="!badge.earned && !badge.progress">
+                    {{ badge.metadata.requirement }}
+                </span>
+                
+                <span class="badge-earned-date" *ngIf="badge.earned">Earned: {{ badge.awardedAt | date }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### CSS Styling for Rarity Display
+
+```css
+.badge-rarity {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+    padding: 2px 6px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-item.earned .badge-rarity {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.badge-item.unearned .badge-rarity {
+    opacity: 0.7;
+}
+```
+
+### Design Rationale
+
+**Why Show Rarity Statistics?**
+- **Context**: Users understand the difficulty and prestige of each badge
+- **Motivation**: Rare badges become aspirational goals that drive engagement
+- **Social Proof**: Seeing that few users have earned a badge creates exclusivity
+- **Transparency**: Users can assess which badges are worth pursuing based on rarity
+
+**Why Calculate Based on Active Users?**
+- **Meaningful Statistics**: Excludes inactive accounts that would skew percentages
+- **Fair Representation**: Only counts users who have participated in the platform
+- **Accurate Difficulty**: Reflects actual achievement difficulty among engaged users
+- **Prevents Inflation**: New registrations don't artificially inflate rarity percentages
+
+**Why Use Percentage Instead of Raw Counts?**
+- **Scalability**: Percentages remain meaningful as platform grows
+- **Comparability**: Easy to compare rarity across different badge types
+- **User-Friendly**: "5% of users" is more intuitive than "47 out of 940 users"
+- **Privacy**: Doesn't reveal exact user counts which could be sensitive
+
+**Why Show Rarity for Both Earned and Unearned Badges?**
+- **Earned Badges**: Validates achievement by showing how rare it is
+- **Unearned Badges**: Helps users prioritize which badges to pursue
+- **Consistency**: Uniform display makes the interface easier to understand
+- **Motivation**: Seeing rarity before earning creates anticipation
+
+**Why Use Color-Coded Rarity Categories?**
+- **Visual Hierarchy**: Instantly communicates rarity level without reading text
+- **Gamification Standard**: Common pattern in gaming (World of Warcraft, Diablo, etc.)
+- **Accessibility**: Color + text label ensures information is accessible
+- **Engagement**: Color coding makes rare badges more visually appealing
+
+### Performance Considerations
+
+1. **Caching**: Cache badge rarity statistics for 1 hour since they change slowly
+2. **Batch Calculation**: Calculate all badge rarities in a single database query
+3. **Background Updates**: Recalculate rarity statistics periodically (e.g., every hour) rather than on-demand
+4. **CDN Delivery**: Serve cached rarity data from CDN for faster global access
+5. **Aggregation Pipeline**: Use MongoDB aggregation for efficient counting
+
+### Rarity Update Strategy
+
+**Update Frequency**:
+- Recalculate badge rarities every hour via scheduled background job
+- Store calculated rarities in a separate collection or cache
+- Serve pre-calculated values to API requests for fast response times
+
+**Alternative Approach** (Real-Time):
+- Calculate rarities on-demand for each API request
+- Use MongoDB aggregation pipeline for efficient calculation
+- Cache results for 5-10 minutes to balance freshness and performance
+
+**Recommended Approach**: Hourly background updates
+- Rarity statistics don't need to be real-time
+- Reduces database load from repeated calculations
+- Provides consistent data across all users
+- Allows for more complex calculations without impacting API response time
+
+### Testing Strategy
+
+#### Backend Unit Tests
+
+- Test GetBadgeRarityAsync calculates correct percentage for each badge type
+- Test GetBadgeRarityAsync returns correct rarity category based on percentage
+- Test GetBadgeRarityAsync only counts active users (with ScoreHistory entries)
+- Test GetBadgeRarityAsync handles zero active users gracefully
+- Test GetBadgeRarityAsync handles badges with zero earners
+- Test GetAllBadgeRaritiesAsync returns rarity for all badge types
+- Test rarity category thresholds (Common, Uncommon, Rare, Very Rare, Ultra Rare)
+- Test UserController endpoint returns badge rarities successfully
+
+#### Frontend Unit Tests
+
+- Test component fetches badge rarities when showRarity is true
+- Test component does not fetch rarities when showRarity is false
+- Test prepareDisplayBadges includes rarity data in DisplayBadge objects
+- Test getRarityText returns correct formatted text
+- Test getRarityColor returns correct color for each rarity category
+- Test template displays rarity for both earned and unearned badges
+- Test template respects showRarity input flag
+- Test component handles API errors gracefully (continues without rarity data)
+
 ## Future Enhancements
 
 - **Leaderboards**: Display top scorers within each loop
@@ -1255,6 +1682,7 @@ interface DisplayBadge {
 - **Custom Point Values**: Allow loop admins to configure point values
 - **Badge Showcase**: Allow users to feature their favorite badge on their profile
 - **Badge Notifications**: Push notifications when badges are earned
-- **Badge Rarity Display**: Show how many users have earned each badge
 - **Visual Progress Bars**: Replace text progress with visual progress bars or circular indicators
 - **Progress Animations**: Animate progress changes when user completes relevant actions
+- **Rarity Trends**: Show how badge rarity has changed over time
+- **Personal Rarity Rank**: Show user's rank among badge earners (e.g., "You're in the top 5% of users with this badge")

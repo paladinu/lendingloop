@@ -1867,4 +1867,191 @@ public class LoopScoreServiceTests
         Assert.Contains(BadgeType.CommunityBuilder, allProgress.Keys);
         Assert.Contains(BadgeType.FirstLend, allProgress.Keys);
     }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_CalculatesCorrectPercentage()
+    {
+        //arrange
+        var badgeType = BadgeType.Bronze;
+        
+        // Setup sequence: first call returns 20 (users with badge), second call returns 100 (total active users)
+        _mockUsersCollection
+            .SetupSequence(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(20)
+            .ReturnsAsync(100);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal(badgeType, rarity.BadgeType);
+        Assert.Equal(20, rarity.UsersWithBadge);
+        Assert.Equal(100, rarity.TotalActiveUsers);
+        Assert.Equal(20.0, rarity.Percentage);
+        Assert.Equal("Rare", rarity.RarityCategory);
+    }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_ReturnsCommonCategory_WhenPercentageAbove50()
+    {
+        //arrange
+        var badgeType = BadgeType.Bronze;
+        
+        _mockUsersCollection
+            .SetupSequence(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(60)
+            .ReturnsAsync(100);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal("Common", rarity.RarityCategory);
+        Assert.Equal(60.0, rarity.Percentage);
+    }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_ReturnsUncommonCategory_WhenPercentageBetween25And50()
+    {
+        //arrange
+        var badgeType = BadgeType.Silver;
+        
+        _mockUsersCollection
+            .SetupSequence(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(30)
+            .ReturnsAsync(100);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal("Uncommon", rarity.RarityCategory);
+        Assert.Equal(30.0, rarity.Percentage);
+    }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_ReturnsVeryRareCategory_WhenPercentageBetween5And10()
+    {
+        //arrange
+        var badgeType = BadgeType.Gold;
+        
+        _mockUsersCollection
+            .SetupSequence(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(7)
+            .ReturnsAsync(100);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal("Very Rare", rarity.RarityCategory);
+        Assert.Equal(7.0, rarity.Percentage, 2); // Allow 2 decimal places precision
+    }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_ReturnsUltraRareCategory_WhenPercentageBelow5()
+    {
+        //arrange
+        var badgeType = BadgeType.PerfectRecord;
+        
+        _mockUsersCollection
+            .SetupSequence(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(3)
+            .ReturnsAsync(100);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal("Ultra Rare", rarity.RarityCategory);
+        Assert.Equal(3.0, rarity.Percentage);
+    }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_HandlesZeroActiveUsers()
+    {
+        //arrange
+        var badgeType = BadgeType.Bronze;
+        
+        _mockUsersCollection
+            .Setup(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(0);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal(0, rarity.UsersWithBadge);
+        Assert.Equal(0, rarity.TotalActiveUsers);
+        Assert.Equal(0.0, rarity.Percentage);
+        Assert.Equal("Ultra Rare", rarity.RarityCategory);
+    }
+
+    [Fact]
+    public async Task GetBadgeRarityAsync_HandlesZeroBadgeEarners()
+    {
+        //arrange
+        var badgeType = BadgeType.CommunityBuilder;
+        
+        _mockUsersCollection
+            .SetupSequence(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(0)
+            .ReturnsAsync(100);
+
+        //act
+        var rarity = await _service.GetBadgeRarityAsync(badgeType);
+
+        //assert
+        Assert.Equal(0, rarity.UsersWithBadge);
+        Assert.Equal(100, rarity.TotalActiveUsers);
+        Assert.Equal(0.0, rarity.Percentage);
+        Assert.Equal("Ultra Rare", rarity.RarityCategory);
+    }
+
+    [Fact]
+    public async Task GetAllBadgeRaritiesAsync_ReturnsRarityForAllBadgeTypes()
+    {
+        //arrange
+        _mockUsersCollection
+            .Setup(c => c.CountDocumentsAsync(
+                It.IsAny<FilterDefinition<User>>(),
+                It.IsAny<CountOptions>(),
+                default))
+            .ReturnsAsync(50);
+
+        //act
+        var allRarities = await _service.GetAllBadgeRaritiesAsync();
+
+        //assert
+        Assert.Equal(8, allRarities.Count);
+        Assert.Contains(BadgeType.Bronze, allRarities.Keys);
+        Assert.Contains(BadgeType.Silver, allRarities.Keys);
+        Assert.Contains(BadgeType.Gold, allRarities.Keys);
+        Assert.Contains(BadgeType.FirstLend, allRarities.Keys);
+        Assert.Contains(BadgeType.ReliableBorrower, allRarities.Keys);
+        Assert.Contains(BadgeType.GenerousLender, allRarities.Keys);
+        Assert.Contains(BadgeType.PerfectRecord, allRarities.Keys);
+        Assert.Contains(BadgeType.CommunityBuilder, allRarities.Keys);
+    }
 }

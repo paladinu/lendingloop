@@ -48,12 +48,21 @@ export interface BadgeMetadata {
     requirement: string;
     icon: string;
     hasProgress: boolean;
+    rarity?: BadgeRarity;
 }
 
 export interface BadgeProgress {
     currentCount: number;
     requiredCount: number;
     displayText: string;
+}
+
+export interface BadgeRarity {
+    badgeType: BadgeType;
+    usersWithBadge: number;
+    totalActiveUsers: number;
+    percentage: number;
+    rarityCategory: 'Common' | 'Uncommon' | 'Rare' | 'Very Rare' | 'Ultra Rare';
 }
 
 export interface VerifyEmailRequest {

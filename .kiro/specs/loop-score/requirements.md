@@ -188,7 +188,7 @@ The LoopScore feature introduces a gamification system to encourage active parti
 
 ## Future Enhancements
 
-### Requirement 14 (Future Enhancement)
+### Requirement 
 
 **User Story:** As a platform user, I want to see how many users have earned each badge, so that I can understand the rarity and prestige of my achievements
 

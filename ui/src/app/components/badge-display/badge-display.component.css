@@ -194,3 +194,24 @@
     gap: 16px;
     margin-top: 12px;
 }
+
+/* Badge rarity styling */
+.badge-rarity {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+    padding: 2px 6px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-item.earned .badge-rarity {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.badge-item.unearned .badge-rarity {
+    opacity: 0.7;
+}

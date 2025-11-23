@@ -19,4 +19,6 @@ public interface ILoopScoreService
     Task AwardAchievementBadgeAsync(string userId, BadgeType badgeType);
     Task<BadgeProgress> GetBadgeProgressAsync(string userId, BadgeType badgeType);
     Task<Dictionary<BadgeType, BadgeProgress>> GetAllBadgeProgressAsync(string userId);
+    Task<BadgeRarity> GetBadgeRarityAsync(BadgeType badgeType);
+    Task<Dictionary<BadgeType, BadgeRarity>> GetAllBadgeRaritiesAsync();
 }

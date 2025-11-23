@@ -123,3 +123,22 @@ public class BadgeProgress
     [BsonElement("displayText")]
     public string DisplayText { get; set; } = string.Empty;
 }
+
+public class BadgeRarity
+{
+    [BsonElement("badgeType")]
+    [BsonRepresentation(BsonType.String)]
+    public BadgeType BadgeType { get; set; }
+    
+    [BsonElement("usersWithBadge")]
+    public int UsersWithBadge { get; set; }
+    
+    [BsonElement("totalActiveUsers")]
+    public int TotalActiveUsers { get; set; }
+    
+    [BsonElement("percentage")]
+    public double Percentage { get; set; }
+    
+    [BsonElement("rarityCategory")]
+    public string RarityCategory { get; set; } = string.Empty;
+}

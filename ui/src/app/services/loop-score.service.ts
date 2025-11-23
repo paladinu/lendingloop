@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { ScoreHistoryEntry, BadgeAward, BadgeMetadata, BadgeProgress, BadgeType } from '../models/auth.interface';
+import { ScoreHistoryEntry, BadgeAward, BadgeMetadata, BadgeProgress, BadgeType, BadgeRarity } from '../models/auth.interface';
 
 export interface ScoreRules {
     borrowCompleted: number;
@@ -143,5 +143,29 @@ export class LoopScoreService {
                     return progressMap;
                 })
             );
+    }
+
+    getBadgeRarities(): Observable<Map<BadgeType, BadgeRarity>> {
+        return this.http.get<Record<string, BadgeRarity>>(`${this.API_URL}/badges/rarity`)
+            .pipe(
+                map(response => {
+                    const rarityMap = new Map<BadgeType, BadgeRarity>();
+                    Object.entries(response).forEach(([key, value]) => {
+                        rarityMap.set(key as BadgeType, value);
+                    });
+                    return rarityMap;
+                })
+            );
+    }
+
+    getRarityColor(rarityCategory: string): string {
+        const colors: Record<string, string> = {
+            'Common': '#9E9E9E',      // Grey
+            'Uncommon': '#4CAF50',    // Green
+            'Rare': '#2196F3',        // Blue
+            'Very Rare': '#9C27B0',   // Purple
+            'Ultra Rare': '#FF9800'   // Orange/Gold
+        };
+        return colors[rarityCategory] || '#9E9E9E';
     }
 }
