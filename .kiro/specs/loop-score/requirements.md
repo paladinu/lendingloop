@@ -184,3 +184,18 @@ The LoopScore feature introduces a gamification system to encourage active parti
 6. THE LoopScore System SHALL calculate progress for Community Builder badge by counting active invited users
 7. WHERE a badge has been earned, THE LoopScore System SHALL NOT display progress information
 8. THE LoopScore System SHALL update progress information in real-time as the User completes relevant actions
+
+
+## Future Enhancements
+
+### Requirement 14 (Future Enhancement)
+
+**User Story:** As a platform user, I want to see how many users have earned each badge, so that I can understand the rarity and prestige of my achievements
+
+#### Acceptance Criteria
+
+1. THE LoopScore System SHALL display the percentage of Users who have earned each badge
+2. THE LoopScore System SHALL calculate badge rarity as a percentage of total active Users
+3. WHERE a User views badge details, THE LoopScore System SHALL show the percentage of Users who have earned that badge
+4. THE LoopScore System SHALL update badge rarity statistics periodically to reflect current platform usage
+5. THE LoopScore System SHALL display rarity information for both earned and unearned badges to provide context for achievement difficulty

@@ -25,7 +25,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularDev", policy =>
     {
-        policy.WithOrigins("https://local-www.lendingloop.com", "https://local-www.lendingloop.com:4200","http://localhost:4200", "http://localhost:4201")
+        policy.WithOrigins("https://local-www.lendingloop.com:4200", "http://localhost:4200", "http://localhost:4201")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials(); // Allow credentials for authentication
@@ -183,8 +183,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 // Configure static file serving for uploaded images
 var uploadPath = builder.Configuration["FileStorage:UploadPath"] ?? "uploads/images";
 var fullUploadPath = Path.Combine(app.Environment.ContentRootPath, uploadPath);
@@ -196,24 +194,35 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = $"/{uploadPath}"
 });
 
-// Add security headers
+// Explicitly handle OPTIONS requests for CORS preflight - BEFORE UseCors
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("X-Frame-Options", "DENY");
-    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
-    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    app.Logger.LogInformation($"Request: {context.Request.Method} {context.Request.Path}");
+    
+    if (context.Request.Method == "OPTIONS")
+    {
+        app.Logger.LogInformation("OPTIONS request detected, processing...");
+        // Let CORS middleware handle it, but ensure we return 200
+        await next();
+        app.Logger.LogInformation($"After CORS, status code: {context.Response.StatusCode}");
+        if (context.Response.StatusCode == 404)
+        {
+            app.Logger.LogInformation("Changing 404 to 200 for OPTIONS");
+            context.Response.StatusCode = 200;
+        }
+        return;
+    }
     await next();
 });
 
-// Use CORS
+// Use CORS - MUST be early in pipeline
 app.UseCors("AllowAngularDev");
 
 // Use Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map controllers
+// Map controllers - this implicitly adds routing
 app.MapControllers();
 
 // Auto-run migration if configured
