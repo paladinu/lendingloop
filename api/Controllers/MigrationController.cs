@@ -112,4 +112,58 @@ internal class MigrationController : ControllerBase
             return StatusCode(500, new { message = "Validation failed", error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Runs the tags migration process
+    /// </summary>
+    [HttpPost("run-tags-migration")]
+    public async Task<IActionResult> RunTagsMigration()
+    {
+        try
+        {
+            await _migration.RunTagsMigration();
+            return Ok(new { message = "Tags migration completed successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to run tags migration");
+            return StatusCode(500, new { message = "Tags migration failed", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Adds tags field to existing items
+    /// </summary>
+    [HttpPost("add-tags-field")]
+    public async Task<IActionResult> AddTagsField()
+    {
+        try
+        {
+            await _migration.AddTagsFieldToItems();
+            return Ok(new { message = "Successfully added tags field to items" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add tags field");
+            return StatusCode(500, new { message = "Tags field addition failed", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Creates indexes for tags
+    /// </summary>
+    [HttpPost("create-tags-indexes")]
+    public async Task<IActionResult> CreateTagsIndexes()
+    {
+        try
+        {
+            await _migration.CreateTagsIndexes();
+            return Ok(new { message = "Tags indexes created successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create tags indexes");
+            return StatusCode(500, new { message = "Tags index creation failed", error = ex.Message });
+        }
+    }
 }

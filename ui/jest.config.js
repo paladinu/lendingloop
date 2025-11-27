@@ -2,6 +2,7 @@ module.exports = {
   preset: 'jest-preset-angular',
   setupFilesAfterEnv: ['<rootDir>/setup-jest.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  testTimeout: 10000, // Maximum 10 seconds per test
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.ts',

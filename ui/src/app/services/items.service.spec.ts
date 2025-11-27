@@ -420,4 +420,300 @@ describe('ItemsService', () => {
       req.flush({ message: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
     });
   });
+
+  describe('searchItems', () => {
+    it('should search items successfully', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const filter = {
+        searchText: 'test',
+        tags: ['tools', 'garden'],
+        isAvailable: true,
+        ownerIds: ['user1', 'user2'],
+        pageNumber: 1,
+        pageSize: 50
+      };
+      const mockSearchResult = {
+        items: [mockItem],
+        totalCount: 1,
+        pageNumber: 1,
+        pageSize: 50,
+        totalPages: 1
+      };
+
+      //act
+      service.searchItems(loopId, filter).subscribe(result => {
+        //assert
+        expect(result).toEqual(mockSearchResult);
+        expect(result.items.length).toBe(1);
+        expect(result.totalCount).toBe(1);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/search/${loopId}`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(filter);
+      req.flush(mockSearchResult);
+    });
+
+    it('should search items with empty filter', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const filter = {
+        searchText: '',
+        tags: [],
+        ownerIds: [],
+        pageNumber: 1,
+        pageSize: 50
+      };
+      const mockSearchResult = {
+        items: [mockItem],
+        totalCount: 1,
+        pageNumber: 1,
+        pageSize: 50,
+        totalPages: 1
+      };
+
+      //act
+      service.searchItems(loopId, filter).subscribe(result => {
+        //assert
+        expect(result).toEqual(mockSearchResult);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/search/${loopId}`);
+      expect(req.request.method).toBe('POST');
+      req.flush(mockSearchResult);
+    });
+
+    it('should handle 401 error and redirect to login', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const filter = {
+        searchText: 'test',
+        tags: [],
+        ownerIds: [],
+        pageNumber: 1,
+        pageSize: 50
+      };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.searchItems(loopId, filter).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('Authentication required. Please log in again.');
+          expect(authService.logout).toHaveBeenCalled();
+          expect(router.navigate).toHaveBeenCalledWith(['/login']);
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/search/${loopId}`);
+      req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    });
+
+    it('should handle 403 forbidden error', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const filter = {
+        searchText: 'test',
+        tags: [],
+        ownerIds: [],
+        pageNumber: 1,
+        pageSize: 50
+      };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.searchItems(loopId, filter).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('You do not have permission to perform this action.');
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/search/${loopId}`);
+      req.flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    });
+
+    it('should handle 400 bad request error', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const filter = {
+        searchText: 'test',
+        tags: [],
+        ownerIds: [],
+        pageNumber: -1,
+        pageSize: 50
+      };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.searchItems(loopId, filter).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('Invalid pagination parameters');
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/search/${loopId}`);
+      req.flush({ message: 'Invalid pagination parameters' }, { status: 400, statusText: 'Bad Request' });
+    });
+
+    it('should handle network error', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const filter = {
+        searchText: 'test',
+        tags: [],
+        ownerIds: [],
+        pageNumber: 1,
+        pageSize: 50
+      };
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.searchItems(loopId, filter).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/search/${loopId}`);
+      req.flush({ message: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
+    });
+  });
+
+  describe('getDistinctOwners', () => {
+    it('should fetch distinct owners successfully', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const mockOwners = ['user1', 'user2', 'user3'];
+
+      //act
+      service.getDistinctOwners(loopId).subscribe(owners => {
+        //assert
+        expect(owners).toEqual(mockOwners);
+        expect(owners.length).toBe(3);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/loop/${loopId}/owners`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockOwners);
+    });
+
+    it('should return empty array when no owners exist', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const mockOwners: string[] = [];
+
+      //act
+      service.getDistinctOwners(loopId).subscribe(owners => {
+        //assert
+        expect(owners).toEqual([]);
+        expect(owners.length).toBe(0);
+        done();
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/loop/${loopId}/owners`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockOwners);
+    });
+
+    it('should handle 401 error and redirect to login', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.getDistinctOwners(loopId).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('Authentication required. Please log in again.');
+          expect(authService.logout).toHaveBeenCalled();
+          expect(router.navigate).toHaveBeenCalledWith(['/login']);
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/loop/${loopId}/owners`);
+      req.flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    });
+
+    it('should handle 403 forbidden error', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.getDistinctOwners(loopId).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBe('You do not have permission to perform this action.');
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/loop/${loopId}/owners`);
+      req.flush({ message: 'Forbidden' }, { status: 403, statusText: 'Forbidden' });
+    });
+
+    it('should handle 404 not found error', (done) => {
+      //arrange
+      const loopId = 'nonexistent';
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.getDistinctOwners(loopId).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/loop/${loopId}/owners`);
+      req.flush({ message: 'Loop not found' }, { status: 404, statusText: 'Not Found' });
+    });
+
+    it('should handle network error', (done) => {
+      //arrange
+      const loopId = 'loop123';
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      //act
+      service.getDistinctOwners(loopId).subscribe({
+        next: () => fail('should have failed'),
+        error: (error) => {
+          //assert
+          expect(error.message).toBeTruthy();
+          consoleErrorSpy.mockRestore();
+          done();
+        }
+      });
+
+      const req = httpMock.expectOne(`${API_URL}/loop/${loopId}/owners`);
+      req.flush({ message: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
+    });
+  });
 });

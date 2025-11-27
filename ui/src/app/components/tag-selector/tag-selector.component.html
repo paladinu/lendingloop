@@ -1,0 +1,82 @@
+<div class="tag-selector">
+  <!-- Search Input -->
+  <div class="search-section">
+    <div class="search-input-container">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search tags..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+      />
+      <button
+        *ngIf="searchQuery"
+        class="clear-search-btn"
+        (click)="clearSearch()"
+        type="button"
+      >
+        ×
+      </button>
+    </div>
+  </div>
+
+  <!-- Selected Tags -->
+  <div class="selected-tags-section" *ngIf="selectedTags.length > 0">
+    <h4>Selected Tags ({{ selectedTags.length }}/{{ 10 }})</h4>
+    <div class="selected-tags">
+      <span
+        *ngFor="let tagName of selectedTags"
+        class="tag-chip selected"
+      >
+        {{ getTagDisplayName(tagName) }}
+        <button
+          class="remove-tag-btn"
+          (click)="onTagRemove(tagName)"
+          type="button"
+          [attr.aria-label]="'Remove ' + getTagDisplayName(tagName)"
+        >
+          ×
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <!-- Validation Message -->
+  <div class="validation-message" *ngIf="validationMessage">
+    {{ validationMessage }}
+  </div>
+
+  <!-- Available Tags -->
+  <div class="available-tags-section">
+    <h4>Available Tags</h4>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+      Loading tags...
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage" class="error-state">
+      <p>{{ errorMessage }}</p>
+      <button class="retry-btn" (click)="retryLoadTags()" type="button">Retry</button>
+    </div>
+
+    <!-- Tags List -->
+    <div *ngIf="!isLoading && !errorMessage" class="available-tags">
+      <div *ngIf="filteredTags.length === 0 && searchQuery" class="no-results">
+        No tags match "{{ searchQuery }}"
+      </div>
+
+      <span
+        *ngFor="let tag of filteredTags"
+        class="tag-chip available"
+        [class.disabled]="isTagSelected(tag.name)"
+        (click)="onTagSelect(tag.name)"
+        [attr.aria-label]="'Select ' + tag.displayName"
+      >
+        {{ tag.displayName }}
+        <span *ngIf="isTagSelected(tag.name)" class="selected-indicator">✓</span>
+      </span>
+    </div>
+  </div>
+</div>

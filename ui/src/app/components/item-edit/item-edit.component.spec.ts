@@ -55,6 +55,8 @@ describe('ItemEditComponent', () => {
   ];
 
   beforeEach(async () => {
+    jest.useFakeTimers();
+    
     const itemsServiceMock = {
       getItemById: jest.fn(),
       updateItem: jest.fn(),
@@ -119,6 +121,10 @@ describe('ItemEditComponent', () => {
     authService = TestBed.inject(AuthService) as jest.Mocked<AuthService>;
     itemRequestService = TestBed.inject(ItemRequestService) as jest.Mocked<ItemRequestService>;
     notificationService = TestBed.inject(NotificationService) as jest.Mocked<NotificationService>;
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should create', () => {
@@ -193,11 +199,12 @@ describe('ItemEditComponent', () => {
       isAvailable: false,
       visibleToLoopIds: ['loop1', 'loop2'],
       visibleToAllLoops: true,
-      visibleToFutureLoops: true
+      visibleToFutureLoops: true,
+      tags: []
     });
   });
 
-  it('should navigate to main page on successful update', (done) => {
+  it('should navigate to main page on successful update', () => {
     //arrange
     component.itemId = '1';
     component.itemName = 'Updated Name';
@@ -205,12 +212,10 @@ describe('ItemEditComponent', () => {
 
     //act
     component.updateItem();
+    jest.advanceTimersByTime(1550);
 
     //assert
-    setTimeout(() => {
-      expect(router.navigate).toHaveBeenCalledWith(['/items']);
-      done();
-    }, 1600);
+    expect(router.navigate).toHaveBeenCalledWith(['/items']);
   });
 
   it('should display error message on update failure', () => {
@@ -301,5 +306,289 @@ describe('ItemEditComponent', () => {
     expect(component.selectedLoopIds).toEqual(['loop1', 'loop2']);
     expect(component.visibleToAllLoops).toBe(true);
     expect(component.visibleToFutureLoops).toBe(true);
+  });
+
+  describe('Tag Selection Integration', () => {
+    it('should load existing tags when editing item', () => {
+      //arrange
+      const itemWithTags: SharedItem = {
+        ...mockItem,
+        tags: ['power-tools', 'hand-tools', 'garden-tools']
+      };
+      itemsService.getItemById.mockReturnValue(of(itemWithTags));
+      loopService.getUserLoops.mockReturnValue(of(mockLoops));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      expect(component.selectedTags).toEqual(['power-tools', 'hand-tools', 'garden-tools']);
+    });
+
+    it('should load empty tags array when item has no tags', () => {
+      //arrange
+      const itemWithoutTags: SharedItem = {
+        ...mockItem,
+        tags: []
+      };
+      itemsService.getItemById.mockReturnValue(of(itemWithoutTags));
+      loopService.getUserLoops.mockReturnValue(of(mockLoops));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      expect(component.selectedTags).toEqual([]);
+    });
+
+    it('should handle item with undefined tags field', () => {
+      //arrange
+      const itemWithUndefinedTags: SharedItem = {
+        ...mockItem
+      };
+      delete (itemWithUndefinedTags as any).tags;
+      itemsService.getItemById.mockReturnValue(of(itemWithUndefinedTags));
+      loopService.getUserLoops.mockReturnValue(of(mockLoops));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      expect(component.selectedTags).toEqual([]);
+    });
+
+    it('should update selectedTags when onTagsChange is called', () => {
+      //arrange
+      const tags = ['cameras', 'audio-equipment', 'projectors'];
+
+      //act
+      component.onTagsChange(tags);
+
+      //assert
+      expect(component.selectedTags).toEqual(tags);
+    });
+
+    it('should include tags in item update API call', () => {
+      //arrange
+      component.itemId = '1';
+      component.itemName = 'Updated Item';
+      component.itemDescription = 'Updated Description';
+      component.selectedTags = ['power-tools', 'hand-tools'];
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalledWith('1', 
+        expect.objectContaining({
+          name: 'Updated Item',
+          description: 'Updated Description',
+          tags: ['power-tools', 'hand-tools']
+        })
+      );
+    });
+
+    it('should update item with empty tags array when no tags selected', () => {
+      //arrange
+      component.itemId = '1';
+      component.itemName = 'Updated Item';
+      component.selectedTags = [];
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalledWith('1',
+        expect.objectContaining({
+          tags: []
+        })
+      );
+    });
+
+    it('should handle tag updates with maximum 10 tags', () => {
+      //arrange
+      const maxTags = [
+        'power-tools', 'hand-tools', 'garden-tools', 'automotive-tools', 'measuring-tools',
+        'lawn-care', 'cleaning-equipment', 'ladders', 'pressure-washers', 'painting-supplies'
+      ];
+      component.itemId = '1';
+      component.itemName = 'Updated Item';
+      component.selectedTags = maxTags;
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalledWith('1',
+        expect.objectContaining({
+          tags: maxTags
+        })
+      );
+      expect(component.selectedTags.length).toBe(10);
+    });
+
+    it('should preserve tags when item update fails', () => {
+      //arrange
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const selectedTags = ['cameras', 'audio-equipment'];
+      component.itemId = '1';
+      component.itemName = 'Updated Item';
+      component.selectedTags = selectedTags;
+      itemsService.updateItem.mockReturnValue(
+        throwError(() => new Error('API Error'))
+      );
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(component.selectedTags).toEqual(selectedTags);
+      expect(component.error).toBeTruthy();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should update tags independently of other fields', () => {
+      //arrange
+      component.itemId = '1';
+      component.itemName = 'Original Name';
+      component.itemDescription = 'Original Description';
+      component.isAvailable = true;
+      component.selectedTags = ['old-tag'];
+      
+      // Only change tags
+      component.selectedTags = ['new-tag-1', 'new-tag-2'];
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalledWith('1',
+        expect.objectContaining({
+          name: 'Original Name',
+          description: 'Original Description',
+          isAvailable: true,
+          tags: ['new-tag-1', 'new-tag-2']
+        })
+      );
+    });
+
+    it('should include tags in update call along with image upload', () => {
+      //arrange
+      component.itemId = '1';
+      component.itemName = 'Updated Item';
+      component.selectedTags = ['power-tools'];
+      component.selectedImageFile = new File(['image'], 'test.jpg', { type: 'image/jpeg' });
+      
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+      itemsService.uploadItemImage.mockReturnValue(of(void 0));
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalledWith('1',
+        expect.objectContaining({
+          tags: ['power-tools']
+        })
+      );
+      
+      jest.advanceTimersByTime(100);
+      expect(itemsService.uploadItemImage).toHaveBeenCalledWith('1', component.selectedImageFile);
+    });
+
+    it('should maintain tag selection when switching between different tag sets', () => {
+      //arrange
+      const firstTags = ['power-tools', 'hand-tools'];
+      const secondTags = ['cameras', 'audio-equipment', 'projectors'];
+
+      //act
+      component.onTagsChange(firstTags);
+      expect(component.selectedTags).toEqual(firstTags);
+
+      component.onTagsChange(secondTags);
+      expect(component.selectedTags).toEqual(secondTags);
+
+      //assert
+      expect(component.selectedTags).toEqual(secondTags);
+      expect(component.selectedTags.length).toBe(3);
+    });
+  });
+
+  describe('Tag Validation', () => {
+    it('should initialize with empty selectedTags array by default', () => {
+      //arrange & act
+      const newComponent = new ItemEditComponent(
+        {} as ActivatedRoute,
+        {} as Router,
+        itemsService,
+        loopService
+      );
+
+      //assert
+      expect(newComponent.selectedTags).toEqual([]);
+    });
+
+    it('should allow item update without tags', () => {
+      //arrange
+      component.itemId = '1';
+      component.itemName = 'Updated Item';
+      component.selectedTags = [];
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+
+      //act
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalled();
+      expect(component.success).toBeTruthy();
+    });
+
+    it('should include tags in the update object passed to updateItem', () => {
+      //arrange
+      const tags = ['books', 'educational'];
+      component.itemId = '1';
+      component.itemName = 'Textbook';
+      component.itemDescription = 'Educational book';
+      component.selectedTags = tags;
+      component.selectedLoopIds = ['loop1'];
+      component.visibleToAllLoops = false;
+      component.visibleToFutureLoops = false;
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+
+      //act
+      component.updateItem();
+
+      //assert
+      const updateCall = itemsService.updateItem.mock.calls[0][1];
+      expect(updateCall.tags).toEqual(tags);
+      expect(updateCall.name).toBe('Textbook');
+      expect(updateCall.description).toBe('Educational book');
+      expect(updateCall.visibleToLoopIds).toEqual(['loop1']);
+    });
+
+    it('should handle rapid tag changes before update', () => {
+      //arrange
+      component.itemId = '1';
+      component.itemName = 'Test Item';
+      
+      //act
+      component.onTagsChange(['tag1']);
+      component.onTagsChange(['tag1', 'tag2']);
+      component.onTagsChange(['tag1', 'tag2', 'tag3']);
+      
+      itemsService.updateItem.mockReturnValue(of(mockItem));
+      component.updateItem();
+
+      //assert
+      expect(itemsService.updateItem).toHaveBeenCalledWith('1',
+        expect.objectContaining({
+          tags: ['tag1', 'tag2', 'tag3']
+        })
+      );
+    });
   });
 });

@@ -1,0 +1,174 @@
+<div class="item-filter" (click)="closeDropdowns()">
+  <div class="filter-header">
+    <h3>Filters</h3>
+    <div class="filter-actions">
+      <span class="active-filters-badge" *ngIf="hasActiveFilters()">
+        {{ getActiveFilterCount() }} active
+      </span>
+      <button 
+        class="clear-filters-btn" 
+        *ngIf="hasActiveFilters()"
+        (click)="clearAllFilters()"
+      >
+        Clear All
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-sections">
+    <!-- Tag Filter -->
+    <div class="filter-section">
+      <div class="filter-label">
+        <span>Tags</span>
+        <span class="selected-count" *ngIf="selectedTags.length > 0">
+          ({{ selectedTags.length }} selected)
+        </span>
+      </div>
+      <div class="dropdown-container">
+        <button 
+          class="dropdown-toggle"
+          (click)="toggleTagDropdown(); $event.stopPropagation()"
+          [class.active]="showTagDropdown"
+        >
+          <span *ngIf="selectedTags.length === 0">Select tags...</span>
+          <span *ngIf="selectedTags.length > 0">
+            {{ selectedTags.length }} tag{{ selectedTags.length === 1 ? '' : 's' }} selected
+          </span>
+          <span class="dropdown-arrow" [class.rotated]="showTagDropdown">▼</span>
+        </button>
+        <div class="dropdown-menu" *ngIf="showTagDropdown" (click)="$event.stopPropagation()">
+          <div *ngIf="isLoadingTags" class="loading-state">Loading tags...</div>
+          <div *ngIf="tagsError" class="error-state">
+            <p>{{ tagsError }}</p>
+            <button class="retry-btn" (click)="retryLoadTags()">Retry</button>
+          </div>
+          <div *ngIf="!isLoadingTags && !tagsError" class="dropdown-options">
+            <label 
+              *ngFor="let tag of availableTags" 
+              class="dropdown-option"
+            >
+              <input 
+                type="checkbox" 
+                [checked]="selectedTags.includes(tag.name)"
+                (change)="onTagToggle(tag.name)"
+              />
+              <span class="option-text">{{ tag.displayName }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <!-- Selected Tags Display -->
+      <div class="selected-items" *ngIf="selectedTags.length > 0">
+        <span 
+          *ngFor="let tagName of selectedTags" 
+          class="selected-item"
+        >
+          {{ getTagDisplayName(tagName) }}
+          <button 
+            class="remove-item-btn"
+            (click)="onTagToggle(tagName)"
+            [attr.aria-label]="'Remove ' + getTagDisplayName(tagName)"
+          >
+            ×
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <!-- Availability Filter -->
+    <div class="filter-section">
+      <div class="filter-label">Availability</div>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input 
+            type="radio" 
+            name="availability" 
+            value="all"
+            [(ngModel)]="availabilityFilter"
+            (change)="onAvailabilityChange()"
+          />
+          <span class="radio-text">All Items</span>
+        </label>
+        <label class="radio-option">
+          <input 
+            type="radio" 
+            name="availability" 
+            value="available"
+            [(ngModel)]="availabilityFilter"
+            (change)="onAvailabilityChange()"
+          />
+          <span class="radio-text">Available Only</span>
+        </label>
+        <label class="radio-option">
+          <input 
+            type="radio" 
+            name="availability" 
+            value="unavailable"
+            [(ngModel)]="availabilityFilter"
+            (change)="onAvailabilityChange()"
+          />
+          <span class="radio-text">Unavailable Only</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Owner Filter -->
+    <div class="filter-section">
+      <div class="filter-label">
+        <span>Owners</span>
+        <span class="selected-count" *ngIf="selectedOwners.length > 0">
+          ({{ selectedOwners.length }} selected)
+        </span>
+      </div>
+      <div class="dropdown-container">
+        <button 
+          class="dropdown-toggle"
+          (click)="toggleOwnerDropdown(); $event.stopPropagation()"
+          [class.active]="showOwnerDropdown"
+        >
+          <span *ngIf="selectedOwners.length === 0">Select owners...</span>
+          <span *ngIf="selectedOwners.length > 0">
+            {{ selectedOwners.length }} owner{{ selectedOwners.length === 1 ? '' : 's' }} selected
+          </span>
+          <span class="dropdown-arrow" [class.rotated]="showOwnerDropdown">▼</span>
+        </button>
+        <div class="dropdown-menu" *ngIf="showOwnerDropdown" (click)="$event.stopPropagation()">
+          <div *ngIf="isLoadingOwners" class="loading-state">Loading owners...</div>
+          <div *ngIf="ownersError" class="error-state">
+            <p>{{ ownersError }}</p>
+            <button class="retry-btn" (click)="retryLoadOwners()">Retry</button>
+          </div>
+          <div *ngIf="!isLoadingOwners && !ownersError" class="dropdown-options">
+            <label 
+              *ngFor="let owner of availableOwners" 
+              class="dropdown-option"
+            >
+              <input 
+                type="checkbox" 
+                [checked]="selectedOwners.includes(owner.id)"
+                (change)="onOwnerToggle(owner.id)"
+              />
+              <span class="option-text">{{ owner.name }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <!-- Selected Owners Display -->
+      <div class="selected-items" *ngIf="selectedOwners.length > 0">
+        <span 
+          *ngFor="let ownerId of selectedOwners" 
+          class="selected-item"
+        >
+          {{ getOwnerName(ownerId) }}
+          <button 
+            class="remove-item-btn"
+            (click)="onOwnerToggle(ownerId)"
+            [attr.aria-label]="'Remove ' + getOwnerName(ownerId)"
+          >
+            ×
+          </button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

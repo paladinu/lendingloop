@@ -37,75 +37,66 @@
     </div>
   </div>
 
-  <div class="search-section">
+  <div class="search-filter-section">
     <div class="search-box">
       <span class="search-icon">🔍</span>
       <input
         type="text"
-        placeholder="Search items..."
+        placeholder="Search items by name, description, or tags..."
         [(ngModel)]="searchQuery"
         (ngModelChange)="onSearchChange()"
       />
     </div>
-    <div class="results-count" *ngIf="searchQuery">
-      {{ filteredItems.length }} of {{ items.length }} items
+    
+    <app-item-filter
+      *ngIf="loopId"
+      [loopId]="loopId"
+      (filterChange)="onFilterChange($event)"
+    ></app-item-filter>
+    
+    <div class="results-info" *ngIf="!searching">
+      <span class="results-count">{{ totalResults }} {{ totalResults === 1 ? 'item' : 'items' }}</span>
     </div>
   </div>
 
-  <div *ngIf="loading" class="loading">
+  <div *ngIf="searching" class="loading">
     <div class="spinner"></div>
-    <p>Loading items...</p>
+    <p>Searching items...</p>
   </div>
 
-  <div *ngIf="error" class="error">
+  <div *ngIf="error" class="error-message">
     <p>{{ error }}</p>
-    <button (click)="loadLoopItems()">Retry</button>
+    <button class="retry-btn" (click)="performSearch()">Retry Search</button>
   </div>
 
-  <div *ngIf="!loading && !error && filteredItems.length === 0 && !searchQuery" class="empty-state">
+  <div *ngIf="!searching && !error && items.length === 0 && !searchQuery && currentFilter.tags.length === 0" class="empty-state">
     <p>No items in this loop yet.</p>
     <p>Items shared by loop members will appear here.</p>
   </div>
 
-  <div *ngIf="!loading && !error && filteredItems.length === 0 && searchQuery" class="empty-state">
-    <p>No items match your search.</p>
-    <p>Try a different search term.</p>
+  <div *ngIf="!searching && !error && items.length === 0 && (searchQuery || currentFilter.tags.length > 0)" class="empty-state">
+    <p>No items match your search or filters.</p>
+    <p>Try adjusting your search criteria.</p>
   </div>
 
-  <div *ngIf="!loading && !error && filteredItems.length > 0" class="items-grid">
-    <div *ngFor="let item of filteredItems" class="item-card">
-      <div class="item-image" *ngIf="item.imageUrl">
-        <img [src]="item.imageUrl" [alt]="item.name" />
-      </div>
-      <div class="item-image placeholder" *ngIf="!item.imageUrl">
-        <span class="placeholder-icon">📦</span>
-      </div>
-      <div class="item-content">
-        <h3>{{ item.name }}</h3>
-        <p class="item-description" *ngIf="item.description">{{ item.description }}</p>
-        <div class="item-meta">
-          <span class="owner">
-            By {{ item.ownerName || 'Unknown' }}
-            <app-loop-score-display 
-              *ngIf="item.ownerScore !== undefined" 
-              [score]="item.ownerScore" 
-              size="small">
-            </app-loop-score-display>
-          </span>
-          <span class="date">{{ item.createdAt | date:'short' }}</span>
-        </div>
-        <div class="item-status" *ngIf="item.isAvailable">
-          <span class="badge available">Available</span>
-        </div>
-        <div class="item-status" *ngIf="!item.isAvailable">
-          <span class="badge unavailable">Unavailable</span>
-        </div>
-        <app-item-request-button
-          [itemId]="item.id!"
-          [ownerId]="item.userId"
-          (requestCreated)="onRequestCreated($event)"
-        ></app-item-request-button>
-      </div>
-    </div>
+  <div *ngIf="!searching && !error && items.length > 0" class="items-grid">
+    <app-item-card
+      *ngFor="let item of items"
+      [item]="item"
+      [isOwner]="item.userId === currentUserId"
+      [loops]="loop ? [loop] : []"
+      (tagClick)="onTagClick($event)"
+      (requestCreated)="onRequestCreated($event)"
+      (editItem)="onEditItem($event)"
+      (editVisibility)="onEditVisibility($event)"
+    ></app-item-card>
   </div>
+
+  <app-pagination
+    *ngIf="!searching && !error && totalResults > currentFilter.pageSize"
+    [currentPage]="currentFilter.pageNumber"
+    [totalItems]="totalResults"
+    [pageSize]="currentFilter.pageSize"
+    (pageChange)="onPageChange($event)"
+  ></app-pagination>
 </div>

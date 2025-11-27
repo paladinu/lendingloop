@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ItemCardComponent } from './item-card.component';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
@@ -28,7 +29,7 @@ describe('ItemCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ItemCardComponent]
+      imports: [ItemCardComponent, HttpClientTestingModule]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ItemCardComponent);
@@ -93,5 +94,126 @@ describe('ItemCardComponent', () => {
 
     //assert
     expect(emitSpy).toHaveBeenCalledWith('1');
+  });
+
+  it('should emit editItem event when onEditItem is called', () => {
+    //arrange
+    component.item = mockItem;
+    const editItemSpy = jest.spyOn(component.editItem, 'emit');
+
+    //act
+    component.onEditItem();
+
+    //assert
+    expect(editItemSpy).toHaveBeenCalledWith('1');
+  });
+
+  it('should return visible tags up to maximum limit', () => {
+    //arrange
+    component.item = {
+      ...mockItem,
+      tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5', 'tag6', 'tag7']
+    };
+
+    //act
+    const visibleTags = component.getVisibleTags();
+
+    //assert
+    expect(visibleTags).toEqual(['tag1', 'tag2', 'tag3', 'tag4', 'tag5']);
+    expect(visibleTags.length).toBe(5);
+  });
+
+  it('should return all tags when less than maximum', () => {
+    //arrange
+    component.item = {
+      ...mockItem,
+      tags: ['tag1', 'tag2', 'tag3']
+    };
+
+    //act
+    const visibleTags = component.getVisibleTags();
+
+    //assert
+    expect(visibleTags).toEqual(['tag1', 'tag2', 'tag3']);
+    expect(visibleTags.length).toBe(3);
+  });
+
+  it('should return empty array when no tags', () => {
+    //arrange
+    component.item = {
+      ...mockItem,
+      tags: undefined
+    };
+
+    //act
+    const visibleTags = component.getVisibleTags();
+
+    //assert
+    expect(visibleTags).toEqual([]);
+  });
+
+  it('should calculate hidden tag count correctly', () => {
+    //arrange
+    component.item = {
+      ...mockItem,
+      tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5', 'tag6', 'tag7', 'tag8']
+    };
+
+    //act
+    const hiddenCount = component.getHiddenTagCount();
+
+    //assert
+    expect(hiddenCount).toBe(3); // 8 total - 5 visible = 3 hidden
+  });
+
+  it('should return zero hidden count when tags are within limit', () => {
+    //arrange
+    component.item = {
+      ...mockItem,
+      tags: ['tag1', 'tag2', 'tag3']
+    };
+
+    //act
+    const hiddenCount = component.getHiddenTagCount();
+
+    //assert
+    expect(hiddenCount).toBe(0);
+  });
+
+  it('should return zero hidden count when no tags', () => {
+    //arrange
+    component.item = {
+      ...mockItem,
+      tags: undefined
+    };
+
+    //act
+    const hiddenCount = component.getHiddenTagCount();
+
+    //assert
+    expect(hiddenCount).toBe(0);
+  });
+
+  it('should check if item has tags', () => {
+    //arrange & act & assert
+    component.item = { ...mockItem, tags: ['tag1', 'tag2'] };
+    expect(component.hasTags()).toBe(true);
+
+    component.item = { ...mockItem, tags: [] };
+    expect(component.hasTags()).toBe(false);
+
+    component.item = { ...mockItem, tags: undefined };
+    expect(component.hasTags()).toBe(false);
+  });
+
+  it('should emit tagClick event when tag is clicked', () => {
+    //arrange
+    const tagClickSpy = jest.spyOn(component.tagClick, 'emit');
+
+    //act
+    component.onTagClick('electronics');
+
+    //assert
+    expect(tagClickSpy).toHaveBeenCalledWith('electronics');
   });
 });

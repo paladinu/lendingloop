@@ -141,6 +141,54 @@ mat-card-content {
   background-color: #bbdefb;
 }
 
+.tags-section {
+  margin-top: 4px;
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.tag-chip:hover {
+  background-color: #c8e6c9;
+  border-color: #4caf50;
+  transform: translateY(-1px);
+}
+
+.tag-chip:focus {
+  outline: 2px solid #4caf50;
+  outline-offset: 2px;
+}
+
+.tag-chip.more-tags {
+  background-color: #f5f5f5;
+  color: #757575;
+  cursor: default;
+  border: 1px solid #e0e0e0;
+}
+
+.tag-chip.more-tags:hover {
+  background-color: #eeeeee;
+  border-color: #bdbdbd;
+  transform: none;
+}
+
 mat-card-actions {
   padding: 12px;
   margin: 0;

@@ -3,6 +3,8 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { SharedItem } from '../models/shared-item.interface';
+import { ItemSearchFilter } from '../models/item-search-filter.interface';
+import { ItemSearchResult } from '../models/item-search-result.interface';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -65,6 +67,20 @@ export class ItemsService {
 
     updateItem(itemId: string, updates: Partial<SharedItem>): Observable<SharedItem> {
         return this.http.put<SharedItem>(`${this.apiUrl}/${itemId}`, updates)
+            .pipe(
+                catchError(error => this.handleError(error))
+            );
+    }
+
+    searchItems(loopId: string, filter: ItemSearchFilter): Observable<ItemSearchResult> {
+        return this.http.post<ItemSearchResult>(`${this.apiUrl}/search/${loopId}`, filter)
+            .pipe(
+                catchError(error => this.handleError(error))
+            );
+    }
+
+    getDistinctOwners(loopId: string): Observable<string[]> {
+        return this.http.get<string[]>(`${this.apiUrl}/loop/${loopId}/owners`)
             .pipe(
                 catchError(error => this.handleError(error))
             );

@@ -8,4 +8,5 @@ public class UpdateItemRequest
     public List<string> VisibleToLoopIds { get; set; } = new();
     public bool VisibleToAllLoops { get; set; }
     public bool VisibleToFutureLoops { get; set; }
+    public List<string>? Tags { get; set; }
 }

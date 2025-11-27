@@ -33,6 +33,9 @@ public class SharedItem
     [BsonElement("visibleToFutureLoops")]
     public bool VisibleToFutureLoops { get; set; } = false;
     
+    [BsonElement("tags")]
+    public List<string> Tags { get; set; } = new();
+    
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     

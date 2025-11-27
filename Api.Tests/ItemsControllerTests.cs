@@ -89,7 +89,8 @@ public class ItemsControllerTests
             request.IsAvailable,
             request.VisibleToLoopIds,
             request.VisibleToAllLoops,
-            request.VisibleToFutureLoops))
+            request.VisibleToFutureLoops,
+            null))
             .ReturnsAsync(updatedItem);
 
         //act
@@ -206,7 +207,8 @@ public class ItemsControllerTests
             It.IsAny<bool>(),
             It.IsAny<List<string>>(),
             It.IsAny<bool>(),
-            It.IsAny<bool>()))
+            It.IsAny<bool>(),
+            It.IsAny<List<string>?>()))
             .ReturnsAsync((SharedItem)null!);
 
         //act
@@ -261,7 +263,8 @@ public class ItemsControllerTests
             request.IsAvailable,
             request.VisibleToLoopIds,
             request.VisibleToAllLoops,
-            request.VisibleToFutureLoops))
+            request.VisibleToFutureLoops,
+            null))
             .ReturnsAsync(updatedItem);
 
         //act
@@ -276,5 +279,322 @@ public class ItemsControllerTests
         Assert.Equal(request.VisibleToLoopIds.Count, returnedItem.VisibleToLoopIds.Count);
         Assert.Equal(request.VisibleToAllLoops, returnedItem.VisibleToAllLoops);
         Assert.Equal(request.VisibleToFutureLoops, returnedItem.VisibleToFutureLoops);
+    }
+
+    // Search endpoint tests
+    [Fact]
+    public async Task SearchItems_ReturnsOk_WhenSearchIsSuccessful()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter
+        {
+            SearchText = "drill",
+            Tags = new List<string> { "tools" },
+            IsAvailable = true,
+            PageNumber = 1,
+            PageSize = 20
+        };
+
+        var searchResult = new ItemSearchResult
+        {
+            Items = new List<SharedItem>
+            {
+                new SharedItem { Id = "item1", Name = "Power Drill", Tags = new List<string> { "tools" }, IsAvailable = true },
+                new SharedItem { Id = "item2", Name = "Drill Bits", Tags = new List<string> { "tools" }, IsAvailable = true }
+            },
+            TotalCount = 2,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalPages = 1
+        };
+
+        _mockItemsService.Setup(s => s.SearchItemsAsync(loopId, filter))
+            .ReturnsAsync(searchResult);
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedResult = Assert.IsType<ItemSearchResult>(okResult.Value);
+        Assert.Equal(2, returnedResult.Items.Count);
+        Assert.Equal(2, returnedResult.TotalCount);
+        Assert.Equal(1, returnedResult.PageNumber);
+        _mockItemsService.Verify(s => s.SearchItemsAsync(loopId, filter), Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchItems_ReturnsOk_WithEmptyResults_WhenNoItemsMatch()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter
+        {
+            SearchText = "nonexistent",
+            PageNumber = 1,
+            PageSize = 20
+        };
+
+        var searchResult = new ItemSearchResult
+        {
+            Items = new List<SharedItem>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalPages = 0
+        };
+
+        _mockItemsService.Setup(s => s.SearchItemsAsync(loopId, filter))
+            .ReturnsAsync(searchResult);
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedResult = Assert.IsType<ItemSearchResult>(okResult.Value);
+        Assert.Empty(returnedResult.Items);
+        Assert.Equal(0, returnedResult.TotalCount);
+        _mockItemsService.Verify(s => s.SearchItemsAsync(loopId, filter), Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchItems_ReturnsOk_WhenLoopIdIsEmpty()
+    {
+        //arrange
+        var loopId = "";
+        var filter = new ItemSearchFilter { PageNumber = 1, PageSize = 20 };
+
+        var searchResult = new ItemSearchResult
+        {
+            Items = new List<SharedItem>(),
+            TotalCount = 0,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalPages = 0
+        };
+
+        _mockItemsService.Setup(s => s.SearchItemsAsync(loopId, filter))
+            .ReturnsAsync(searchResult);
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.IsType<ItemSearchResult>(okResult.Value);
+    }
+
+    [Fact]
+    public async Task SearchItems_ReturnsBadRequest_WhenPageNumberIsInvalid()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter { PageNumber = 0, PageSize = 20 };
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Invalid pagination parameters: PageNumber must be at least 1", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task SearchItems_ReturnsBadRequest_WhenPageSizeIsInvalid()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter { PageNumber = 1, PageSize = 0 };
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Invalid pagination parameters: PageSize must be between 1 and 100", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task SearchItems_ReturnsBadRequest_WhenPageSizeExceedsMaximum()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter { PageNumber = 1, PageSize = 150 };
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Invalid pagination parameters: PageSize must be between 1 and 100", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task SearchItems_HandlesMultipleFilters_Correctly()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter
+        {
+            SearchText = "drill",
+            Tags = new List<string> { "tools", "power" },
+            IsAvailable = true,
+            OwnerIds = new List<string> { "user1", "user2" },
+            PageNumber = 1,
+            PageSize = 20
+        };
+
+        var searchResult = new ItemSearchResult
+        {
+            Items = new List<SharedItem>
+            {
+                new SharedItem 
+                { 
+                    Id = "item1", 
+                    Name = "Power Drill", 
+                    Tags = new List<string> { "tools", "power" }, 
+                    IsAvailable = true,
+                    UserId = "user1"
+                }
+            },
+            TotalCount = 1,
+            PageNumber = 1,
+            PageSize = 20,
+            TotalPages = 1
+        };
+
+        _mockItemsService.Setup(s => s.SearchItemsAsync(loopId, filter))
+            .ReturnsAsync(searchResult);
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedResult = Assert.IsType<ItemSearchResult>(okResult.Value);
+        Assert.Single(returnedResult.Items);
+        Assert.Equal("Power Drill", returnedResult.Items[0].Name);
+        _mockItemsService.Verify(s => s.SearchItemsAsync(loopId, filter), Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchItems_ReturnsInternalServerError_WhenServiceThrowsException()
+    {
+        //arrange
+        var loopId = "loop123";
+        var filter = new ItemSearchFilter { PageNumber = 1, PageSize = 20 };
+
+        _mockItemsService.Setup(s => s.SearchItemsAsync(loopId, filter))
+            .ThrowsAsync(new Exception("Database error"));
+
+        //act
+        var result = await _controller.SearchItems(loopId, filter);
+
+        //assert
+        var statusResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusResult.StatusCode);
+        Assert.Equal("Internal server error: Database error", statusResult.Value);
+    }
+
+    // GetDistinctOwners endpoint tests
+    [Fact]
+    public async Task GetDistinctOwners_ReturnsOk_WhenOwnersExist()
+    {
+        //arrange
+        var loopId = "loop123";
+        var expectedOwners = new List<string> { "user1", "user2", "user3" };
+
+        _mockItemsService.Setup(s => s.GetDistinctOwnersInLoopAsync(loopId))
+            .ReturnsAsync(expectedOwners);
+
+        //act
+        var result = await _controller.GetDistinctOwners(loopId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedOwners = Assert.IsAssignableFrom<List<string>>(okResult.Value);
+        Assert.Equal(3, returnedOwners.Count);
+        Assert.Equal(expectedOwners, returnedOwners);
+        _mockItemsService.Verify(s => s.GetDistinctOwnersInLoopAsync(loopId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetDistinctOwners_ReturnsOk_WithEmptyList_WhenNoOwnersExist()
+    {
+        //arrange
+        var loopId = "loop123";
+        var emptyOwners = new List<string>();
+
+        _mockItemsService.Setup(s => s.GetDistinctOwnersInLoopAsync(loopId))
+            .ReturnsAsync(emptyOwners);
+
+        //act
+        var result = await _controller.GetDistinctOwners(loopId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedOwners = Assert.IsAssignableFrom<List<string>>(okResult.Value);
+        Assert.Empty(returnedOwners);
+        _mockItemsService.Verify(s => s.GetDistinctOwnersInLoopAsync(loopId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetDistinctOwners_ReturnsOk_WhenLoopIdIsEmpty()
+    {
+        //arrange
+        var loopId = "";
+        var emptyOwners = new List<string>();
+
+        _mockItemsService.Setup(s => s.GetDistinctOwnersInLoopAsync(loopId))
+            .ReturnsAsync(emptyOwners);
+
+        //act
+        var result = await _controller.GetDistinctOwners(loopId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedOwners = Assert.IsAssignableFrom<List<string>>(okResult.Value);
+        Assert.Empty(returnedOwners);
+    }
+
+    [Fact]
+    public async Task GetDistinctOwners_ReturnsInternalServerError_WhenServiceThrowsException()
+    {
+        //arrange
+        var loopId = "loop123";
+
+        _mockItemsService.Setup(s => s.GetDistinctOwnersInLoopAsync(loopId))
+            .ThrowsAsync(new Exception("Database error"));
+
+        //act
+        var result = await _controller.GetDistinctOwners(loopId);
+
+        //assert
+        var statusResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(500, statusResult.StatusCode);
+        Assert.Equal("Internal server error: Database error", statusResult.Value);
+    }
+
+    [Fact]
+    public async Task GetDistinctOwners_ReturnsDistinctOwners_WhenMultipleItemsPerOwner()
+    {
+        //arrange
+        var loopId = "loop123";
+        var expectedOwners = new List<string> { "user1", "user2" }; // Distinct owners
+
+        _mockItemsService.Setup(s => s.GetDistinctOwnersInLoopAsync(loopId))
+            .ReturnsAsync(expectedOwners);
+
+        //act
+        var result = await _controller.GetDistinctOwners(loopId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedOwners = Assert.IsAssignableFrom<List<string>>(okResult.Value);
+        Assert.Equal(2, returnedOwners.Count);
+        Assert.Equal(expectedOwners.Distinct().Count(), returnedOwners.Count);
+        _mockItemsService.Verify(s => s.GetDistinctOwnersInLoopAsync(loopId), Times.Once);
     }
 }

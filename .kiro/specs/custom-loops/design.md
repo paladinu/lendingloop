@@ -586,23 +586,17 @@ erDiagram
 
 ## Future Enhancements
 
-2. **Advanced Invitations**
+1. **Advanced Invitations**
    - Bulk invitations
    - Invitation templates
    - Invitation reminders
 
-3. **Item Features**
-   - Item categories/tags
-   - Advanced search filters
-   - Item requests within loops
-   - Item availability calendar
-
-4. **Notifications**
+2. **Notifications**
    - In-app notifications for invitations
    - Push notifications
    - Email digests
 
-5. **Analytics**
+3. **Analytics**
    - Loop activity metrics
    - Popular items
    - Member engagement

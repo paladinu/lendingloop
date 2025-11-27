@@ -99,6 +99,16 @@
         </div>
 
         <div class="form-section">
+          <h3>Tags</h3>
+          <p class="section-help">Add tags to help others find your item</p>
+          
+          <app-tag-selector
+            [selectedTags]="selectedTags"
+            (selectedTagsChange)="onTagsChange($event)">
+          </app-tag-selector>
+        </div>
+
+        <div class="form-section">
           <h3>Visibility Settings</h3>
           <p class="section-help">Choose which loops can see this item</p>
           

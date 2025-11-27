@@ -19,6 +19,29 @@
           {{ item.isAvailable ? 'Available' : 'Not Available' }}
         </mat-chip>
       </div>
+
+      <div class="tags-section" *ngIf="hasTags()">
+        <div class="tags-container">
+          <span 
+            *ngFor="let tag of getVisibleTags()" 
+            class="tag-chip"
+            (click)="onTagClick(tag)"
+            [attr.aria-label]="'Filter by ' + tag"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="onTagClick(tag)"
+            (keydown.space)="onTagClick(tag)">
+            {{ tag }}
+          </span>
+          <span 
+            *ngIf="getHiddenTagCount() > 0" 
+            class="tag-chip more-tags"
+            [matTooltip]="item.tags!.slice(5).join(', ')"
+            aria-label="More tags">
+            +{{ getHiddenTagCount() }} more
+          </span>
+        </div>
+      </div>
       
       <div class="visibility-info">
         <mat-icon class="visibility-icon">visibility</mat-icon>
@@ -40,14 +63,23 @@
     </div>
   </mat-card-content>
   
-  <mat-card-actions *ngIf="isOwner">
-    <button mat-button (click)="onEditItem()" class="edit-item-btn">
-      <mat-icon>edit</mat-icon>
-      Edit Item
-    </button>
-    <button mat-button (click)="onEditVisibility()" class="edit-visibility-btn">
-      <mat-icon>visibility</mat-icon>
-      Visibility
-    </button>
+  <mat-card-actions>
+    <div *ngIf="isOwner" class="owner-actions">
+      <button mat-button (click)="onEditItem()" class="edit-item-btn">
+        <mat-icon>edit</mat-icon>
+        Edit Item
+      </button>
+      <button mat-button (click)="onEditVisibility()" class="edit-visibility-btn">
+        <mat-icon>visibility</mat-icon>
+        Visibility
+      </button>
+    </div>
+    <div *ngIf="!isOwner" class="request-action">
+      <app-item-request-button
+        [itemId]="item.id!"
+        [ownerId]="item.userId"
+        (requestCreated)="onRequestCreated($event)"
+      ></app-item-request-button>
+    </div>
   </mat-card-actions>
 </mat-card>

@@ -8,6 +8,7 @@ export interface SharedItem {
     visibleToLoopIds: string[];
     visibleToAllLoops: boolean;
     visibleToFutureLoops: boolean;
+    tags: string[];
     createdAt: Date;
     updatedAt: Date;
     ownerName?: string;

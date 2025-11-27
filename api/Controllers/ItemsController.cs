@@ -209,7 +209,8 @@ public class ItemsController : ControllerBase
                 request.IsAvailable,
                 request.VisibleToLoopIds,
                 request.VisibleToAllLoops,
-                request.VisibleToFutureLoops
+                request.VisibleToFutureLoops,
+                request.Tags
             );
 
             if (updatedItem == null)
@@ -263,6 +264,63 @@ public class ItemsController : ControllerBase
             }
 
             return Ok(updatedItem);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
+    [HttpPost("search/{loopId}")]
+    public async Task<ActionResult<ItemSearchResult>> SearchItems(string loopId, [FromBody] ItemSearchFilter filter)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            // Validate pagination parameters
+            if (filter.PageNumber < 1)
+            {
+                return BadRequest("Invalid pagination parameters: PageNumber must be at least 1");
+            }
+
+            if (filter.PageSize < 1 || filter.PageSize > 100)
+            {
+                return BadRequest("Invalid pagination parameters: PageSize must be between 1 and 100");
+            }
+
+            // TODO: Verify user belongs to the loop (requires ILoopService)
+            // For now, we'll allow the search and let the service filter by loop visibility
+
+            var result = await _itemsService.SearchItemsAsync(loopId, filter);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
+    [HttpGet("loop/{loopId}/owners")]
+    public async Task<ActionResult<List<string>>> GetDistinctOwners(string loopId)
+    {
+        try
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User ID not found in token");
+            }
+
+            // TODO: Verify user belongs to the loop (requires ILoopService)
+            // For now, we'll allow the query
+
+            var ownerIds = await _itemsService.GetDistinctOwnersInLoopAsync(loopId);
+            return Ok(ownerIds);
         }
         catch (Exception ex)
         {

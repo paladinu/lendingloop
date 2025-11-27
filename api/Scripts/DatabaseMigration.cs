@@ -173,6 +173,87 @@ public class DatabaseMigration
     }
 
     /// <summary>
+    /// Adds tags field to existing items that don't have it
+    /// </summary>
+    public async Task AddTagsFieldToItems()
+    {
+        try
+        {
+            var itemsCollection = _database.GetCollection<BsonDocument>("items");
+            
+            // Find all documents that don't have tags field
+            var filter = Builders<BsonDocument>.Filter.Not(
+                Builders<BsonDocument>.Filter.Exists("tags")
+            );
+
+            var itemsToMigrate = await itemsCollection.Find(filter).ToListAsync();
+            
+            _logger.LogInformation($"Found {itemsToMigrate.Count} items to add tags field");
+
+            if (itemsToMigrate.Count > 0)
+            {
+                var update = Builders<BsonDocument>.Update.Set("tags", new BsonArray());
+                var result = await itemsCollection.UpdateManyAsync(filter, update);
+                
+                _logger.LogInformation($"Successfully added tags field to {result.ModifiedCount} items");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during tags field addition");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Creates indexes for tags and systemTags collections
+    /// </summary>
+    public async Task CreateTagsIndexes()
+    {
+        try
+        {
+            // Create index on items.tags field for efficient filtering
+            var itemsCollection = _database.GetCollection<SharedItem>("items");
+            
+            var tagsIndexKeys = Builders<SharedItem>.IndexKeys.Ascending(i => i.Tags);
+            var tagsIndexModel = new CreateIndexModel<SharedItem>(tagsIndexKeys);
+            
+            await itemsCollection.Indexes.CreateOneAsync(tagsIndexModel);
+            _logger.LogInformation("Created index on items.tags");
+
+            // Create indexes for systemTags collection
+            var systemTagsCollection = _database.GetCollection<SystemTag>("systemTags");
+            
+            // Create unique index on name field
+            var nameIndexKeys = Builders<SystemTag>.IndexKeys.Ascending(t => t.Name);
+            var nameIndexOptions = new CreateIndexOptions { Unique = true };
+            var nameIndexModel = new CreateIndexModel<SystemTag>(nameIndexKeys, nameIndexOptions);
+            
+            await systemTagsCollection.Indexes.CreateOneAsync(nameIndexModel);
+            _logger.LogInformation("Created unique index on systemTags.name");
+
+            // Create index on category field
+            var categoryIndexKeys = Builders<SystemTag>.IndexKeys.Ascending(t => t.Category);
+            var categoryIndexModel = new CreateIndexModel<SystemTag>(categoryIndexKeys);
+            
+            await systemTagsCollection.Indexes.CreateOneAsync(categoryIndexModel);
+            _logger.LogInformation("Created index on systemTags.category");
+
+            // Create index on isActive field
+            var isActiveIndexKeys = Builders<SystemTag>.IndexKeys.Ascending(t => t.IsActive);
+            var isActiveIndexModel = new CreateIndexModel<SystemTag>(isActiveIndexKeys);
+            
+            await systemTagsCollection.Indexes.CreateOneAsync(isActiveIndexModel);
+            _logger.LogInformation("Created index on systemTags.isActive");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during tags indexes creation");
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Runs the complete migration process
     /// </summary>
     public async Task RunCompleteMigration()
@@ -200,5 +281,21 @@ public class DatabaseMigration
             _logger.LogError("Database migration validation failed");
             throw new InvalidOperationException("Database migration validation failed");
         }
+    }
+
+    /// <summary>
+    /// Runs the tags migration process
+    /// </summary>
+    public async Task RunTagsMigration()
+    {
+        _logger.LogInformation("Starting tags migration");
+        
+        // Step 1: Add tags field to existing items
+        await AddTagsFieldToItems();
+        
+        // Step 2: Create tags indexes
+        await CreateTagsIndexes();
+        
+        _logger.LogInformation("Tags migration completed successfully");
     }
 }

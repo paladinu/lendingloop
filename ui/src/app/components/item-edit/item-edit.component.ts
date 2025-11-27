@@ -15,6 +15,7 @@ import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
 import { VisibilitySelectorComponent } from '../visibility-selector/visibility-selector.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { TagSelectorComponent } from '../tag-selector/tag-selector.component';
 
 @Component({
   selector: 'app-item-edit',
@@ -29,7 +30,8 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
     MatIconModule,
     MatCheckboxModule,
     VisibilitySelectorComponent,
-    ToolbarComponent
+    ToolbarComponent,
+    TagSelectorComponent
   ],
   templateUrl: './item-edit.component.html',
   styleUrls: ['./item-edit.component.css']
@@ -46,6 +48,7 @@ export class ItemEditComponent implements OnInit {
   selectedLoopIds: string[] = [];
   visibleToAllLoops: boolean = false;
   visibleToFutureLoops: boolean = false;
+  selectedTags: string[] = [];
   loading: boolean = false;
   error: string = '';
   success: string = '';
@@ -84,6 +87,7 @@ export class ItemEditComponent implements OnInit {
         this.selectedLoopIds = item.visibleToLoopIds || [];
         this.visibleToAllLoops = item.visibleToAllLoops || false;
         this.visibleToFutureLoops = item.visibleToFutureLoops || false;
+        this.selectedTags = item.tags || [];
         this.loading = false;
       },
       error: (err) => {
@@ -128,6 +132,10 @@ export class ItemEditComponent implements OnInit {
     this.visibleToFutureLoops = selection.visibleToFutureLoops;
   }
 
+  onTagsChange(tags: string[]): void {
+    this.selectedTags = tags;
+  }
+
   updateItem(): void {
     if (!this.itemName.trim()) {
       this.error = 'Item name is required';
@@ -139,13 +147,19 @@ export class ItemEditComponent implements OnInit {
       return;
     }
 
+    if (this.selectedTags.length > 10) {
+      this.error = 'You can select up to 10 tags per item';
+      return;
+    }
+
     const updates: Partial<SharedItem> = {
       name: this.itemName.trim(),
       description: this.itemDescription.trim(),
       isAvailable: this.isAvailable,
       visibleToLoopIds: this.selectedLoopIds,
       visibleToAllLoops: this.visibleToAllLoops,
-      visibleToFutureLoops: this.visibleToFutureLoops
+      visibleToFutureLoops: this.visibleToFutureLoops,
+      tags: this.selectedTags
     };
 
     this.loading = true;
@@ -158,7 +172,7 @@ export class ItemEditComponent implements OnInit {
         if (this.selectedImageFile && this.itemId) {
           this.itemsService.uploadItemImage(this.itemId, this.selectedImageFile).subscribe({
             next: () => {
-              this.success = 'Item updated successfully!';
+              this.success = 'Item updated successfully with tags!';
               this.loading = false;
               setTimeout(() => {
                 this.router.navigate(['/items']);
@@ -174,7 +188,7 @@ export class ItemEditComponent implements OnInit {
             }
           });
         } else {
-          this.success = 'Item updated successfully!';
+          this.success = 'Item updated successfully with tags!';
           this.loading = false;
           setTimeout(() => {
             this.router.navigate(['/items']);
@@ -187,6 +201,10 @@ export class ItemEditComponent implements OnInit {
           this.error = 'You do not have permission to update this item';
         } else if (err.message.includes('404') || err.message.includes('not found')) {
           this.error = 'Item not found';
+        } else if (err.message && err.message.includes('tag')) {
+          this.error = err.message;
+        } else if (err.message && err.message.includes('10 tags')) {
+          this.error = 'You can select up to 10 tags per item';
         } else if (err.message.includes('name')) {
           this.error = 'Item name is required';
         } else {

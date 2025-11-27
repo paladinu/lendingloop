@@ -7,7 +7,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
+import { ItemRequest } from '../../models/item-request.interface';
 import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-display.component';
+import { ItemRequestButtonComponent } from '../item-request-button/item-request-button.component';
 
 @Component({
   selector: 'app-item-card',
@@ -19,7 +21,8 @@ import { LoopScoreDisplayComponent } from '../loop-score-display/loop-score-disp
     MatIconModule,
     MatChipsModule,
     MatTooltipModule,
-    LoopScoreDisplayComponent
+    LoopScoreDisplayComponent,
+    ItemRequestButtonComponent
   ],
   templateUrl: './item-card.component.html',
   styleUrls: ['./item-card.component.css']
@@ -31,6 +34,10 @@ export class ItemCardComponent {
   
   @Output() editVisibility = new EventEmitter<string>();
   @Output() editItem = new EventEmitter<string>();
+  @Output() tagClick = new EventEmitter<string>();
+  @Output() requestCreated = new EventEmitter<ItemRequest>();
+
+  private readonly MAX_VISIBLE_TAGS = 5;
 
   getVisibilityText(): string {
     if (this.item.visibleToAllLoops) {
@@ -68,5 +75,31 @@ export class ItemCardComponent {
     if (this.item.id) {
       this.editItem.emit(this.item.id);
     }
+  }
+
+  getVisibleTags(): string[] {
+    if (!this.item.tags || this.item.tags.length === 0) {
+      return [];
+    }
+    return this.item.tags.slice(0, this.MAX_VISIBLE_TAGS);
+  }
+
+  getHiddenTagCount(): number {
+    if (!this.item.tags || this.item.tags.length <= this.MAX_VISIBLE_TAGS) {
+      return 0;
+    }
+    return this.item.tags.length - this.MAX_VISIBLE_TAGS;
+  }
+
+  hasTags(): boolean {
+    return !!(this.item.tags && this.item.tags.length > 0);
+  }
+
+  onTagClick(tagName: string): void {
+    this.tagClick.emit(tagName);
+  }
+
+  onRequestCreated(request: ItemRequest): void {
+    this.requestCreated.emit(request);
   }
 }

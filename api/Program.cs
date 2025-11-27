@@ -107,6 +107,9 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
         return client.GetDatabase(mongoDatabaseName);
     });
 
+    // Register TagsService
+    builder.Services.AddSingleton<ITagsService, TagsService>();
+    
     // Register ItemsService
     builder.Services.AddScoped<IItemsService, ItemsService>();
     
@@ -224,6 +227,25 @@ app.UseAuthorization();
 
 // Map controllers - this implicitly adds routing
 app.MapControllers();
+
+// Initialize default tags on startup
+using (var scope = app.Services.CreateScope())
+{
+    var tagsService = scope.ServiceProvider.GetRequiredService<ITagsService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("Initializing default system tags");
+        await tagsService.InitializeDefaultTagsAsync();
+        logger.LogInformation("Default system tags initialized successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to initialize default system tags");
+        // Don't fail the application startup, just log the error
+    }
+}
 
 // Auto-run migration if configured
 var autoRunMigration = builder.Configuration.GetValue<bool>("Migration:AutoRunOnStartup");

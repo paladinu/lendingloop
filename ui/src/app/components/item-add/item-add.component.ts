@@ -13,6 +13,7 @@ import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
 import { VisibilitySelectorComponent } from '../visibility-selector/visibility-selector.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { TagSelectorComponent } from '../tag-selector/tag-selector.component';
 
 @Component({
   selector: 'app-item-add',
@@ -26,7 +27,8 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
     MatButtonModule,
     MatIconModule,
     VisibilitySelectorComponent,
-    ToolbarComponent
+    ToolbarComponent,
+    TagSelectorComponent
   ],
   templateUrl: './item-add.component.html',
   styleUrls: ['./item-add.component.css']
@@ -44,6 +46,9 @@ export class ItemAddComponent implements OnInit {
   selectedLoopIds: string[] = [];
   visibleToAllLoops: boolean = false;
   visibleToFutureLoops: boolean = false;
+
+  // Tag selection
+  selectedTags: string[] = [];
 
   constructor(
     private itemsService: ItemsService,
@@ -80,8 +85,18 @@ export class ItemAddComponent implements OnInit {
     this.visibleToFutureLoops = selection.visibleToFutureLoops;
   }
 
+  onTagsChange(tags: string[]): void {
+    this.selectedTags = tags;
+  }
+
   addItem(): void {
     if (!this.newItemName.trim()) {
+      this.error = 'Item name is required';
+      return;
+    }
+
+    if (this.selectedTags.length > 10) {
+      this.error = 'You can select up to 10 tags per item';
       return;
     }
 
@@ -91,7 +106,8 @@ export class ItemAddComponent implements OnInit {
       isAvailable: true,
       visibleToLoopIds: this.selectedLoopIds,
       visibleToAllLoops: this.visibleToAllLoops,
-      visibleToFutureLoops: this.visibleToFutureLoops
+      visibleToFutureLoops: this.visibleToFutureLoops,
+      tags: this.selectedTags
     };
 
     this.loading = true;
@@ -104,7 +120,7 @@ export class ItemAddComponent implements OnInit {
         if (this.selectedImageFile && createdItem.id) {
           this.itemsService.uploadItemImage(createdItem.id, this.selectedImageFile).subscribe({
             next: () => {
-              this.success = 'Item added successfully!';
+              this.success = 'Item added successfully with tags!';
               this.loading = false;
               setTimeout(() => {
                 this.router.navigate(['/items']);
@@ -120,7 +136,9 @@ export class ItemAddComponent implements OnInit {
             }
           });
         } else {
-          this.success = 'Item added successfully!';
+          this.success = this.selectedTags.length > 0 
+            ? 'Item added successfully with tags!' 
+            : 'Item added successfully!';
           this.loading = false;
           setTimeout(() => {
             this.router.navigate(['/items']);
@@ -129,7 +147,13 @@ export class ItemAddComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error creating item:', err);
-        this.error = 'Failed to add item. Please try again.';
+        if (err.message && err.message.includes('tag')) {
+          this.error = err.message;
+        } else if (err.message && err.message.includes('10 tags')) {
+          this.error = 'You can select up to 10 tags per item';
+        } else {
+          this.error = 'Failed to add item. Please try again.';
+        }
         this.loading = false;
       }
     });
