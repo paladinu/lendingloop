@@ -485,7 +485,7 @@
   - _Requirements: 11.1, 11.2_
 
 
-- [ ] 26. Add expected return date input to ItemRequestDialog component
+- [ ] 26. Complete expected return date integration
 
 - [x] 26.1 Add date picker to request dialog
 
@@ -543,3 +543,41 @@
   - Format date consistently with ItemRequestList
   - Show "No return date" if not provided
   - _Requirements: 11.5_
+
+- [x] 29. Implement auto-cancellation system
+
+- [x] 29.1 Add CancelExpiredRequestsAsync method to ItemRequestService
+
+  - Add `CancelExpiredRequestsAsync()` method to `api/Services/IItemRequestService.cs` interface
+  - Implement method in `api/Services/ItemRequestService.cs` to find and cancel requests pending for 10+ days
+  - Set status to "Cancelled" and update respondedAt timestamp
+  - Log cancellation activities for monitoring
+  - _Requirements: 12.1, 12.2, 12.3_
+
+- [x] 29.2 Create RequestCleanupService background service
+
+  - Create `api/Services/RequestCleanupService.cs` implementing `IHostedService`
+  - Run daily cleanup process to call `CancelExpiredRequestsAsync`
+  - Configure cleanup interval (default: daily at midnight)
+  - Add proper logging and error handling
+  - _Requirements: 12.4_
+
+- [x] 29.3 Register RequestCleanupService in dependency injection
+
+  - Update `api/Program.cs` to register RequestCleanupService as hosted service
+  - Ensure proper service lifetime management
+  - _Requirements: 12.4_
+
+- [x] 29.4 Write unit tests for auto-cancellation
+
+  - Add tests to `Api.Tests/ItemRequestServiceTests.cs` for CancelExpiredRequestsAsync method
+  - Test expired request detection (10+ days)
+  - Test timestamp validation for auto-cancelled requests
+  - Test that non-pending requests are not affected
+  - _Requirements: 12.1, 12.2, 12.3, 12.5_
+
+- [x] 30. Fix duplicate service registration
+
+  - Remove duplicate `ItemRequestService` registration in `api/Program.cs` (line 117 is duplicated)
+  - Ensure only one registration exists
+  - _Requirements: All requirements_

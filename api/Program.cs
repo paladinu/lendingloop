@@ -146,6 +146,9 @@ if (!string.IsNullOrEmpty(mongoConnectionString) && !string.IsNullOrEmpty(mongoD
     // Register Database Migration Service
     builder.Services.AddScoped<DatabaseMigration>();
     
+    // Register RequestCleanupService as hosted service
+    builder.Services.AddHostedService<RequestCleanupService>();
+    
     // Set up dependencies for LoopService to avoid circular dependency
     builder.Services.AddScoped(serviceProvider =>
     {

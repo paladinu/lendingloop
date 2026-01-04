@@ -655,4 +655,71 @@ public class ItemRequestService : IItemRequestService
             _logger.LogError(ex, "Error awarding CommunityBuilder badge to user {UserId}", inviterId);
         }
     }
+
+    public async Task CancelExpiredRequestsAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Starting auto-cancellation process for expired requests");
+
+            // Find requests that have been pending for 10+ days
+            var tenDaysAgo = DateTime.UtcNow.AddDays(-10);
+            var filter = Builders<ItemRequest>.Filter.And(
+                Builders<ItemRequest>.Filter.Eq(r => r.Status, RequestStatus.Pending),
+                Builders<ItemRequest>.Filter.Lt(r => r.RequestedAt, tenDaysAgo)
+            );
+
+            var expiredRequests = await _requestsCollection.Find(filter).ToListAsync();
+
+            if (expiredRequests.Count == 0)
+            {
+                _logger.LogInformation("No expired requests found for auto-cancellation");
+                return;
+            }
+
+            _logger.LogInformation("Found {Count} expired requests to auto-cancel", expiredRequests.Count);
+
+            var cancelledCount = 0;
+            foreach (var request in expiredRequests)
+            {
+                try
+                {
+                    // Update request status to Cancelled and set respondedAt timestamp
+                    var updateFilter = Builders<ItemRequest>.Filter.Eq(r => r.Id, request.Id);
+                    var update = Builders<ItemRequest>.Update
+                        .Set(r => r.Status, RequestStatus.Cancelled)
+                        .Set(r => r.RespondedAt, DateTime.UtcNow);
+
+                    var result = await _requestsCollection.UpdateOneAsync(updateFilter, update);
+
+                    if (result.ModifiedCount > 0)
+                    {
+                        cancelledCount++;
+                        _logger.LogInformation("Auto-cancelled expired request {RequestId} for item {ItemId} (requested {RequestedAt})", 
+                            request.Id, request.ItemId, request.RequestedAt);
+
+                        // Send notification to requester about auto-cancellation
+                        await SendNotificationsAsync(
+                            request.RequesterId,   // recipient (requester)
+                            request.OwnerId,       // related user (owner)
+                            request.ItemId,
+                            request.Id!,
+                            NotificationType.ItemRequestCancelled
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to auto-cancel expired request {RequestId}", request.Id);
+                }
+            }
+
+            _logger.LogInformation("Auto-cancellation process completed. Cancelled {CancelledCount} out of {TotalCount} expired requests", 
+                cancelledCount, expiredRequests.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during auto-cancellation process");
+        }
+    }
 }

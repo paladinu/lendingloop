@@ -26,7 +26,36 @@ The Item Request System consists of three main layers:
 
 [Owner rejects] → Rejected (item.isAvailable = true)
 [Requester cancels] → Cancelled (item.isAvailable unchanged)
+[Auto-cancel after 10 days] → Cancelled (item.isAvailable unchanged)
 ```
+
+## Design Decisions and Rationales
+
+### Key Design Decisions
+
+1. **Items Remain Available Until Approved**
+   - **Decision**: Keep `isAvailable = true` until owner approves a request
+   - **Rationale**: Allows multiple users to express interest, giving owners flexibility to choose based on timing, relationship, or other factors. Prevents items from appearing unavailable due to pending requests that may never be approved.
+
+2. **Owner Approval Required for All Requests**
+   - **Decision**: No automatic approval; all requests require explicit owner action
+   - **Rationale**: Ensures owners maintain full control over their items and can coordinate lending based on their schedule and preferences. Builds trust by preventing unexpected item commitments.
+
+3. **Single Active Request Per Item**
+   - **Decision**: Only one request can be in "Approved" status per item at any time
+   - **Rationale**: Prevents double-booking of items while still allowing multiple pending requests. Clear ownership of who currently has the item.
+
+4. **10-Day Auto-Cancellation**
+   - **Decision**: Automatically cancel requests that remain pending for 10+ days
+   - **Rationale**: Prevents accumulation of stale requests that owners may have forgotten about. 10 days provides reasonable time for owners to respond while keeping the system clean.
+
+5. **Optional Message and Return Date**
+   - **Decision**: Allow requesters to include optional context with requests
+   - **Rationale**: Enables better communication between users and helps owners make informed decisions. Optional nature keeps the request process lightweight for simple cases.
+
+6. **Separate Dialog for Request Creation**
+   - **Decision**: Use modal dialog instead of inline form for request details
+   - **Rationale**: Keeps item cards clean and uncluttered while providing focused space for message and date input. Better user experience for optional fields.
 
 ## Components and Interfaces
 
@@ -74,6 +103,7 @@ public interface IItemRequestService
     Task<ItemRequest?> CancelRequestAsync(string requestId, string requesterId);
     Task<ItemRequest?> CompleteRequestAsync(string requestId, string ownerId);
     Task<ItemRequest?> GetActiveRequestForItemAsync(string itemId);
+    Task CancelExpiredRequestsAsync();
 }
 ```
 
@@ -86,6 +116,8 @@ Key responsibilities:
 - Enforce authorization rules
 - Validate and sanitize request messages (max 500 characters)
 - Validate expected return dates (must be in the future)
+- Auto-cancel expired requests (pending for 10+ days)
+- Run daily cleanup process for expired requests
 
 #### 4. ItemRequestController (`api/Controllers/ItemRequestController.cs`)
 
@@ -98,6 +130,18 @@ RESTful endpoints:
 - `PUT /api/itemrequests/{id}/reject` - Reject request
 - `PUT /api/itemrequests/{id}/cancel` - Cancel request
 - `PUT /api/itemrequests/{id}/complete` - Complete request
+
+#### 5. Background Service for Auto-Cancellation
+
+**RequestCleanupService**: Background service for automatic request cleanup
+- Implements `IHostedService` for background processing
+- Runs daily to identify and cancel expired requests
+- Cancels requests that have been pending for 10+ days
+- Updates request status to "Cancelled" and sets respondedAt timestamp
+- Logs cleanup activities for monitoring and debugging
+- Configurable cleanup interval (default: daily at midnight)
+
+**Design Rationale**: Auto-cancellation prevents the accumulation of stale requests that owners may have forgotten about, keeping the system clean and ensuring items don't appear to have pending requests indefinitely. The 10-day threshold provides sufficient time for owners to respond while preventing indefinite accumulation.
 
 ### Frontend Components
 
@@ -141,27 +185,38 @@ Methods:
 - `rejectRequest(requestId: string): Observable<ItemRequest>`
 - `cancelRequest(requestId: string): Observable<ItemRequest>`
 - `completeRequest(requestId: string): Observable<ItemRequest>`
+- `getPendingRequestCount(): Observable<number>` - For navigation badge display
 
 #### 3. UI Components
 
 **ItemRequestButtonComponent**: Displays request button on item cards with status indicators
 - Shows "Request Item" button for available items
-- Opens dialog/modal to collect optional message and expected return date when clicked
+- Opens ItemRequestDialogComponent when clicked
 - Shows "Pending Request" badge if user has pending request
 - Shows "Currently Borrowed" badge if user has approved request
 - Disables button when request exists
+
+**ItemRequestDialogComponent**: Modal for collecting request details
+- Opens when "Request Item" button is clicked
+- Collects optional message (max 500 characters with counter)
+- Collects optional expected return date (date picker with minimum date validation)
+- Displays item name in dialog title
+- Validates inputs before submission
+- Handles form submission and cancellation
 
 **ItemRequestListComponent**: Displays list of requests for owners
 - Shows pending requests with approve/reject actions
 - Displays requester's message and expected return date if provided
 - Shows approved requests with complete action
 - Shows historical requests (rejected, cancelled, completed)
+- Displays request count badge in navigation
 
 **MyRequestsComponent**: Displays requester's requests
 - Shows all requests created by user
 - Displays the message and expected return date included with each request
 - Allows cancellation of pending requests
 - Shows status of all requests
+- Groups requests by status for better organization
 
 ## Data Models
 
@@ -232,6 +287,10 @@ No schema changes required. The `isAvailable` field is updated through ItemsServ
 6. **Invalid Expected Return Date**
    - Expected return date is in the past → 400 Bad Request
 
+7. **Auto-Cancellation Scenarios**
+   - Requests pending for 10+ days → Automatically cancelled
+   - Daily cleanup process runs to identify expired requests
+
 ### Frontend Error Handling
 
 - Display user-friendly error messages using toast notifications
@@ -271,7 +330,12 @@ Test categories:
    - Authorization validation
    - Status validation
 
-6. **Query Tests**
+6. **Auto-Cancellation Tests**
+   - Expired request detection (10+ days)
+   - Daily cleanup process execution
+   - Timestamp validation for auto-cancelled requests
+
+7. **Query Tests**
    - Get requests by requester
    - Get pending requests by owner
    - Get requests by item
@@ -293,6 +357,7 @@ Test categories:
 
 2. **Component Tests**
    - ItemRequestButtonComponent: Button states and click handlers
+   - ItemRequestDialogComponent: Form validation and submission
    - ItemRequestListComponent: Request display and action handlers
    - MyRequestsComponent: Request list display and filtering
 
@@ -302,8 +367,10 @@ Test categories:
 2. Multiple users requesting same item
 3. Request cancellation flow
 4. Request rejection flow
-5. UI state updates after actions
-6. Error message display
+5. Auto-cancellation of expired requests (10+ days)
+6. UI state updates after actions
+7. Error message display
+8. Message and expected return date validation
 
 ## Security Considerations
 
@@ -352,9 +419,10 @@ Test categories:
 ## Future Enhancements
 
 1. **Notifications**: Email/push notifications when requests are created, approved, or rejected
-2. **Request Expiration**: Auto-cancel requests after X days
-3. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
-4. **Return Date Reminders**: Send notifications as expected return date approaches
-5. **Overdue Tracking**: Flag requests that exceed expected return date
-6. **Ratings**: Allow users to rate borrowing experiences
-7. **Message Threading**: Allow back-and-forth messaging between requester and owner
+2. **Request Queue**: Allow multiple pending requests with automatic approval of next in queue
+3. **Return Date Reminders**: Send notifications as expected return date approaches
+4. **Overdue Tracking**: Flag requests that exceed expected return date
+5. **Ratings**: Allow users to rate borrowing experiences
+6. **Message Threading**: Allow back-and-forth messaging between requester and owner
+7. **Advanced Auto-Cancellation**: Configurable expiration periods per loop or item type
+8. **Request Analytics**: Dashboard showing request patterns and success rates

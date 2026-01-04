@@ -142,3 +142,15 @@ This document specifies the technical requirements for implementing the item req
 3. IF a Requester provides an expected return date that is in the past, THEN THE Item Request System SHALL reject the request with a validation error
 4. WHEN an Owner views an Item Request, THE Item Request System SHALL display the expected return date if one was provided
 5. WHEN a Requester views their Item Requests, THE Item Request System SHALL display the expected return date they specified with each request
+
+### Requirement 12: Auto-cancel Expired Requests
+
+**User Story:** As a system administrator, I want requests to be automatically cancelled after 10 days, so that pending requests don't accumulate indefinitely.
+
+#### Acceptance Criteria
+
+1. WHEN an Item Request has been in "Pending" status for 10 days, THE Item Request System SHALL automatically update the status to "Cancelled"
+2. WHEN an Item Request is auto-cancelled, THE Item Request System SHALL record the cancellation timestamp in the respondedAt field
+3. WHEN an Item Request is auto-cancelled, THE Item Request System SHALL keep the SharedItem's isAvailable property unchanged
+4. THE Item Request System SHALL run the auto-cancellation process daily to check for expired requests
+5. THE Item Request System SHALL not auto-cancel requests that have already been approved, rejected, or manually cancelled
