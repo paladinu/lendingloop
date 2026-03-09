@@ -499,6 +499,19 @@ public class LoopService : ILoopService
         return updatedLoop;
     }
 
+    public async Task<bool> DoUsersShareLoopAsync(string userId1, string userId2)
+    {
+        // Query loops collection for any loop where both users are members
+        var filter = Builders<Loop>.Filter.And(
+            Builders<Loop>.Filter.AnyEq(l => l.MemberIds, userId1),
+            Builders<Loop>.Filter.AnyEq(l => l.MemberIds, userId2)
+        );
+        
+        var sharedLoop = await _loopsCollection.Find(filter).FirstOrDefaultAsync();
+        
+        return sharedLoop != null;
+    }
+
     private async Task EnsureIndexesAsync()
     {
         try

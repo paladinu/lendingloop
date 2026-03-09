@@ -1088,4 +1088,36 @@ describe('BadgeDisplayComponent', () => {
         
         consoleErrorSpy.mockRestore();
     });
+
+    // Test for empty badges case when showAllBadges is true
+    it('should show empty state message when showAllBadges is true and no badges earned', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const emptyState = fixture.nativeElement.querySelector('.empty-state');
+        expect(emptyState).toBeTruthy();
+        expect(emptyState.textContent).toContain('No badges earned yet');
+    });
+
+    it('should not show empty state message when showAllBadges is true and badges are earned', () => {
+        //arrange
+        component.showAllBadges = true;
+        component.earnedBadges = [
+            { badgeType: 'Bronze', awardedAt: new Date().toISOString() }
+        ];
+
+        //act
+        component.ngOnInit();
+        fixture.detectChanges();
+
+        //assert
+        const emptyState = fixture.nativeElement.querySelector('.empty-state');
+        expect(emptyState).toBeFalsy();
+    });
 });

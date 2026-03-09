@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 import { ItemCardComponent } from './item-card.component';
 import { SharedItem } from '../../models/shared-item.interface';
 import { Loop } from '../../models/loop.interface';
@@ -29,7 +30,7 @@ describe('ItemCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ItemCardComponent, HttpClientTestingModule]
+      imports: [ItemCardComponent, HttpClientTestingModule, RouterTestingModule]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ItemCardComponent);

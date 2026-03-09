@@ -1,9 +1,12 @@
 using Api.Controllers;
+using Api.DTOs;
 using Api.Models;
 using Api.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Security.Claims;
 using Xunit;
 
 namespace Api.Tests;
@@ -25,6 +28,21 @@ public class UsersControllerTests
             _mockLoopScoreService.Object,
             _mockUserService.Object,
             _mockLogger.Object);
+    }
+
+    private void SetupAuthenticatedUser(string userId)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId)
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+        };
     }
 
     [Fact]
@@ -274,5 +292,151 @@ public class UsersControllerTests
         Assert.Equal("Common", returnedRarities[BadgeType.Bronze].RarityCategory);
         Assert.Equal(20, returnedRarities[BadgeType.Silver].UsersWithBadge);
         Assert.Equal("Rare", returnedRarities[BadgeType.Silver].RarityCategory);
+    }
+    [Fact]
+    public async Task GetPublicProfile_Returns200WithPublicProfileDto_WhenValidUserIdAndSharedLoops()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        
+        SetupAuthenticatedUser(requestingUserId);
+
+        var expectedProfile = new PublicProfileDto
+        {
+            UserId = targetUserId,
+            FirstName = "John",
+            LastName = "Doe",
+            LoopScore = 25,
+            Badges = new List<BadgeDto>
+            {
+                new BadgeDto { BadgeType = "Bronze", AwardedAt = DateTime.UtcNow.AddDays(-10) }
+            },
+            ScoreHistory = new List<ScoreHistoryEntryDto>
+            {
+                new ScoreHistoryEntryDto { Timestamp = DateTime.UtcNow.AddDays(-5), Points = 5, ActionType = "BorrowCompleted", ItemRequestId = "req1", ItemName = "Test Item" }
+            }
+        };
+
+        _mockUserService.Setup(s => s.GetPublicProfileAsync(requestingUserId, targetUserId))
+            .ReturnsAsync(expectedProfile);
+
+        //act
+        var result = await _controller.GetPublicProfile(targetUserId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedProfile = Assert.IsType<PublicProfileDto>(okResult.Value);
+        Assert.Equal(targetUserId, returnedProfile.UserId);
+        Assert.Equal("John", returnedProfile.FirstName);
+        Assert.Equal("Doe", returnedProfile.LastName);
+        Assert.Equal(25, returnedProfile.LoopScore);
+        Assert.Single(returnedProfile.Badges);
+        Assert.Single(returnedProfile.ScoreHistory);
+    }
+
+    [Fact]
+    public async Task GetPublicProfile_Returns404_WhenUserNotFound()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "nonexistent";
+        
+        SetupAuthenticatedUser(requestingUserId);
+
+        _mockUserService.Setup(s => s.GetPublicProfileAsync(requestingUserId, targetUserId))
+            .ThrowsAsync(new KeyNotFoundException("User not found"));
+
+        //act
+        var result = await _controller.GetPublicProfile(targetUserId);
+
+        //assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.NotNull(notFoundResult.Value);
+    }
+
+    [Fact]
+    public async Task GetPublicProfile_Returns403_WhenNoSharedLoops()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        
+        SetupAuthenticatedUser(requestingUserId);
+
+        _mockUserService.Setup(s => s.GetPublicProfileAsync(requestingUserId, targetUserId))
+            .ThrowsAsync(new UnauthorizedAccessException("You can only view profiles of users in your loops"));
+
+        //act
+        var result = await _controller.GetPublicProfile(targetUserId);
+
+        //assert
+        var forbiddenResult = Assert.IsType<ObjectResult>(result.Result);
+        Assert.Equal(403, forbiddenResult.StatusCode);
+        Assert.NotNull(forbiddenResult.Value);
+    }
+
+    [Fact]
+    public async Task GetPublicProfile_Returns401_WhenUnauthenticatedRequest()
+    {
+        //arrange
+        var targetUserId = "user456";
+        
+        // Do not setup authenticated user - simulate unauthenticated request
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+        };
+
+        //act
+        var result = await _controller.GetPublicProfile(targetUserId);
+
+        //assert
+        var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result.Result);
+        Assert.NotNull(unauthorizedResult.Value);
+    }
+
+    [Fact]
+    public async Task GetPublicProfile_ResponseDoesNotIncludeEmailOrAddress()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        
+        SetupAuthenticatedUser(requestingUserId);
+
+        var expectedProfile = new PublicProfileDto
+        {
+            UserId = targetUserId,
+            FirstName = "John",
+            LastName = "Doe",
+            LoopScore = 25,
+            Badges = new List<BadgeDto>(),
+            ScoreHistory = new List<ScoreHistoryEntryDto>()
+        };
+
+        _mockUserService.Setup(s => s.GetPublicProfileAsync(requestingUserId, targetUserId))
+            .ReturnsAsync(expectedProfile);
+
+        //act
+        var result = await _controller.GetPublicProfile(targetUserId);
+
+        //assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedProfile = Assert.IsType<PublicProfileDto>(okResult.Value);
+        
+        // Verify that PublicProfileDto does not have Email or StreetAddress properties
+        var profileType = returnedProfile.GetType();
+        Assert.Null(profileType.GetProperty("Email"));
+        Assert.Null(profileType.GetProperty("StreetAddress"));
+        Assert.Null(profileType.GetProperty("Address"));
+        
+        // Verify that only expected public properties are present
+        Assert.NotNull(profileType.GetProperty("UserId"));
+        Assert.NotNull(profileType.GetProperty("FirstName"));
+        Assert.NotNull(profileType.GetProperty("LastName"));
+        Assert.NotNull(profileType.GetProperty("LoopScore"));
+        Assert.NotNull(profileType.GetProperty("Badges"));
+        Assert.NotNull(profileType.GetProperty("ScoreHistory"));
     }
 }

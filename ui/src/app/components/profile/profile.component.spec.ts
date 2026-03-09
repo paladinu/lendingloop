@@ -1,19 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfileComponent } from './profile.component';
 import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
 import { NotificationService } from '../../services/notification.service';
 import { ItemRequestService } from '../../services/item-request.service';
 import { LoopScoreService } from '../../services/loop-score.service';
 import { provideHttpClient } from '@angular/common/http';
 import { Router, ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
-import { UserProfile } from '../../models/auth.interface';
+import { Location } from '@angular/common';
+import { of, BehaviorSubject, throwError } from 'rxjs';
+import { UserProfile, PublicProfile } from '../../models/auth.interface';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('ProfileComponent', () => {
   let component: ProfileComponent;
   let fixture: ComponentFixture<ProfileComponent>;
   let mockAuthService: any;
+  let mockUserService: any;
+  let mockActivatedRoute: any;
+  let mockLocation: any;
+  let paramMapSubject: BehaviorSubject<any>;
 
   const mockUser: UserProfile = {
     id: 'user123',
@@ -26,10 +32,28 @@ describe('ProfileComponent', () => {
     badges: []
   };
 
+  const mockPublicProfile: PublicProfile = {
+    userId: 'otherUser456',
+    firstName: 'Other',
+    lastName: 'User',
+    loopScore: 25,
+    badges: [],
+    scoreHistory: []
+  };
+
   beforeEach(async () => {
+    // Create a BehaviorSubject for paramMap to simulate route parameter changes
+    paramMapSubject = new BehaviorSubject({
+      get: jest.fn().mockReturnValue(null)
+    });
+
     mockAuthService = {
       getCurrentUser: jest.fn().mockReturnValue(of(mockUser)),
       refreshCurrentUser: jest.fn().mockReturnValue(of(mockUser))
+    };
+
+    mockUserService = {
+      getPublicProfile: jest.fn().mockReturnValue(of(mockPublicProfile))
     };
 
     const mockNotificationService = {
@@ -63,9 +87,14 @@ describe('ProfileComponent', () => {
       navigate: jest.fn()
     };
 
-    const mockActivatedRoute = {
+    mockActivatedRoute = {
       snapshot: { params: {} },
-      params: of({})
+      params: of({}),
+      paramMap: paramMapSubject.asObservable()
+    };
+
+    mockLocation = {
+      back: jest.fn()
     };
 
     await TestBed.configureTestingModule({
@@ -73,11 +102,13 @@ describe('ProfileComponent', () => {
       providers: [
         provideHttpClient(),
         { provide: AuthService, useValue: mockAuthService },
+        { provide: UserService, useValue: mockUserService },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: ItemRequestService, useValue: mockItemRequestService },
         { provide: LoopScoreService, useValue: mockLoopScoreService },
         { provide: Router, useValue: mockRouter },
-        { provide: ActivatedRoute, useValue: mockActivatedRoute }
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        { provide: Location, useValue: mockLocation }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -136,5 +167,362 @@ describe('ProfileComponent', () => {
     const badgeDisplay = fixture.nativeElement.querySelector('app-badge-display');
     expect(badgeDisplay).toBeTruthy();
     expect(badgeDisplay.getAttribute('ng-reflect-show-all-badges')).toBe('true');
+  });
+
+  it('should set isOwnProfile to true when no userId parameter', () => {
+    //arrange
+    paramMapSubject.next({
+      get: jest.fn().mockReturnValue(null)
+    });
+
+    //act
+    component.ngOnInit();
+
+    //assert
+    expect(component.isOwnProfile).toBe(true);
+  });
+
+  it('should set isOwnProfile to true when userId matches current user', () => {
+    //arrange
+    paramMapSubject.next({
+      get: jest.fn((key: string) => key === 'userId' ? 'user123' : null)
+    });
+
+    //act
+    component.ngOnInit();
+
+    //assert
+    expect(component.isOwnProfile).toBe(true);
+    expect(component.userId).toBe('user123');
+  });
+
+  it('should set isOwnProfile to false when userId differs from current user', () => {
+    //arrange
+    paramMapSubject.next({
+      get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+    });
+
+    //act
+    component.ngOnInit();
+
+    //assert
+    expect(component.isOwnProfile).toBe(false);
+    expect(component.userId).toBe('otherUser456');
+  });
+
+  it('should extract userId from route parameters', () => {
+    //arrange
+    paramMapSubject.next({
+      get: jest.fn((key: string) => key === 'userId' ? 'testUser789' : null)
+    });
+
+    //act
+    component.ngOnInit();
+
+    //assert
+    expect(component.userId).toBe('testUser789');
+  });
+
+  it('should initialize errorMessage as null', () => {
+    //arrange & act
+    // Component is already initialized in beforeEach
+
+    //assert
+    expect(component.errorMessage).toBeNull();
+  });
+
+  describe('loadProfile logic', () => {
+    it('should initialize with loading state true', () => {
+      //arrange
+      // Create a new component without triggering ngOnInit
+      const newFixture = TestBed.createComponent(ProfileComponent);
+      const newComponent = newFixture.componentInstance;
+
+      //act
+      // Component is created but ngOnInit not called yet
+
+      //assert
+      expect(newComponent.isLoading).toBe(true);
+    });
+
+    it('should call authService.refreshCurrentUser when viewing own profile', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn().mockReturnValue(null)
+      });
+      mockAuthService.refreshCurrentUser.mockReturnValue(of(mockUser));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(mockAuthService.refreshCurrentUser).toHaveBeenCalled();
+        expect(component.profileData).toEqual(mockUser);
+        expect(component.isLoading).toBe(false);
+        done();
+      }, 100);
+    });
+
+    it('should call userService.getPublicProfile when viewing another user profile', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+      });
+      mockUserService.getPublicProfile.mockReturnValue(of(mockPublicProfile));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(mockUserService.getPublicProfile).toHaveBeenCalledWith('otherUser456');
+        expect(component.profileData).toEqual(mockPublicProfile);
+        expect(component.isLoading).toBe(false);
+        done();
+      }, 100);
+    });
+
+    it('should set profileData and isLoading false on successful private profile load', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn().mockReturnValue(null)
+      });
+      mockAuthService.refreshCurrentUser.mockReturnValue(of(mockUser));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(component.profileData).toEqual(mockUser);
+        expect(component.currentUser).toEqual(mockUser);
+        expect(component.isLoading).toBe(false);
+        expect(component.errorMessage).toBeNull();
+        done();
+      }, 100);
+    });
+
+    it('should set profileData and isLoading false on successful public profile load', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+      });
+      mockUserService.getPublicProfile.mockReturnValue(of(mockPublicProfile));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(component.profileData).toEqual(mockPublicProfile);
+        expect(component.isLoading).toBe(false);
+        expect(component.errorMessage).toBeNull();
+        done();
+      }, 100);
+    });
+
+    it('should set error message on 403 error when loading public profile', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+      });
+      const error = { status: 403, error: { message: 'Forbidden' } };
+      mockUserService.getPublicProfile.mockReturnValue(throwError(() => error));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(component.errorMessage).toBe('You can only view profiles of users in your loops');
+        expect(component.isLoading).toBe(false);
+        done();
+      }, 100);
+    });
+
+    it('should set error message on 404 error when loading public profile', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'nonExistentUser' : null)
+      });
+      const error = { status: 404, error: { message: 'Not Found' } };
+      mockUserService.getPublicProfile.mockReturnValue(throwError(() => error));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(component.errorMessage).toBe('User not found');
+        expect(component.isLoading).toBe(false);
+        done();
+      }, 100);
+    });
+
+    it('should set generic error message on other errors when loading public profile', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+      });
+      const error = { status: 500, error: { message: 'Internal Server Error' } };
+      mockUserService.getPublicProfile.mockReturnValue(throwError(() => error));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(component.errorMessage).toBe('Failed to load profile');
+        expect(component.isLoading).toBe(false);
+        done();
+      }, 100);
+    });
+
+    it('should set error message when loading own profile fails', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn().mockReturnValue(null)
+      });
+      const error = { status: 500, error: { message: 'Internal Server Error' } };
+      mockAuthService.refreshCurrentUser.mockReturnValue(throwError(() => error));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        expect(component.errorMessage).toBe('Failed to load profile');
+        expect(component.isLoading).toBe(false);
+        done();
+      }, 100);
+    });
+  });
+
+  describe('goBack', () => {
+    it('should call location.back() when goBack is invoked', () => {
+      //arrange
+      // mockLocation is already set up in beforeEach
+
+      //act
+      component.goBack();
+
+      //assert
+      expect(mockLocation.back).toHaveBeenCalled();
+    });
+  });
+
+  describe('page title display', () => {
+    it('should display "My Profile" when viewing own profile', () => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn().mockReturnValue(null)
+      });
+
+      //act
+      component.ngOnInit();
+      fixture.detectChanges();
+
+      //assert
+      const pageTitle = fixture.nativeElement.querySelector('.page-title');
+      expect(pageTitle).toBeTruthy();
+      expect(pageTitle.textContent.trim()).toBe('My Profile');
+    });
+
+    it('should display "User Profile" when viewing another user profile', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+      });
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        fixture.detectChanges();
+        const pageTitle = fixture.nativeElement.querySelector('.page-title');
+        expect(pageTitle).toBeTruthy();
+        expect(pageTitle.textContent.trim()).toBe('User Profile');
+        done();
+      }, 100);
+    });
+  });
+
+  describe('error message display', () => {
+    it('should display error message when errorMessage is set', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'otherUser456' : null)
+      });
+      const error = { status: 403, error: { message: 'Forbidden' } };
+      mockUserService.getPublicProfile.mockReturnValue(throwError(() => error));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        fixture.detectChanges();
+        const errorElement = fixture.nativeElement.querySelector('.error-message');
+        expect(errorElement).toBeTruthy();
+        expect(errorElement.textContent.trim()).toBe('You can only view profiles of users in your loops');
+        done();
+      }, 100);
+    });
+
+    it('should hide profile content when error message is present', (done) => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn((key: string) => key === 'userId' ? 'nonExistentUser' : null)
+      });
+      const error = { status: 404, error: { message: 'Not Found' } };
+      mockUserService.getPublicProfile.mockReturnValue(throwError(() => error));
+
+      //act
+      component.ngOnInit();
+
+      //assert
+      setTimeout(() => {
+        fixture.detectChanges();
+        const profileHeader = fixture.nativeElement.querySelector('.profile-header');
+        const profileContent = fixture.nativeElement.querySelector('.profile-content');
+        expect(profileHeader).toBeFalsy();
+        expect(profileContent).toBeFalsy();
+        done();
+      }, 100);
+    });
+
+    it('should not display error message when errorMessage is null', () => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn().mockReturnValue(null)
+      });
+
+      //act
+      component.ngOnInit();
+      fixture.detectChanges();
+
+      //assert
+      const errorElement = fixture.nativeElement.querySelector('.error-message');
+      expect(errorElement).toBeFalsy();
+    });
+
+    it('should show profile content when no error message', () => {
+      //arrange
+      paramMapSubject.next({
+        get: jest.fn().mockReturnValue(null)
+      });
+
+      //act
+      component.ngOnInit();
+      fixture.detectChanges();
+
+      //assert
+      const profileHeader = fixture.nativeElement.querySelector('.profile-header');
+      const profileContent = fixture.nativeElement.querySelector('.profile-content');
+      expect(profileHeader).toBeTruthy();
+      expect(profileContent).toBeTruthy();
+    });
   });
 });

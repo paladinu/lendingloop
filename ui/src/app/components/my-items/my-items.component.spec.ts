@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { MyItemsComponent } from './my-items.component';
@@ -68,17 +69,13 @@ describe('MyItemsComponent', () => {
       getUserLoops: jest.fn()
     } as unknown as jest.Mocked<LoopService>;
 
-    const routerMock = {
-      navigate: jest.fn()
-    } as unknown as jest.Mocked<Router>;
-
     const activatedRouteMock = {
       snapshot: { params: {} },
       params: of({})
     };
 
     await TestBed.configureTestingModule({
-      imports: [MyItemsComponent, ToolbarComponent],
+      imports: [MyItemsComponent, ToolbarComponent, RouterTestingModule],
       providers: [
         provideHttpClient(),
         { provide: ItemsService, useValue: itemsServiceMock },
@@ -86,7 +83,6 @@ describe('MyItemsComponent', () => {
         { provide: LoopService, useValue: loopServiceMock },
         { provide: NotificationService, useValue: toolbarMocks.mockNotificationService },
         { provide: ItemRequestService, useValue: toolbarMocks.mockItemRequestService },
-        { provide: Router, useValue: routerMock },
         { provide: ActivatedRoute, useValue: activatedRouteMock }
       ]
     })
@@ -103,6 +99,9 @@ describe('MyItemsComponent', () => {
     authService.refreshCurrentUser.mockReturnValue(of(mockUser));
     itemsService.getItems.mockReturnValue(of(mockItems));
     loopService.getUserLoops.mockReturnValue(of(mockLoops));
+    
+    // Spy on router.navigate
+    jest.spyOn(router, 'navigate');
     
     // Prevent automatic change detection to avoid triggering child component lifecycle
     fixture.autoDetectChanges(false);

@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Models;
 
 namespace Api.Services;
@@ -11,4 +12,5 @@ public interface IUserService
     Task<bool> DeleteUserAsync(string id);
     Task<User?> VerifyEmailAsync(string token);
     Task EnsureIndexesAsync();
+    Task<PublicProfileDto> GetPublicProfileAsync(string requestingUserId, string targetUserId);
 }

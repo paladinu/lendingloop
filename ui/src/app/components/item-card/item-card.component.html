@@ -10,7 +10,7 @@
     <div class="item-details">
       <div class="owner-info" *ngIf="item.ownerName">
         <span class="owner-label">Owner:</span>
-        <span class="owner-name">{{ item.ownerName }}</span>
+        <a [routerLink]="['/profile', item.userId]" class="owner-name-link">{{ item.ownerName }}</a>
         <app-loop-score-display *ngIf="item.ownerScore !== undefined" [score]="item.ownerScore" size="small"></app-loop-score-display>
       </div>
       

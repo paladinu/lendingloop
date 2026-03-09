@@ -12,6 +12,8 @@ public class UserServiceTests
     private readonly Mock<IMongoDatabase> _mockDatabase;
     private readonly Mock<IMongoCollection<User>> _mockCollection;
     private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<ILoopService> _mockLoopService;
+    private readonly Mock<ILoopScoreService> _mockLoopScoreService;
     private readonly UserService _service;
 
     public UserServiceTests()
@@ -19,12 +21,14 @@ public class UserServiceTests
         _mockDatabase = new Mock<IMongoDatabase>();
         _mockCollection = new Mock<IMongoCollection<User>>();
         _mockConfiguration = new Mock<IConfiguration>();
+        _mockLoopService = new Mock<ILoopService>();
+        _mockLoopScoreService = new Mock<ILoopScoreService>();
 
         _mockConfiguration.Setup(c => c["MongoDB:UsersCollectionName"]).Returns("users");
         _mockDatabase.Setup(db => db.GetCollection<User>("users", null))
             .Returns(_mockCollection.Object);
 
-        _service = new UserService(_mockDatabase.Object, _mockConfiguration.Object);
+        _service = new UserService(_mockDatabase.Object, _mockConfiguration.Object, _mockLoopService.Object, _mockLoopScoreService.Object);
     }
 
     [Fact]
@@ -318,5 +322,236 @@ public class UserServiceTests
 
         //assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetPublicProfileAsync_ReturnsPublicProfileDto_WhenUsersShareLoops()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        var targetUser = new User
+        {
+            Id = targetUserId,
+            Email = "target@example.com",
+            FirstName = "Jane",
+            LastName = "Doe",
+            StreetAddress = "456 Oak St"
+        };
+
+        SetupMockFind(targetUser);
+
+        _mockLoopService.Setup(s => s.DoUsersShareLoopAsync(requestingUserId, targetUserId))
+            .ReturnsAsync(true);
+
+        _mockLoopScoreService.Setup(s => s.GetUserScoreAsync(targetUserId))
+            .ReturnsAsync(50);
+
+        var badges = new List<BadgeAward>
+        {
+            new BadgeAward { BadgeType = BadgeType.Bronze, AwardedAt = DateTime.UtcNow }
+        };
+        _mockLoopScoreService.Setup(s => s.GetUserBadgesAsync(targetUserId))
+            .ReturnsAsync(badges);
+
+        var scoreHistory = new List<ScoreHistoryEntry>
+        {
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Points = 10,
+                ActionType = ScoreActionType.BorrowCompleted,
+                ItemRequestId = "req123",
+                ItemName = "Drill"
+            }
+        };
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(targetUserId, It.IsAny<int>()))
+            .ReturnsAsync(scoreHistory);
+
+        //act
+        var result = await _service.GetPublicProfileAsync(requestingUserId, targetUserId);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(targetUserId, result.UserId);
+        Assert.Equal("Jane", result.FirstName);
+        Assert.Equal("Doe", result.LastName);
+        Assert.Equal(50, result.LoopScore);
+        Assert.Single(result.Badges);
+        Assert.Equal("Bronze", result.Badges[0].BadgeType);
+        Assert.Single(result.ScoreHistory);
+        Assert.Equal(10, result.ScoreHistory[0].Points);
+    }
+
+    [Fact]
+    public async Task GetPublicProfileAsync_ThrowsKeyNotFoundException_WhenUserDoesNotExist()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "nonexistent";
+
+        SetupMockFind(null);
+
+        //act & assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            async () => await _service.GetPublicProfileAsync(requestingUserId, targetUserId)
+        );
+    }
+
+    [Fact]
+    public async Task GetPublicProfileAsync_ThrowsUnauthorizedAccessException_WhenUsersDoNotShareLoops()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        var targetUser = new User
+        {
+            Id = targetUserId,
+            Email = "target@example.com",
+            FirstName = "Jane",
+            LastName = "Doe"
+        };
+
+        SetupMockFind(targetUser);
+
+        _mockLoopService.Setup(s => s.DoUsersShareLoopAsync(requestingUserId, targetUserId))
+            .ReturnsAsync(false);
+
+        //act & assert
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            async () => await _service.GetPublicProfileAsync(requestingUserId, targetUserId)
+        );
+    }
+
+    [Fact]
+    public async Task GetPublicProfileAsync_ExcludesEmailAndStreetAddress_InResponse()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        var targetUser = new User
+        {
+            Id = targetUserId,
+            Email = "target@example.com",
+            FirstName = "Jane",
+            LastName = "Doe",
+            StreetAddress = "456 Oak St"
+        };
+
+        SetupMockFind(targetUser);
+
+        _mockLoopService.Setup(s => s.DoUsersShareLoopAsync(requestingUserId, targetUserId))
+            .ReturnsAsync(true);
+
+        _mockLoopScoreService.Setup(s => s.GetUserScoreAsync(targetUserId))
+            .ReturnsAsync(50);
+
+        _mockLoopScoreService.Setup(s => s.GetUserBadgesAsync(targetUserId))
+            .ReturnsAsync(new List<BadgeAward>());
+
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(targetUserId, It.IsAny<int>()))
+            .ReturnsAsync(new List<ScoreHistoryEntry>());
+
+        //act
+        var result = await _service.GetPublicProfileAsync(requestingUserId, targetUserId);
+
+        //assert
+        Assert.NotNull(result);
+        // Verify that PublicProfileDto does not have Email or StreetAddress properties
+        var resultType = result.GetType();
+        Assert.Null(resultType.GetProperty("Email"));
+        Assert.Null(resultType.GetProperty("StreetAddress"));
+    }
+
+    [Fact]
+    public async Task GetPublicProfileAsync_IncludesLoopScoreBadgesAndScoreHistory_InResponse()
+    {
+        //arrange
+        var requestingUserId = "user123";
+        var targetUserId = "user456";
+        var targetUser = new User
+        {
+            Id = targetUserId,
+            Email = "target@example.com",
+            FirstName = "Jane",
+            LastName = "Doe"
+        };
+
+        SetupMockFind(targetUser);
+
+        _mockLoopService.Setup(s => s.DoUsersShareLoopAsync(requestingUserId, targetUserId))
+            .ReturnsAsync(true);
+
+        var expectedScore = 75;
+        _mockLoopScoreService.Setup(s => s.GetUserScoreAsync(targetUserId))
+            .ReturnsAsync(expectedScore);
+
+        var expectedBadges = new List<BadgeAward>
+        {
+            new BadgeAward { BadgeType = BadgeType.Bronze, AwardedAt = DateTime.UtcNow.AddDays(-10) },
+            new BadgeAward { BadgeType = BadgeType.Silver, AwardedAt = DateTime.UtcNow.AddDays(-5) }
+        };
+        _mockLoopScoreService.Setup(s => s.GetUserBadgesAsync(targetUserId))
+            .ReturnsAsync(expectedBadges);
+
+        var expectedScoreHistory = new List<ScoreHistoryEntry>
+        {
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-3),
+                Points = 10,
+                ActionType = ScoreActionType.BorrowCompleted,
+                ItemRequestId = "req123",
+                ItemName = "Drill"
+            },
+            new ScoreHistoryEntry
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-1),
+                Points = 5,
+                ActionType = ScoreActionType.OnTimeReturn,
+                ItemRequestId = "req124",
+                ItemName = "Saw"
+            }
+        };
+        _mockLoopScoreService.Setup(s => s.GetScoreHistoryAsync(targetUserId, It.IsAny<int>()))
+            .ReturnsAsync(expectedScoreHistory);
+
+        //act
+        var result = await _service.GetPublicProfileAsync(requestingUserId, targetUserId);
+
+        //assert
+        Assert.NotNull(result);
+        Assert.Equal(expectedScore, result.LoopScore);
+        Assert.Equal(2, result.Badges.Count);
+        Assert.Equal("Bronze", result.Badges[0].BadgeType);
+        Assert.Equal("Silver", result.Badges[1].BadgeType);
+        Assert.Equal(2, result.ScoreHistory.Count);
+        Assert.Equal(10, result.ScoreHistory[0].Points);
+        Assert.Equal("BorrowCompleted", result.ScoreHistory[0].ActionType);
+        Assert.Equal(5, result.ScoreHistory[1].Points);
+        Assert.Equal("OnTimeReturn", result.ScoreHistory[1].ActionType);
+    }
+
+    private IAsyncCursor<User> MockUserCursor(User? user)
+    {
+        var mockCursor = new Mock<IAsyncCursor<User>>();
+        mockCursor.Setup(c => c.Current).Returns(user != null ? new List<User> { user } : new List<User>());
+        mockCursor.SetupSequence(c => c.MoveNext(It.IsAny<CancellationToken>()))
+            .Returns(user != null)
+            .Returns(false);
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user != null)
+            .ReturnsAsync(false);
+        return mockCursor.Object;
+    }
+    
+    private void SetupMockFind(User? user)
+    {
+        var mockCursor = MockUserCursor(user);
+        _mockCollection.Setup(c => c.FindAsync(
+            It.IsAny<FilterDefinition<User>>(),
+            It.IsAny<FindOptions<User, User>>(),
+            default))
+            .ReturnsAsync(mockCursor);
     }
 }

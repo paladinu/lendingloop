@@ -33,6 +33,15 @@ export interface UserProfile {
     badges: BadgeAward[];
 }
 
+export interface PublicProfile {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    loopScore: number;
+    badges: BadgeAward[];
+    scoreHistory: ScoreHistoryEntry[];
+}
+
 export interface BadgeAward {
     badgeType: BadgeType;
     awardedAt: string;

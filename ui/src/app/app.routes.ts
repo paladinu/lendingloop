@@ -22,6 +22,8 @@ import { ArchivedLoopsComponent } from './components/archived-loops/archived-loo
 import { LoopSettingsComponent } from './components/loop-settings/loop-settings.component';
 import { NotificationsPageComponent } from './components/notifications-page/notifications-page.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { LandingPageComponent } from './components/landing-page/landing-page.component';
+import { authenticatedRedirectGuard } from './guards/authenticated-redirect.guard';
 
 export const routes: Routes = [
     // Authentication routes (no guard needed)
@@ -88,18 +90,23 @@ export const routes: Routes = [
         canActivate: [AuthGuard]
     },
 
-    // Profile route (protected)
+    // Profile routes (protected)
+    {
+        path: 'profile/:userId',
+        component: ProfileComponent,
+        canActivate: [AuthGuard]
+    },
     {
         path: 'profile',
         component: ProfileComponent,
         canActivate: [AuthGuard]
     },
 
-    // Root redirect
+    // Root route - public landing page with redirect for authenticated users
     {
         path: '',
-        redirectTo: 'loops',
-        pathMatch: 'full'
+        component: LandingPageComponent,
+        canActivate: [authenticatedRedirectGuard]
     },
 
     // Fallback route

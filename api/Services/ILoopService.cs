@@ -38,4 +38,7 @@ public interface ILoopService
     
     // Member management
     Task<Loop?> LeaveLoopAsync(string loopId, string userId);
+    
+    // Loop membership validation
+    Task<bool> DoUsersShareLoopAsync(string userId1, string userId2);
 }

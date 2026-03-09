@@ -80,7 +80,7 @@ describe('ScoreHistoryComponent', () => {
 
         //assert
         setTimeout(() => {
-            expect(component.scoreHistory).toEqual(mockHistory);
+            expect(component.displayScoreHistory).toEqual(mockHistory);
             expect(component.loading).toBe(false);
             expect(mockLoopScoreService.getScoreHistory).toHaveBeenCalledWith('user123');
             done();

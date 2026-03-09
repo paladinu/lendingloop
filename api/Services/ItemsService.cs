@@ -6,6 +6,7 @@ namespace Api.Services;
 public class ItemsService : IItemsService
 {
     private readonly IMongoCollection<SharedItem> _itemsCollection;
+    private readonly IMongoCollection<User> _usersCollection;
     private readonly IConfiguration _configuration;
     private readonly ITagsService _tagsService;
 
@@ -13,6 +14,10 @@ public class ItemsService : IItemsService
     {
         var collectionName = configuration["MongoDB:CollectionName"] ?? "items";
         _itemsCollection = database.GetCollection<SharedItem>(collectionName);
+        
+        var usersCollectionName = configuration["MongoDB:UsersCollectionName"] ?? "users";
+        _usersCollection = database.GetCollection<User>(usersCollectionName);
+        
         _configuration = configuration;
         _tagsService = tagsService;
         
@@ -35,6 +40,31 @@ public class ItemsService : IItemsService
         foreach (var item in items)
         {
             NormalizeImageUrl(item);
+        }
+    }
+    
+    private async Task PopulateOwnerInformationAsync(List<SharedItem> items)
+    {
+        if (items == null || items.Count == 0) return;
+        
+        // Get unique user IDs
+        var userIds = items.Select(i => i.UserId).Distinct().ToList();
+        
+        // Fetch all users in one query
+        var userFilter = Builders<User>.Filter.In(u => u.Id, userIds);
+        var users = await _usersCollection.Find(userFilter).ToListAsync();
+        
+        // Create a dictionary for quick lookup
+        var userDict = users.ToDictionary(u => u.Id!, u => u);
+        
+        // Populate owner information for each item
+        foreach (var item in items)
+        {
+            if (userDict.TryGetValue(item.UserId, out var user))
+            {
+                item.OwnerName = $"{user.FirstName} {user.LastName}".Trim();
+                item.OwnerScore = user.LoopScore;
+            }
         }
     }
 
@@ -81,6 +111,7 @@ public class ItemsService : IItemsService
         var sort = Builders<SharedItem>.Sort.Descending(item => item.CreatedAt);
         var items = await _itemsCollection.Find(filter).Sort(sort).ToListAsync();
         NormalizeImageUrls(items);
+        await PopulateOwnerInformationAsync(items);
         return items;
     }
 
@@ -319,6 +350,7 @@ public class ItemsService : IItemsService
             .ToListAsync();
 
         NormalizeImageUrls(items);
+        await PopulateOwnerInformationAsync(items);
 
         return new Api.DTOs.ItemSearchResult
         {

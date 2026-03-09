@@ -41,4 +41,11 @@ public class SharedItem
     
     [BsonElement("updatedAt")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    // Non-persisted properties for API responses
+    [BsonIgnore]
+    public string? OwnerName { get; set; }
+    
+    [BsonIgnore]
+    public int? OwnerScore { get; set; }
 }

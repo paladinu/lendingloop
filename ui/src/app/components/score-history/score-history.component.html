@@ -28,12 +28,12 @@
             <p>{{ error }}</p>
         </div>
 
-        <div *ngIf="!loading && !error && scoreHistory.length === 0" class="empty-state">
+        <div *ngIf="!loading && !error && displayScoreHistory.length === 0" class="empty-state">
             <p>No activity yet. Start borrowing or lending items to earn points!</p>
         </div>
 
-        <div *ngIf="!loading && !error && scoreHistory.length > 0" class="history-list">
-            <div *ngFor="let entry of scoreHistory" class="history-entry" [ngClass]="{'negative-points': entry.points < 0}">
+        <div *ngIf="!loading && !error && displayScoreHistory.length > 0" class="history-list">
+            <div *ngFor="let entry of displayScoreHistory" class="history-entry" [ngClass]="{'negative-points': entry.points < 0}">
                 <div class="entry-icon">{{ getActionTypeIcon(entry.actionType) }}</div>
                 <div class="entry-details">
                     <div class="entry-action">{{ getActionTypeLabel(entry.actionType) }}</div>

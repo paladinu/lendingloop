@@ -102,4 +102,9 @@
     <div *ngIf="!showAllBadges && (!earnedBadges || earnedBadges.length === 0)" class="empty-state">
         <p class="empty-message">No badges earned yet. Keep participating to earn badges!</p>
     </div>
+    
+    <!-- Empty state for showAllBadges mode when no badges earned -->
+    <div *ngIf="showAllBadges && earnedBadges && earnedBadges.length === 0" class="empty-state">
+        <p class="empty-message">No badges earned yet</p>
+    </div>
 </div>

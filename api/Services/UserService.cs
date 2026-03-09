@@ -1,4 +1,5 @@
 using Api.Models;
+using Api.DTOs;
 using MongoDB.Driver;
 
 namespace Api.Services;
@@ -6,11 +7,15 @@ namespace Api.Services;
 public class UserService : IUserService
 {
     private readonly IMongoCollection<User> _usersCollection;
+    private readonly ILoopService _loopService;
+    private readonly ILoopScoreService _loopScoreService;
 
-    public UserService(IMongoDatabase database, IConfiguration configuration)
+    public UserService(IMongoDatabase database, IConfiguration configuration, ILoopService loopService, ILoopScoreService loopScoreService)
     {
         var collectionName = configuration["MongoDB:UsersCollectionName"] ?? "users";
         _usersCollection = database.GetCollection<User>(collectionName);
+        _loopService = loopService;
+        _loopScoreService = loopScoreService;
         
         // Ensure indexes are created when service is instantiated
         _ = Task.Run(EnsureIndexesAsync);
@@ -119,5 +124,47 @@ public class UserService : IUserService
             // Log the exception but don't fail the application startup
             Console.WriteLine($"Warning: Could not create indexes for Users collection: {ex.Message}");
         }
+    }
+
+    public async Task<PublicProfileDto> GetPublicProfileAsync(string requestingUserId, string targetUserId)
+    {
+        // Validate target user exists
+        var targetUser = await _usersCollection
+            .Find(u => u.Id == targetUserId)
+            .FirstOrDefaultAsync();
+        
+        if (targetUser == null)
+        {
+            throw new KeyNotFoundException("User not found");
+        }
+        
+        // Check if requesting user equals target user (should use /api/users/me)
+        if (requestingUserId == targetUserId)
+        {
+            throw new InvalidOperationException("Use /api/users/me for your own profile");
+        }
+        
+        // Call DoUsersShareLoopAsync to validate loop membership
+        var shareLoop = await _loopService.DoUsersShareLoopAsync(requestingUserId, targetUserId);
+        if (!shareLoop)
+        {
+            throw new UnauthorizedAccessException("You can only view profiles of users in your loops");
+        }
+        
+        // Fetch loop score data
+        var loopScore = await _loopScoreService.GetUserScoreAsync(targetUserId);
+        var badges = await _loopScoreService.GetUserBadgesAsync(targetUserId);
+        var scoreHistory = await _loopScoreService.GetScoreHistoryAsync(targetUserId);
+        
+        // Return PublicProfileDto with only public fields (no email, no streetAddress)
+        return new PublicProfileDto
+        {
+            UserId = targetUser.Id!,
+            FirstName = targetUser.FirstName,
+            LastName = targetUser.LastName,
+            LoopScore = loopScore,
+            Badges = badges.Select(BadgeDto.FromBadgeAward).ToList(),
+            ScoreHistory = scoreHistory.Select(ScoreHistoryEntryDto.FromScoreHistoryEntry).ToList()
+        };
     }
 }

@@ -407,4 +407,117 @@ public class LoopServiceTests
         Assert.DoesNotContain(result, u => u.Id == userId);
         Assert.DoesNotContain(result, u => u.Id == "user2");
     }
+
+    [Fact]
+    public async Task DoUsersShareLoopAsync_ReturnsTrue_WhenUsersShareOneLoop()
+    {
+        //arrange
+        var userId1 = "user123";
+        var userId2 = "user456";
+        var sharedLoop = new Loop
+        {
+            Id = "loop1",
+            Name = "Shared Loop",
+            MemberIds = new List<string> { userId1, userId2, "user789" }
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<Loop>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<Loop> { sharedLoop });
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockLoopsCollection.Setup(c => c.FindAsync(
+            It.IsAny<FilterDefinition<Loop>>(),
+            It.IsAny<FindOptions<Loop, Loop>>(),
+            default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var result = await _service.DoUsersShareLoopAsync(userId1, userId2);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task DoUsersShareLoopAsync_ReturnsTrue_WhenUsersShareMultipleLoops()
+    {
+        //arrange
+        var userId1 = "user123";
+        var userId2 = "user456";
+        var sharedLoop = new Loop
+        {
+            Id = "loop1",
+            Name = "First Shared Loop",
+            MemberIds = new List<string> { userId1, userId2 }
+        };
+
+        var mockCursor = new Mock<IAsyncCursor<Loop>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<Loop> { sharedLoop });
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true)
+            .ReturnsAsync(false);
+
+        _mockLoopsCollection.Setup(c => c.FindAsync(
+            It.IsAny<FilterDefinition<Loop>>(),
+            It.IsAny<FindOptions<Loop, Loop>>(),
+            default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var result = await _service.DoUsersShareLoopAsync(userId1, userId2);
+
+        //assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task DoUsersShareLoopAsync_ReturnsFalse_WhenUsersShareNoLoops()
+    {
+        //arrange
+        var userId1 = "user123";
+        var userId2 = "user456";
+
+        var mockCursor = new Mock<IAsyncCursor<Loop>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<Loop>());
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        _mockLoopsCollection.Setup(c => c.FindAsync(
+            It.IsAny<FilterDefinition<Loop>>(),
+            It.IsAny<FindOptions<Loop, Loop>>(),
+            default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var result = await _service.DoUsersShareLoopAsync(userId1, userId2);
+
+        //assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task DoUsersShareLoopAsync_ReturnsFalse_WhenSameUserId()
+    {
+        //arrange
+        var userId = "user123";
+
+        var mockCursor = new Mock<IAsyncCursor<Loop>>();
+        mockCursor.Setup(c => c.Current).Returns(new List<Loop>());
+        mockCursor.SetupSequence(c => c.MoveNextAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        _mockLoopsCollection.Setup(c => c.FindAsync(
+            It.IsAny<FilterDefinition<Loop>>(),
+            It.IsAny<FindOptions<Loop, Loop>>(),
+            default))
+            .ReturnsAsync(mockCursor.Object);
+
+        //act
+        var result = await _service.DoUsersShareLoopAsync(userId, userId);
+
+        //assert
+        Assert.False(result);
+    }
 }

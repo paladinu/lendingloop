@@ -76,6 +76,26 @@ mat-card-content {
   flex: 1;
 }
 
+.owner-name-link {
+  color: #1976d2;
+  font-weight: 600;
+  flex: 1;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.owner-name-link:hover {
+  color: #1565c0;
+  text-decoration: underline;
+}
+
+.owner-name-link:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .status-row {
   display: flex;
   align-items: center;

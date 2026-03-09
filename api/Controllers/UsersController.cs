@@ -1,7 +1,9 @@
+using Api.DTOs;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Api.Controllers;
 
@@ -124,6 +126,50 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error retrieving badge rarities");
             return StatusCode(500, new { message = "An error occurred while retrieving badge rarities" });
+        }
+    }
+
+    [HttpGet("{userId}/public-profile")]
+    public async Task<ActionResult<PublicProfileDto>> GetPublicProfile(string userId)
+    {
+        try
+        {
+            // Get requesting user ID from JWT claims
+            var requestingUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrEmpty(requestingUserId))
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            // Call usersService.GetPublicProfileAsync
+            var publicProfile = await _userService.GetPublicProfileAsync(requestingUserId, userId);
+            
+            return Ok(publicProfile);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            // Handle NotFoundException → return 404
+            _logger.LogWarning(ex, "User not found: {UserId}", userId);
+            return NotFound(new { message = "User not found" });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            // Handle UnauthorizedException → return 403
+            _logger.LogWarning(ex, "Unauthorized access to profile: {UserId}", userId);
+            return StatusCode(403, new { message = "You can only view profiles of users in your loops" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Handle BadRequestException for viewing own profile
+            _logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Handle other exceptions → return 500
+            _logger.LogError(ex, "Error retrieving public profile for user {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while retrieving the public profile" });
         }
     }
 }

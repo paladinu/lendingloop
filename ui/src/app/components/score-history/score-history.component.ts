@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LoopScoreService, ScoreRules } from '../../services/loop-score.service';
 import { AuthService } from '../../services/auth.service';
@@ -11,8 +11,11 @@ import { ScoreHistoryEntry } from '../../models/auth.interface';
     templateUrl: './score-history.component.html',
     styleUrls: ['./score-history.component.css']
 })
-export class ScoreHistoryComponent implements OnInit {
-    scoreHistory: ScoreHistoryEntry[] = [];
+export class ScoreHistoryComponent implements OnInit, OnChanges {
+    @Input() userId: string | null = null;
+    @Input() scoreHistory: ScoreHistoryEntry[] | null = null;
+    
+    displayScoreHistory: ScoreHistoryEntry[] = [];
     scoreRules: ScoreRules;
     loading: boolean = true;
     error: string | null = null;
@@ -25,21 +28,46 @@ export class ScoreHistoryComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.authService.getCurrentUser().subscribe(user => {
-            if (user && user.id) {
-                this.loadScoreHistory(user.id);
-            } else {
-                this.loading = false;
-                this.error = 'User not found';
-            }
-        });
+        this.loadHistory();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['userId'] || changes['scoreHistory']) {
+            this.loadHistory();
+        }
+    }
+
+    private loadHistory(): void {
+        // If scoreHistory is provided as input, use it directly
+        if (this.scoreHistory) {
+            this.displayScoreHistory = this.scoreHistory;
+            this.loading = false;
+            return;
+        }
+
+        // Otherwise, load from API using userId
+        const targetUserId = this.userId;
+        
+        if (targetUserId) {
+            this.loadScoreHistory(targetUserId);
+        } else {
+            // Fall back to current user if no userId provided
+            this.authService.getCurrentUser().subscribe(user => {
+                if (user && user.id) {
+                    this.loadScoreHistory(user.id);
+                } else {
+                    this.loading = false;
+                    this.error = 'User not found';
+                }
+            });
+        }
     }
 
     private loadScoreHistory(userId: string): void {
         this.loading = true;
         this.loopScoreService.getScoreHistory(userId).subscribe({
             next: (history) => {
-                this.scoreHistory = history;
+                this.displayScoreHistory = history;
                 this.loading = false;
             },
             error: (err) => {

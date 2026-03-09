@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
-import { UserProfile } from '../models/auth.interface';
+import { UserProfile, PublicProfile } from '../models/auth.interface';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -20,6 +20,13 @@ export class UserService {
 
     getCurrentUser(): Observable<UserProfile> {
         return this.http.get<UserProfile>(`${this.API_URL}/me`)
+            .pipe(
+                catchError(error => this.handleError(error))
+            );
+    }
+
+    getPublicProfile(userId: string): Observable<PublicProfile> {
+        return this.http.get<PublicProfile>(`${environment.apiUrl}/api/users/${userId}/public-profile`)
             .pipe(
                 catchError(error => this.handleError(error))
             );

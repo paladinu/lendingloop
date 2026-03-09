@@ -1,27 +1,38 @@
 <app-toolbar></app-toolbar>
 
 <div class="profile-container">
-  <div class="profile-header">
+  <button class="back-button" (click)="goBack()">
+    <span class="back-arrow">←</span> Back
+  </button>
+  
+  <h2 class="page-title" [ngClass]="{'own-profile': isOwnProfile, 'public-profile': !isOwnProfile}">{{ isOwnProfile ? 'My Profile' : 'User Profile' }}</h2>
+  
+  <!-- Error message display -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+  
+  <div *ngIf="!errorMessage" class="profile-header">
     <div class="user-avatar">
       <span class="avatar-icon">{{ getUserDisplayName().charAt(0).toUpperCase() }}</span>
     </div>
     <div class="user-details">
       <h1 class="user-name">
         {{ getUserDisplayName() }}
-        <app-loop-score-display *ngIf="currentUser && currentUser.loopScore !== undefined" [score]="currentUser.loopScore" size="large"></app-loop-score-display>
+        <app-loop-score-display *ngIf="profileData && profileData.loopScore !== undefined" [score]="profileData.loopScore" size="large"></app-loop-score-display>
       </h1>
-      <p class="user-email">{{ currentUser?.email }}</p>
-      <p class="user-address" *ngIf="currentUser && currentUser.streetAddress">{{ currentUser.streetAddress }}</p>
+      <p class="user-email" *ngIf="isOwnProfile && currentUser">{{ currentUser.email }}</p>
+      <p class="user-address" *ngIf="isOwnProfile && currentUser && currentUser.streetAddress">{{ currentUser.streetAddress }}</p>
       
-      <div class="badges-section" *ngIf="currentUser">
-        <h3 class="section-heading">My Badges</h3>
-        <app-badge-display [earnedBadges]="currentUser.badges || []" [showAllBadges]="true" [userId]="currentUser.id"></app-badge-display>
+      <div class="badges-section" *ngIf="profileData">
+        <h3 class="section-heading">{{ isOwnProfile ? 'My Badges' : 'Badges' }}</h3>
+        <app-badge-display [earnedBadges]="profileData.badges || []" [showAllBadges]="true" [userId]="getProfileUserId()"></app-badge-display>
       </div>
     </div>
   </div>
 
-  <div class="profile-content">
-    <h2 class="section-heading">My LoopScore History</h2>
-    <app-score-history></app-score-history>
+  <div *ngIf="!errorMessage" class="profile-content">
+    <h2 class="section-heading">{{ isOwnProfile ? 'My LoopScore History' : 'LoopScore History' }}</h2>
+    <app-score-history [scoreHistory]="getScoreHistory()" [userId]="getProfileUserId()"></app-score-history>
   </div>
 </div>
